@@ -1,44 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Nunito:wght@400;600;700&display=swap');
 
-/* ========== TABLET ONLY ========== */
-/* This app is designed exclusively for tablets.
-   On phones or desktops, show a message. */
-
-@media screen and (max-width: 600px) {
-  body::after {
-    content: 'Usa esta app en una tableta 📱';
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    inset: 0;
-    background: #FFE4F0;
-    font-size: 24px;
-    font-family: 'Comic Neue', cursive;
-    color: #E91E8C;
-    text-align: center;
-    padding: 40px;
-    z-index: 9999;
-  }
-}
-
-@media screen and (min-width: 1200px) {
-  body::after {
-    content: '📱 Esta app está diseñada para tableta';
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    inset: 0;
-    background: #E8F4FD;
-    font-size: 24px;
-    font-family: 'Comic Neue', cursive;
-    color: #4A9FD9;
-    text-align: center;
-    padding: 40px;
-    z-index: 9999;
-  }
-}
+/* ========== MOBILE + TABLET ========== */
 
 /* ========== GLOBAL ========== */
 * {
@@ -55,7 +17,6 @@ body {
   -webkit-touch-callout: none;
 }
 
-/* Disable pinch-zoom and double-tap zoom for tablet kiosk feel */
 html {
   touch-action: manipulation;
   zoom: 1;
@@ -70,24 +31,24 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 64px;
-  padding: 0 16px;
+  height: 56px;
+  padding: 0 12px;
   background: transparent !important;
 }
 
 .app-content {
-  padding: 12px 24px 24px;
+  padding: 8px 12px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  height: calc(100vh - 64px);
+  gap: 8px;
+  height: calc(100vh - 56px);
   overflow: hidden;
 }
 
 .main-layout {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   max-width: 960px;
   flex: 1;
@@ -111,7 +72,7 @@ html {
 
 .playlist-card .ant-card-body {
   overflow-y: auto;
-  max-height: calc(100vh - 240px);
+  max-height: calc(100vh - 200px);
 }
 
 /* ========== PLAYER ========== */
@@ -119,13 +80,14 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   height: 100%;
   justify-content: center;
+  padding: 4px 0;
 }
 
 .cover-art-container {
-  margin: 8px 0;
+  margin: 4px 0;
 }
 
 .cover-art {
@@ -143,16 +105,16 @@ html {
 
 .song-info {
   text-align: center;
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 /* Progress bar */
 .progress-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
 }
 
 .progress-slider {
@@ -172,8 +134,8 @@ html {
 
 .time-label {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
-  min-width: 36px;
+  font-size: 12px;
+  min-width: 32px;
   text-align: center;
 }
 
@@ -181,14 +143,14 @@ html {
 .main-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 6px;
+  margin: 4px 0;
 }
 
 .control-btn {
-  font-size: 28px !important;
-  width: 52px !important;
-  height: 52px !important;
+  font-size: 24px !important;
+  width: 48px !important;
+  height: 48px !important;
   color: #fff !important;
   border-radius: 50% !important;
   transition: all 0.2s !important;
@@ -200,9 +162,9 @@ html {
 }
 
 .control-btn-secondary {
-  font-size: 20px !important;
-  width: 44px !important;
-  height: 44px !important;
+  font-size: 18px !important;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50% !important;
 }
 
@@ -215,9 +177,9 @@ html {
 }
 
 .play-btn {
-  width: 72px !important;
-  height: 72px !important;
-  font-size: 36px !important;
+  width: 64px !important;
+  height: 64px !important;
+  font-size: 32px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
   transition: transform 0.2s !important;
 }
@@ -230,9 +192,9 @@ html {
 .volume-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  max-width: 200px;
+  max-width: 180px;
 }
 
 .volume-slider {
@@ -263,19 +225,19 @@ html {
   transform: scale(0.98);
 }
 
-/* Ant Design Segmented override for theme selector */
+/* Ant Design Segmented override */
 .ant-segmented {
   border-radius: 16px !important;
-  padding: 4px !important;
+  padding: 3px !important;
 }
 
 .ant-segmented-item {
   border-radius: 12px !important;
 }
 
-/* Scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -289,4 +251,103 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
+}
+
+/* ========== MOBILE (max-width: 640px) ========== */
+@media screen and (max-width: 640px) {
+  .app-header {
+    height: 48px;
+  }
+
+  .app-header .ant-typography {
+    font-size: 18px !important;
+  }
+
+  .app-content {
+    padding: 6px 10px 12px;
+    height: calc(100vh - 48px);
+    gap: 6px;
+  }
+
+  .main-layout {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .player-card {
+    flex: none;
+    max-height: 55vh;
+  }
+
+  .playlist-card {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .playlist-card .ant-card-body {
+    max-height: none;
+  }
+
+  .cover-art-container .ant-avatar {
+    width: 140px !important;
+    height: 140px !important;
+  }
+
+  .song-info .ant-typography h3 {
+    font-size: 18px !important;
+  }
+
+  .main-controls {
+    gap: 4px;
+  }
+
+  .control-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 22px !important;
+  }
+
+  .play-btn {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 28px !important;
+  }
+
+  .control-btn-secondary {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .volume-container {
+    max-width: 140px;
+  }
+
+  .progress-container {
+    max-width: 280px;
+    gap: 6px;
+  }
+}
+
+/* ========== TABLET (641px - 1024px) ========== */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .app-content {
+    padding: 10px 20px 20px;
+  }
+
+  .cover-art-container .ant-avatar {
+    width: 180px !important;
+    height: 180px !important;
+  }
+}
+
+/* ========== LARGE TABLET / SMALL DESKTOP ========== */
+@media screen and (min-width: 1025px) {
+  .app-content {
+    padding: 12px 32px 24px;
+  }
+
+  .cover-art-container .ant-avatar {
+    width: 200px !important;
+    height: 200px !important;
+  }
 }

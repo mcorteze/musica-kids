@@ -6,7 +6,7 @@ const themeKeys = Object.keys(themes);
 export default function ThemeSelector({ currentTheme, onChange }) {
   const options = themeKeys.map((key) => ({
     label: (
-      <span style={{ fontSize: 18, padding: '4px 8px' }}>
+      <span style={{ fontSize: 15, padding: '2px 4px', whiteSpace: 'nowrap' }}>
         {themes[key].icon} {themes[key].name}
       </span>
     ),
@@ -18,8 +18,8 @@ export default function ThemeSelector({ currentTheme, onChange }) {
       options={options}
       value={currentTheme}
       onChange={onChange}
-      style={{ marginBottom: 16 }}
-      size="large"
+      style={{ maxWidth: '100%' }}
+      size="middle"
     />
   );
 }
