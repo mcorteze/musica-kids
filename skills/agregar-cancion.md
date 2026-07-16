@@ -1,76 +1,73 @@
 # Agregar Cancion — musica-kids
 
-> Skill para agregar canciones al reproductor. Mueve archivos, actualiza datos, despliega.
+> Agrega canciones al reproductor desde un archivo MP3.
 
-## Flujo obligatorio
+## Obligatorio
 
-### 1. Pedir ruta del MP3 (OBLIGATORIO)
+**Ruta del archivo MP3.** Si no se proporciona, no hacer nada.
 
-**No hacer nada si no se proporciona la ruta del archivo MP3.**
+## Flujo
 
-Preguntar al usuario:
-- Ruta del archivo MP3 (obligatorio)
-- Ruta de carátula/foto jpg/png (opcional)
-- URL de YouTube (opcional, para obtener titulo y artista automaticamente)
+### 1. Recibir ruta MP3
 
-Si el usuario no da la ruta del MP3, detenerse aqui.
+El usuario da la ruta. Verificar que existe con `Test-Path`. Si no existe, informar y detener.
 
-### 2. Verificar que el archivo existe
+### 2. Extraer datos del nombre de archivo
 
-```powershell
-Test-Path -LiteralPath "<ruta-del-usuario>"
-```
+Parsear el nombre del archivo para obtener titulo y artista.
 
-Si no existe, informar y detenerse.
+Ejemplos:
+- `Shakira - Zoo (From Zootopia 2).mp3` → artista: `Shakira`, titulo: `Zoo`
+- `paw-patrol-theme.mp3` → titulo: `Paw Patrol Theme`, artista: `Kids Music`
+- `yo-nunca-vi-tele.mp3` → titulo: `Yo nunca vi tele`, artista: `31 Minutos`
 
-### 3. Determinar nombre limpio del archivo
+Reglas:
+- Si hay ` - ` separando, lo izquierda es artista, lo derecha es titulo
+- Si no hay ` - `, todo el nombre (sin extension) es el titulo, artista queda como `Various`
+- Quitar extension `.mp3`
+- Reemplazar `_` y `-` por espacios
+- Capitalizar primera letra de cada palabra
 
-El nombre del MP3 debe ser:
-- Sin espacios, en minusculas
-- Separado por guiones
-- Sin caracteres especiales (tildes, eñes, etc.)
+### 3. Generar nombre limpio del archivo
+
+- Sin espacios, minusculas, guiones entre palabras
+- Sin caracteres especiales (tildes → sin tilde, eñes → n)
 - Ejemplo: `Shakira - Zoo (From Zootopia 2).mp3` → `shakira-zoo-zootopia2.mp3`
 
 ### 4. Mover el MP3
 
 ```powershell
-Copy-Item "<ruta-original>" "C:\Proyectos\musica-kids\public\music\<nombre-limpio>.mp3"
+Copy-Item "<ruta-usuario>" "C:\Proyectos\musica-kids\public\music\<nombre-limpio>.mp3"
 ```
 
-No eliminar el original (por si el usuario lo necesita).
+No eliminar el original.
 
-### 5. Mover carátula (si se proporciono)
+### 5. Buscar carátula (opcional, automatica)
 
-Si el usuario dio ruta de carátula, copiar a `public/covers/<nombre-limpio>.jpg` (o la extension que tenga).
+Buscar en `public/covers/` si existe un archivo que empiece con el mismo nombre base del MP3 original o del nombre limpio. Si existe, usarlo como cover. Si no, `cover: null`.
 
-### 6. Obtener datos de la cancion
+### 6. Actualizar songs.js
 
-**Si el usuario dio URL de YouTube:**
-- Usar `webfetch` para obtener el titulo de la pagina
-- El titulo suele estar en el formato: `Artista - Cancion (Details) - YouTube`
-- Separar artista y titulo de ese string
+Leer `src/data/songs.js`, encontrar el ultimo `id`, incrementar, agregar entrada.
 
-**Si NO hay URL de YouTube:**
-- Preguntar el titulo de la cancion
-- Preguntar el nombre del artista
+### 7. PREVISUALIZACION — Obligatoria antes de desplegar
 
-### 7. Actualizar songs.js
+**ANTES de hacer build/deploy**, mostrar al usuario un resumen y ESPERAR confirmacion:
 
-Leer `src/data/songs.js`, encontrar el ultimo `id` usado, incrementar en 1, y agregar la entrada antes del `];`:
-
-```js
-  {
-    id: <siguiente-id>,
-    title: '<titulo>',
-    artist: '<artista>',
-    file: '<nombre-limpio>.mp3',
-    cover: '<nombre-cover>.jpg' o null,
-  },
 ```
+Cancion a agregar:
+  Titulo: Zoo
+  Artista: Shakira
+  Archivo: shakira-zoo-zootopia2.mp3
+  Caratula: no
+
+Confirmas? (s/n)
+```
+
+Si el usuario dice que no o corrige algo, ajustar y volver a mostrar.
+Solo proceder al paso 8 cuando el usuario confirme.
 
 ### 8. Build + Commit + Push + Deploy
-
-Ejecutar en orden:
 
 ```powershell
 npm run build
@@ -80,17 +77,14 @@ git commit -m "feat: add <artista> - <titulo>"
 git push
 ```
 
-### 9. Confirmar al usuario
+### 9. Confirmar
 
-Informar:
-- Nombre del archivo movido
-- Datos que se agregaron
-- URL donde vera la cancion: `https://mcorteze.github.io/musica-kids/`
+Informar URL: `https://mcorteze.github.io/musica-kids/`
 
-## Reglas que nunca se rompen
+## Reglas
 
-- **NUNCA** proceder sin ruta de MP3 valida
-- **NUNCA** eliminar el archivo original del usuario
-- **NUNCA** usar caracteres especiales en nombres de archivo
-- **NUNCA** saltar el build/deploy
-- Si hay multiples canciones, repetir el proceso para cada una
+- NUNCA proceder sin ruta de MP3 valida
+- NUNCA eliminar el archivo original
+- NUNCA saltar la previsualizacion
+- NUNCA deploy sin confirmacion del usuario
+- Si hay multiples archivos, procesar todos y mostrar resumen completo antes de desplegar
