@@ -113,7 +113,7 @@ export default function App() {
       >
         <Header
           className="app-header"
-          style={theme.headerStyle}
+          style={{ ...theme.headerStyle, justifyContent: 'space-between' }}
         >
           <Title level={2} style={{ margin: 0, color: '#fff', fontSize: 'inherit' }}>
             {theme.icon} Mi Musica

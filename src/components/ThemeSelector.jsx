@@ -12,13 +12,12 @@ export default function ThemeSelector({ currentTheme, onChange }) {
   return (
     <>
       <Button
+        type="text"
         icon={<BgColorsOutlined />}
         onClick={() => setOpen(true)}
         size="large"
-        style={{ borderRadius: 12, fontWeight: 600 }}
-      >
-        {themes[currentTheme].icon} Tema
-      </Button>
+        style={{ borderRadius: 12, color: '#fff', fontSize: 22 }}
+      />
 
       <Drawer
         title="Elegir tema"
