@@ -129,9 +129,9 @@ export default function App() {
             <Card
               className="player-card"
               style={{
-                background: theme.cardBg,
-                borderColor: theme.cardStyle.borderColor,
-                borderWidth: theme.cardStyle.borderWidth,
+                background: theme.playerBg,
+                borderColor: 'transparent',
+                borderWidth: 0,
                 borderStyle: 'solid',
               }}
               bodyStyle={{ padding: 20 }}
