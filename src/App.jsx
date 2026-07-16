@@ -25,7 +25,7 @@ export default function App() {
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
-  const [repeat, setRepeat] = useState('off'); // off | all | one
+  const [repeat, setRepeat] = useState('off');
 
   const theme = themes[currentTheme];
 
@@ -39,13 +39,10 @@ export default function App() {
     return shuffledOrder.indexOf(currentSong.id);
   }, [currentSong, shuffledOrder]);
 
-  const handleSelectSong = useCallback(
-    (song) => {
-      setCurrentSong(song);
-      setIsPlaying(true);
-    },
-    []
-  );
+  const handleSelectSong = useCallback((song) => {
+    setCurrentSong(song);
+    setIsPlaying(true);
+  }, []);
 
   const handlePlayPause = useCallback(() => {
     setIsPlaying((prev) => !prev);
@@ -53,12 +50,10 @@ export default function App() {
 
   const handleNext = useCallback(() => {
     if (songs.length === 0) return;
-
     if (repeat === 'off' && currentIndex === songs.length - 1 && !shuffle) {
       setIsPlaying(false);
       return;
     }
-
     const nextIndex = (currentIndex + 1) % songs.length;
     const nextId = shuffledOrder[nextIndex];
     const nextSong = songs.find((s) => s.id === nextId);
@@ -110,17 +105,16 @@ export default function App() {
         style={{ background: theme.gradient, minHeight: '100vh' }}
       >
         <Header className="app-header">
-          <Title level={2} style={{ margin: 0, color: theme.token.colorText }}>
-            {theme.icon} Mi Música
+          <Title level={2} style={{ margin: 0, color: theme.token.colorText, fontSize: 'inherit' }}>
+            {theme.icon} Mi Musica
           </Title>
-        </Header>
-
-        <Content className="app-content">
           <ThemeSelector
             currentTheme={currentTheme}
             onChange={handleThemeChange}
           />
+        </Header>
 
+        <Content className="app-content">
           <div className="main-layout">
             <Card
               className="player-card"
@@ -128,7 +122,7 @@ export default function App() {
                 background: theme.cardBg,
                 borderColor: 'transparent',
               }}
-              bodyStyle={{ padding: 24 }}
+              bodyStyle={{ padding: 20 }}
             >
               <MusicPlayer
                 song={currentSong}
@@ -147,15 +141,15 @@ export default function App() {
             <Card
               className="playlist-card"
               title={
-                <span style={{ fontSize: 18 }}>
-                  🎵 Canciones ({songs.length})
+                <span style={{ fontSize: 16 }}>
+                  Canciones ({songs.length})
                 </span>
               }
               style={{
                 background: theme.cardBg,
                 borderColor: 'transparent',
               }}
-              bodyStyle={{ padding: '8px 12px' }}
+              bodyStyle={{ padding: '4px 8px' }}
             >
               <Playlist
                 songs={songs}

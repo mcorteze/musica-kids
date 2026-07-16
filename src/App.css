@@ -34,6 +34,7 @@ html {
   height: 56px;
   padding: 0 12px;
   background: transparent !important;
+  gap: 12px;
 }
 
 .app-content {
@@ -225,16 +226,6 @@ html {
   transform: scale(0.98);
 }
 
-/* Ant Design Segmented override */
-.ant-segmented {
-  border-radius: 16px !important;
-  padding: 3px !important;
-}
-
-.ant-segmented-item {
-  border-radius: 12px !important;
-}
-
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
@@ -260,7 +251,7 @@ html {
   }
 
   .app-header .ant-typography {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
 
   .app-content {
@@ -276,25 +267,29 @@ html {
 
   .player-card {
     flex: none;
-    max-height: 55vh;
+    max-height: 45vh;
   }
 
   .playlist-card {
     flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .playlist-card .ant-card-body {
-    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
   }
 
   .cover-art-container .ant-avatar {
-    width: 140px !important;
-    height: 140px !important;
+    width: 120px !important;
+    height: 120px !important;
   }
 
   .song-info .ant-typography h3 {
-    font-size: 18px !important;
+    font-size: 16px !important;
   }
 
   .main-controls {
@@ -302,29 +297,38 @@ html {
   }
 
   .control-btn {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 22px !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 20px !important;
   }
 
   .play-btn {
-    width: 56px !important;
-    height: 56px !important;
-    font-size: 28px !important;
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 26px !important;
   }
 
   .control-btn-secondary {
-    width: 36px !important;
-    height: 36px !important;
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .volume-container {
-    max-width: 140px;
+    max-width: 130px;
   }
 
   .progress-container {
-    max-width: 280px;
+    max-width: 260px;
     gap: 6px;
+  }
+
+  .music-player-container {
+    gap: 4px;
+    padding: 0;
+  }
+
+  .cover-art-container {
+    margin: 0;
   }
 }
 
