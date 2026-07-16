@@ -34,9 +34,16 @@ const songs = [
   },
   {
     id: 4,
-    title: 'Canción de Cielo',
+    title: 'Cancion de Cielo',
     artist: 'Paw Patrol',
     file: 'sky-song.mp3',
+    cover: null,
+  },
+  {
+    id: 5,
+    title: 'Zoo',
+    artist: 'Shakira',
+    file: 'shakira-zoo-zootopia2.mp3',
     cover: null,
   },
 ];
