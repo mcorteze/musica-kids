@@ -1,71 +1,162 @@
+/*
+ * PALETAS REFINADAS — 5 iteraciones de autocritica por tema
+ *
+ * Iteracion 1: Colores base del show
+ * Iteracion 2: Ajuste de contraste y legibilidad
+ * Iteracion 3: Coherencia visual entre gradientes y cards
+ * Iteracion 4: Refinamiento de acentos para botones/interactivos
+ * Iteracion 5: Balance final — inmersivo pero funcional
+ */
+
 const themes = {
-  sky: {
-    name: 'Sky - Paw Patrol',
-    icon: '🐾',
-    token: {
-      colorPrimary: '#E91E8C',
-      colorBgContainer: '#FFF0F8',
-      colorBgLayout: '#FFE4F0',
-      colorText: '#4A1942',
-      colorTextSecondary: '#8B5E8B',
-      borderRadius: 16,
-      fontFamily: "'Comic Neue', 'Nunito', sans-serif",
-    },
-    gradient: 'linear-gradient(135deg, #FFE4F0 0%, #E8F4FD 50%, #FFF0F8 100%)',
-    playerBg: 'linear-gradient(180deg, #FFB6D9 0%, #E91E8C 100%)',
-    cardBg: 'rgba(255, 255, 255, 0.85)',
-    accentColor: '#E91E8C',
-  },
+  // ========== BLUEY ==========
+  // Investigacion: Paleta oficial extraida de blueycolors (R package)
+  // Bluey: #88cafc (cuerpo), #d2ebff (panza), #404066 (sombras), #2b2c41 (bordes), #edcc6f (acento cálido)
+  // Ambiente: cielo australiano, calidez familiar, tonos pastel cálidos
   bluey: {
     name: 'Bluey',
     icon: '🐕',
     token: {
-      colorPrimary: '#4A9FD9',
-      colorBgContainer: '#E8F4FD',
-      colorBgLayout: '#D4EDFC',
-      colorText: '#1A3A5C',
-      colorTextSecondary: '#5A8AB5',
-      borderRadius: 20,
+      colorPrimary: '#4A90D9',
+      colorBgContainer: '#EAF4FD',
+      colorBgLayout: '#D6ECFA',
+      colorText: '#1E2A3A',
+      colorTextSecondary: '#5A7A9A',
+      colorBorder: '#B8D8F0',
+      borderRadius: 18,
       fontFamily: "'Comic Neue', 'Nunito', sans-serif",
     },
-    gradient: 'linear-gradient(135deg, #D4EDFC 0%, #B8E6FF 50%, #E8F4FD 100%)',
-    playerBg: 'linear-gradient(180deg, #7BC4F0 0%, #2E86C1 100%)',
-    cardBg: 'rgba(255, 255, 255, 0.85)',
-    accentColor: '#4A9FD9',
+    gradient: 'linear-gradient(160deg, #D6ECFA 0%, #C2E0F6 40%, #E8F4FD 100%)',
+    playerBg: 'linear-gradient(180deg, #88CAFC 0%, #4A90D9 50%, #2B4A7A 100%)',
+    cardBg: 'rgba(234, 244, 253, 0.92)',
+    accentColor: '#EDCC6F',
+    accentRgb: '237, 204, 111',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #4A90D9, #88CAFC)',
+      borderBottom: '3px solid #EDCC6F',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #4A90D9, #2B6CB0)',
+      borderColor: '#3A7BC8',
+      boxShadow: '0 4px 12px rgba(74, 144, 217, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#B8D8F0',
+      borderWidth: 2,
+    },
   },
+
+  // ========== SKYE (Paw Patrol) ==========
+  // Investigacion: Skye usa rosa hot, magenta, crema dorada
+  // Colores oficiales Paw Patrol: red #BD221F, blue #099EDA, yellow #FEE301
+  // Skye especifico: rosa dominante, acordeos dorados, feminidad sin ser suave
+  sky: {
+    name: 'Sky - Paw Patrol',
+    icon: '🐾',
+    token: {
+      colorPrimary: '#D63384',
+      colorBgContainer: '#FFF0F6',
+      colorBgLayout: '#FFE4EF',
+      colorText: '#4A1942',
+      colorTextSecondary: '#9B4D8A',
+      colorBorder: '#F5B8D4',
+      borderRadius: 18,
+      fontFamily: "'Comic Neue', 'Nunito', sans-serif",
+    },
+    gradient: 'linear-gradient(160deg, #FFE4EF 0%, #FFD6E8 40%, #FFF0F6 100%)',
+    playerBg: 'linear-gradient(180deg, #F06292 0%, #D63384 50%, #9C2060 100%)',
+    cardBg: 'rgba(255, 240, 246, 0.92)',
+    accentColor: '#FFB300',
+    accentRgb: '255, 179, 0',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #D63384, #F06292)',
+      borderBottom: '3px solid #FFB300',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #D63384, #AD1457)',
+      borderColor: '#C2185B',
+      boxShadow: '0 4px 12px rgba(214, 51, 132, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#F5B8D4',
+      borderWidth: 2,
+    },
+  },
+
+  // ========== 31 MINUTOS ==========
+  // Investigacion: Estetica artesanal, punk-craft, caotica pero disenada
+  // Tulio: beige #E8D5B7, chaleco rayas cafe/naranja/negro
+  // Bodoque: rojo #C0392B, ojos asimetricos
+  // Ambiente: carton pintado, utileria, colores calidos y saturados
   trece: {
     name: '31 Minutos',
     icon: '🎤',
     token: {
-      colorPrimary: '#FF6B35',
+      colorPrimary: '#E67E22',
       colorBgContainer: '#FFF5E6',
       colorBgLayout: '#FFE8CC',
-      colorText: '#5C3A1E',
-      colorTextSecondary: '#B5764E',
-      borderRadius: 24,
+      colorText: '#3E2723',
+      colorTextSecondary: '#8D6E63',
+      colorBorder: '#F0C89A',
+      borderRadius: 22,
       fontFamily: "'Comic Neue', 'Nunito', sans-serif",
     },
-    gradient: 'linear-gradient(135deg, #FFE8CC 0%, #FFD6B3 50%, #FFF5E6 100%)',
-    playerBg: 'linear-gradient(180deg, #FFB088 0%, #FF6B35 100%)',
-    cardBg: 'rgba(255, 255, 255, 0.85)',
-    accentColor: '#FF6B35',
+    gradient: 'linear-gradient(160deg, #FFE8CC 0%, #FFD9B3 40%, #FFF5E6 100%)',
+    playerBg: 'linear-gradient(180deg, #FF9800 0%, #E67E22 50%, #BF5600 100%)',
+    cardBg: 'rgba(255, 245, 230, 0.92)',
+    accentColor: '#C0392B',
+    accentRgb: '192, 57, 43',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #E67E22, #F39C12)',
+      borderBottom: '3px solid #C0392B',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #E67E22, #D35400)',
+      borderColor: '#D4720A',
+      boxShadow: '0 4px 12px rgba(230, 126, 34, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#F0C89A',
+      borderWidth: 2,
+    },
   },
+
+  // ========== GABBY'S DOLLHOUSE (La Casa de Munecas) ==========
+  // Investigacion: Pastel arcoiris, purpurina, gatitos
+  // Paleta dominante: rosa, lila, turquesa, verde menta
+  // MerCat: turquesa, DJ Catnip: lavanda/rosa, Kitty Fairy: rosa/verde
+  // Ambiente: magia, brillo, juguete, fantasia
   munecas: {
-    name: 'La Casa de Muñecas',
-    icon: '🏠',
+    name: 'Casa de Munecas',
+    icon: '🐱',
     token: {
-      colorPrimary: '#B088D0',
+      colorPrimary: '#A855F7',
       colorBgContainer: '#F5EEFF',
       colorBgLayout: '#EDE0FF',
-      colorText: '#3D2B5A',
-      colorTextSecondary: '#8B7AAD',
-      borderRadius: 12,
+      colorText: '#3B1F6E',
+      colorTextSecondary: '#8B6AAF',
+      colorBorder: '#D4B8F0',
+      borderRadius: 20,
       fontFamily: "'Comic Neue', 'Nunito', sans-serif",
     },
-    gradient: 'linear-gradient(135deg, #EDE0FF 0%, #FFDEE8 50%, #F5EEFF 100%)',
-    playerBg: 'linear-gradient(180deg, #D4B8E8 0%, #B088D0 100%)',
-    cardBg: 'rgba(255, 255, 255, 0.85)',
-    accentColor: '#B088D0',
+    gradient: 'linear-gradient(160deg, #EDE0FF 0%, #F0E4FF 40%, #F5EEFF 100%)',
+    playerBg: 'linear-gradient(180deg, #CE93D8 0%, #A855F7 50%, #7B1FA2 100%)',
+    cardBg: 'rgba(245, 238, 255, 0.92)',
+    accentColor: '#2DD4BF',
+    accentRgb: '45, 212, 191',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #A855F7, #CE93D8)',
+      borderBottom: '3px solid #2DD4BF',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+      borderColor: '#9333EA',
+      boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#D4B8F0',
+      borderWidth: 2,
+    },
   },
 };
 

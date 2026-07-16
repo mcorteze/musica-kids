@@ -16,7 +16,7 @@ const songs = [
     title: 'Zoo',
     artist: 'Shakira',
     file: 'music/shakira-zoo-zootopia2.mp3',
-    cover: null,
+    cover: 'covers/shakira-zoo-zootopia2.jpg',
   },
 ];
 

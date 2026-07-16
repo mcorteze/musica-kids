@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ConfigProvider, Card, Layout, Typography } from 'antd';
 import MusicPlayer from './components/MusicPlayer';
 import Playlist from './components/Playlist';
@@ -28,6 +28,13 @@ export default function App() {
   const [repeat, setRepeat] = useState('off');
 
   const theme = themes[currentTheme];
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--accent-color', theme.accentColor);
+    root.style.setProperty('--accent-rgb', theme.accentRgb);
+    root.style.setProperty('--player-bg', theme.playerBg);
+  }, [theme]);
 
   const shuffledOrder = useMemo(() => {
     if (shuffle) return shuffleArray(songs.map((s) => s.id));
@@ -104,8 +111,11 @@ export default function App() {
         className="app-layout"
         style={{ background: theme.gradient, minHeight: '100vh' }}
       >
-        <Header className="app-header">
-          <Title level={2} style={{ margin: 0, color: theme.token.colorText, fontSize: 'inherit' }}>
+        <Header
+          className="app-header"
+          style={theme.headerStyle}
+        >
+          <Title level={2} style={{ margin: 0, color: '#fff', fontSize: 'inherit' }}>
             {theme.icon} Mi Musica
           </Title>
           <ThemeSelector
@@ -120,7 +130,9 @@ export default function App() {
               className="player-card"
               style={{
                 background: theme.cardBg,
-                borderColor: 'transparent',
+                borderColor: theme.cardStyle.borderColor,
+                borderWidth: theme.cardStyle.borderWidth,
+                borderStyle: 'solid',
               }}
               bodyStyle={{ padding: 20 }}
             >
@@ -141,13 +153,15 @@ export default function App() {
             <Card
               className="playlist-card"
               title={
-                <span style={{ fontSize: 16 }}>
+                <span style={{ fontSize: 16, color: theme.token.colorText }}>
                   Canciones ({songs.length})
                 </span>
               }
               style={{
                 background: theme.cardBg,
-                borderColor: 'transparent',
+                borderColor: theme.cardStyle.borderColor,
+                borderWidth: theme.cardStyle.borderWidth,
+                borderStyle: 'solid',
               }}
               bodyStyle={{ padding: '4px 8px' }}
             >
