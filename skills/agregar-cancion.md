@@ -48,7 +48,19 @@ Buscar en `public/covers/` si existe un archivo que empiece con el mismo nombre 
 
 ### 6. Actualizar songs.js
 
-Leer `src/data/songs.js`, encontrar el ultimo `id`, incrementar, agregar entrada.
+Leer `src/data/songs.js`, encontrar el ultimo `id`, incrementar, agregar entrada antes del `];`:
+
+```js
+  {
+    id: <siguiente-id>,
+    title: '<titulo>',
+    artist: '<artista>',
+    file: 'music/<nombre-limpio>.mp3',
+    cover: null,
+  },
+```
+
+**IMPORTANTE**: El campo `file` SIEMPRE debe empezar con `music/` seguido del nombre del archivo.
 
 ### 7. PREVISUALIZACION — Obligatoria antes de desplegar
 

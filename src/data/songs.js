@@ -15,7 +15,7 @@ const songs = [
     id: 1,
     title: 'Zoo',
     artist: 'Shakira',
-    file: 'shakira-zoo-zootopia2.mp3',
+    file: 'music/shakira-zoo-zootopia2.mp3',
     cover: null,
   },
 ];
