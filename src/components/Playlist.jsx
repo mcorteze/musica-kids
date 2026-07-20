@@ -1,76 +1,56 @@
-import { List, Avatar, Typography } from 'antd';
-import {
-  PlayCircleFilled,
-  PauseCircleFilled,
-} from '@ant-design/icons';
-
-const { Text } = Typography;
+import { PlayCircleFilled, PauseCircleFilled, CustomerServiceOutlined } from '@ant-design/icons';
 
 export default function Playlist({ songs, currentSong, isPlaying, onSelect }) {
+  if (songs.length === 0) {
+    return (
+      <div className="playlist-empty">
+        <p>Aun no hay canciones aqui.</p>
+      </div>
+    );
+  }
+
   return (
-    <List
-      dataSource={songs}
-      style={{
-        maxHeight: '40vh',
-        overflowY: 'auto',
-        borderRadius: 16,
-      }}
-      renderItem={(song) => {
+    <div className="playlist-list">
+      {songs.map((song, index) => {
         const isActive = currentSong?.id === song.id;
         return (
-          <List.Item
+          <button
+            type="button"
             key={song.id}
             onClick={() => onSelect(song)}
-            style={{
-              cursor: 'pointer',
-              padding: '12px 16px',
-              borderRadius: 12,
-              marginBottom: 4,
-              background: isActive
-                ? 'rgba(var(--accent-rgb, 233, 30, 140), 0.15)'
-                : 'transparent',
-              transition: 'all 0.2s',
-            }}
-            className="playlist-item"
+            className={`song-row ${isActive ? 'active' : ''}`}
           >
-            <List.Item.Meta
-              avatar={
-                <Avatar
-                  shape="square"
-                  size={48}
-                  src={song.cover || undefined}
-                  style={{ borderRadius: 8 }}
-                >
-                  {!song.cover && song.title.charAt(0)}
-                </Avatar>
-              }
-              title={
-                <Text
-                  strong
-                  style={{
-                    color: isActive ? 'var(--accent-color)' : undefined,
-                    fontSize: 16,
-                  }}
-                >
-                  {song.title}
-                </Text>
-              }
-              description={
-                <Text style={{ fontSize: 13 }}>{song.artist}</Text>
-              }
-            />
-            {isActive && isPlaying ? (
-              <PauseCircleFilled
-                style={{ fontSize: 28, color: 'var(--accent-color)' }}
-              />
-            ) : isActive ? (
-              <PlayCircleFilled
-                style={{ fontSize: 28, color: 'var(--accent-color)' }}
-              />
-            ) : null}
-          </List.Item>
+            <span className="song-row-index">
+              {isActive ? (
+                isPlaying ? <PauseCircleFilled /> : <PlayCircleFilled />
+              ) : (
+                index + 1
+              )}
+            </span>
+
+            <span className="song-row-art">
+              {song.cover ? (
+                <img src={song.cover} alt="" />
+              ) : (
+                <CustomerServiceOutlined className="song-row-art-fallback" />
+              )}
+            </span>
+
+            <span className="song-row-info">
+              <span className="song-row-title">{song.title}</span>
+              <span className="song-row-artist">{song.artist}</span>
+            </span>
+
+            {isActive && (
+              <span className="song-row-live" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            )}
+          </button>
         );
-      }}
-    />
+      })}
+    </div>
   );
 }

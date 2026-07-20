@@ -1,15 +1,16 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { ConfigProvider, Card, Layout, Typography } from 'antd';
-import MusicPlayer from './components/MusicPlayer';
+import { ConfigProvider } from 'antd';
+import { CustomerServiceOutlined } from '@ant-design/icons';
+import AlbumHeader from './components/AlbumHeader';
+import PlayerBar from './components/PlayerBar';
 import Playlist from './components/Playlist';
 import ThemeSelector from './components/ThemeSelector';
+import ChildLock from './components/ChildLock';
+import useAudioPlayer from './hooks/useAudioPlayer';
 import themes from './themes';
 import songs from './data/songs';
 import 'antd/dist/reset.css';
 import './App.css';
-
-const { Header, Content } = Layout;
-const { Title } = Typography;
 
 function shuffleArray(array) {
   const arr = [...array];
@@ -22,10 +23,11 @@ function shuffleArray(array) {
 
 export default function App() {
   const [currentTheme, setCurrentTheme] = useState('sky');
-  const [currentSong, setCurrentSong] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState(songs[0] || null);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
+  const [childMode, setChildMode] = useState(false);
 
   const theme = themes[currentTheme];
 
@@ -34,6 +36,12 @@ export default function App() {
     root.style.setProperty('--accent-color', theme.accentColor);
     root.style.setProperty('--accent-rgb', theme.accentRgb);
     root.style.setProperty('--player-bg', theme.playerBg);
+    root.style.setProperty('--player-overlay-rgb', theme.playerOverlayRgb);
+    root.style.setProperty('--ant-color-text', theme.token.colorText);
+    root.style.setProperty('--ant-color-text-secondary', theme.token.colorTextSecondary);
+    root.style.setProperty('--ant-color-border', theme.token.colorBorder);
+    root.style.setProperty('--ant-color-bg-container', theme.token.colorBgContainer);
+    root.style.setProperty('--ant-color-primary', theme.token.colorPrimary);
   }, [theme]);
 
   const shuffledOrder = useMemo(() => {
@@ -52,8 +60,8 @@ export default function App() {
   }, []);
 
   const handlePlayPause = useCallback(() => {
-    setIsPlaying((prev) => !prev);
-  }, []);
+    setIsPlaying((prev) => (currentSong ? !prev : prev));
+  }, [currentSong]);
 
   const handleNext = useCallback(() => {
     if (songs.length === 0) return;
@@ -97,84 +105,88 @@ export default function App() {
     setCurrentTheme(value);
   }, []);
 
+  const handleChildModeChange = useCallback((isChild) => {
+    setChildMode(isChild);
+  }, []);
+
+  const {
+    audioRef,
+    currentTime,
+    duration,
+    volume,
+    isMuted,
+    handleSeek,
+    handleVolumeChange,
+    toggleMute,
+  } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleNext, repeat });
+
   return (
     <ConfigProvider
       theme={{
         token: theme.token,
-        components: {
-          Button: { algorithm: true },
-          Slider: { algorithm: true },
-        },
       }}
     >
-      <Layout
-        className="app-layout"
-        style={{ background: theme.gradient, minHeight: '100vh' }}
-      >
-        <Header
-          className="app-header"
-          style={{ ...theme.headerStyle, justifyContent: 'space-between' }}
-        >
-          <Title level={2} style={{ margin: 0, color: '#fff', fontSize: 'inherit' }}>
-            {theme.icon} Mi Musica
-          </Title>
-          <ThemeSelector
-            currentTheme={currentTheme}
-            onChange={handleThemeChange}
-          />
-        </Header>
+      <div className="app-shell" style={{ background: theme.gradient }}>
+        {currentSong && <audio ref={audioRef} src={currentSong.file} preload="metadata" />}
 
-        <Content className="app-content">
-          <div className="main-layout">
-            <Card
-              className="player-card"
-              style={{
-                background: theme.playerBg,
-                borderColor: 'transparent',
-                borderWidth: 0,
-                borderStyle: 'solid',
-              }}
-              bodyStyle={{ padding: 20 }}
-            >
-              <MusicPlayer
-                song={currentSong}
-                isPlaying={isPlaying}
-                onPlayPause={handlePlayPause}
-                onNext={handleNext}
-                onPrev={handlePrev}
-                shuffle={shuffle}
-                onShuffleToggle={handleShuffleToggle}
-                repeat={repeat}
-                onRepeatToggle={handleRepeatToggle}
-                theme={theme}
-              />
-            </Card>
-
-            <Card
-              className="playlist-card"
-              title={
-                <span style={{ fontSize: 16, color: theme.token.colorText }}>
-                  Canciones ({songs.length})
-                </span>
-              }
-              style={{
-                background: theme.cardBg,
-                borderColor: theme.cardStyle.borderColor,
-                borderWidth: theme.cardStyle.borderWidth,
-                borderStyle: 'solid',
-              }}
-              bodyStyle={{ padding: '4px 8px' }}
-            >
-              <Playlist
-                songs={songs}
-                currentSong={currentSong}
-                isPlaying={isPlaying}
-                onSelect={handleSelectSong}
-              />
-            </Card>
+        <header className="app-header" style={theme.headerStyle}>
+          <div className="app-brand">
+            <CustomerServiceOutlined className="app-brand-icon" />
+            <span className="app-brand-name">Musica de Sofia</span>
           </div>
-        </Content>
-      </Layout>
+          <div className="header-actions">
+            <ThemeSelector
+              currentTheme={currentTheme}
+              onChange={handleThemeChange}
+              disabled={childMode}
+            />
+            <ChildLock onChildModeChange={handleChildModeChange} />
+          </div>
+        </header>
+
+        <main className="app-content">
+          <div className="album-surface" style={{ background: theme.playerBg }}>
+            <AlbumHeader
+              song={currentSong}
+              isPlaying={isPlaying}
+              onPlayPause={handlePlayPause}
+              shuffle={shuffle}
+              onShuffleToggle={handleShuffleToggle}
+              repeat={repeat}
+              onRepeatToggle={handleRepeatToggle}
+              songCount={songs.length}
+            />
+          </div>
+
+          <section className="playlist-surface">
+            <div className="playlist-columns">
+              <span className="playlist-col-index">#</span>
+              <span className="playlist-col-title">Titulo</span>
+            </div>
+            <Playlist
+              songs={songs}
+              currentSong={currentSong}
+              isPlaying={isPlaying}
+              onSelect={handleSelectSong}
+            />
+          </section>
+        </main>
+
+        <PlayerBar
+          song={currentSong}
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          onNext={handleNext}
+          onPrev={handlePrev}
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={handleSeek}
+          volume={volume}
+          isMuted={isMuted}
+          onVolumeChange={handleVolumeChange}
+          onToggleMute={toggleMute}
+        />
+      </div>
     </ConfigProvider>
   );
 }

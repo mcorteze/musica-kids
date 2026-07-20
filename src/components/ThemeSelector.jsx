@@ -1,71 +1,71 @@
-import { useState } from 'react';
-import { Button, Drawer, List, Avatar, Typography } from 'antd';
-import { BgColorsOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { BgColorsOutlined, CheckCircleFilled, CloseOutlined } from '@ant-design/icons';
 import themes from '../themes';
 
-const { Text } = Typography;
 const themeKeys = Object.keys(themes);
 
-export default function ThemeSelector({ currentTheme, onChange }) {
+export default function ThemeSelector({ currentTheme, onChange, disabled }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
+  if (disabled) return null;
 
   return (
     <>
-      <Button
-        type="text"
-        icon={<BgColorsOutlined />}
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        size="large"
-        style={{ borderRadius: 12, color: '#fff', fontSize: 22 }}
-      />
-
-      <Drawer
-        title="Elegir tema"
-        placement="right"
-        onClose={() => setOpen(false)}
-        open={open}
-        width={280}
-        styles={{ body: { padding: '8px 0' } }}
+        className="theme-trigger-btn"
+        aria-label="Elegir tema"
       >
-        <List
-          dataSource={themeKeys}
-          renderItem={(key) => {
-            const t = themes[key];
-            const isActive = key === currentTheme;
-            return (
-              <List.Item
-                onClick={() => { onChange(key); setOpen(false); }}
-                style={{
-                  cursor: 'pointer',
-                  padding: '14px 20px',
-                  background: isActive ? `${t.token.colorPrimary}15` : 'transparent',
-                  borderLeft: isActive ? `4px solid ${t.token.colorPrimary}` : '4px solid transparent',
-                  transition: 'all 0.2s',
-                }}
+        <BgColorsOutlined />
+      </button>
+
+      {open && (
+        <div className="theme-modal-overlay" onClick={() => setOpen(false)}>
+          <div className="theme-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="theme-modal-header">
+              <h2>Elige un tema</h2>
+              <button
+                type="button"
+                className="theme-modal-close"
+                onClick={() => setOpen(false)}
+                aria-label="Cerrar"
               >
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      style={{
-                        background: t.token.colorPrimary,
-                        fontSize: 22,
-                        borderRadius: 10,
-                      }}
-                    >
-                      {t.icon}
-                    </Avatar>
-                  }
-                  title={
-                    <Text strong style={{ fontSize: 16 }}>
-                      {t.name}
-                    </Text>
-                  }
-                />
-              </List.Item>
-            );
-          }}
-        />
-      </Drawer>
+                <CloseOutlined />
+              </button>
+            </div>
+
+            <div className="theme-grid">
+              {themeKeys.map((key) => {
+                const t = themes[key];
+                const isActive = key === currentTheme;
+                return (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => { onChange(key); setOpen(false); }}
+                    className={`theme-card ${isActive ? 'active' : ''}`}
+                    style={{ background: t.gradient }}
+                  >
+                    <span className="theme-card-icon">{t.icon}</span>
+                    <span className="theme-card-name">{t.name}</span>
+                    {isActive && <CheckCircleFilled className="theme-card-check" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
