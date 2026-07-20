@@ -23,8 +23,8 @@ function shuffleArray(array) {
 
 export default function App() {
   const [currentTheme, setCurrentTheme] = useState('sky');
-  const [currentSong, setCurrentSong] = useState(songs[0] || null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [currentSong, setCurrentSong] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
   const [childMode, setChildMode] = useState(false);
