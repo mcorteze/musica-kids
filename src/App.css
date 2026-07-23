@@ -754,6 +754,22 @@ html {
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* Tooltip (identidad propia, no el default gris de antd) */
+.ant-tooltip .ant-tooltip-inner {
+  background: #1a1a2e;
+  color: #ffffff;
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.ant-tooltip .ant-tooltip-arrow::before {
+  background: #1a1a2e;
+}
+
 /* ========== THEME SELECTOR (modal a pantalla completa) ========== */
 .theme-trigger-btn {
   appearance: none;
@@ -1173,8 +1189,8 @@ html {
   .player-bar {
     grid-template-columns: 1fr;
     height: auto;
-    padding: 8px 12px 10px;
-    gap: 6px;
+    padding: 10px 12px 14px;
+    gap: 8px;
   }
 
   .player-bar-now {
@@ -1186,11 +1202,49 @@ html {
   }
 
   .player-bar-center {
-    gap: 4px;
+    gap: 8px;
+  }
+
+  .player-bar-controls {
+    gap: 12px;
+  }
+
+  .control-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .play-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
   }
 
   .player-bar-progress {
     max-width: none;
+    gap: 10px;
+  }
+
+  .time-label {
+    font-size: 12px;
+    min-width: 32px;
+  }
+
+  .scrub-track {
+    height: 24px;
+  }
+
+  .scrub-rail,
+  .scrub-fill,
+  .scrub-hover {
+    height: 5px;
+  }
+
+  .scrub-handle {
+    width: 16px;
+    height: 16px;
+    opacity: 1;
   }
 
   .song-row {
@@ -1238,6 +1292,16 @@ html {
     overflow-y: hidden;
   }
 
+  .album-header-bg-gradient {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(var(--player-overlay-rgb, 20, 20, 30), 0.08) 0%,
+        rgba(var(--player-overlay-rgb, 20, 20, 30), 0.35) 60%,
+        rgba(var(--player-overlay-rgb, 20, 20, 30), 0.7) 100%
+      );
+  }
+
   .main-columns {
     max-width: 1400px;
     flex-direction: row;
@@ -1249,9 +1313,9 @@ html {
   .album-surface {
     width: 560px;
     flex: none;
+    align-self: flex-start;
     margin: 20px 0;
     display: flex;
-    align-items: stretch;
     min-height: 0;
     max-height: 100%;
     overflow-y: auto;
@@ -1297,12 +1361,16 @@ html {
 
   .playlist-list {
     overflow-y: auto;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+    padding-bottom: 32px;
   }
 
   .player-bar {
+    grid-template-columns: minmax(220px, 340px) minmax(0, 1fr) minmax(160px, 240px);
     height: 112px;
-    padding: 0 28px;
-    gap: 28px;
+    padding: 0 32px;
+    gap: 32px;
   }
 
   .player-bar-art {
@@ -1326,9 +1394,9 @@ html {
   }
 
   .play-btn {
-    width: 64px;
-    height: 64px;
-    font-size: 28px;
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
   }
 
   .volume-btn {
@@ -1337,16 +1405,43 @@ html {
     font-size: 21px;
   }
 
-  .player-bar-volume {
-    max-width: 200px;
-  }
-
   .player-bar-progress {
+    gap: 14px;
     max-width: 560px;
   }
 
   .time-label {
     font-size: 13px;
+    min-width: 36px;
+  }
+
+  .player-bar-volume {
+    max-width: 200px;
+  }
+
+  .playlist-columns {
+    padding: 0 16px 12px 16px;
+    margin-bottom: 12px;
+  }
+
+  .song-row {
+    grid-template-columns: 32px 52px 1fr auto;
+    gap: 16px;
+    min-height: 66px;
+    padding: 8px 16px;
+  }
+
+  .song-row-art {
+    width: 52px;
+    height: 52px;
+  }
+
+  .song-row-title {
+    font-size: 16px;
+  }
+
+  .song-row-artist {
+    font-size: 14px;
   }
 }
 
