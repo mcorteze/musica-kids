@@ -145,31 +145,33 @@ export default function App() {
         </header>
 
         <main className="app-content">
-          <div className="album-surface" style={{ background: theme.playerBg }}>
-            <AlbumHeader
-              song={currentSong}
-              isPlaying={isPlaying}
-              onPlayPause={handlePlayPause}
-              shuffle={shuffle}
-              onShuffleToggle={handleShuffleToggle}
-              repeat={repeat}
-              onRepeatToggle={handleRepeatToggle}
-              songCount={songs.length}
-            />
-          </div>
-
-          <section className="playlist-surface">
-            <div className="playlist-columns">
-              <span className="playlist-col-index">#</span>
-              <span className="playlist-col-title">Titulo</span>
+          <div className="main-columns">
+            <div className="album-surface" style={{ background: theme.playerBg }}>
+              <AlbumHeader
+                song={currentSong}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                shuffle={shuffle}
+                onShuffleToggle={handleShuffleToggle}
+                repeat={repeat}
+                onRepeatToggle={handleRepeatToggle}
+                songCount={songs.length}
+              />
             </div>
-            <Playlist
-              songs={songs}
-              currentSong={currentSong}
-              isPlaying={isPlaying}
-              onSelect={handleSelectSong}
-            />
-          </section>
+
+            <section className="playlist-surface">
+              <div className="playlist-columns">
+                <span className="playlist-col-index">#</span>
+                <span className="playlist-col-title">Titulo</span>
+              </div>
+              <Playlist
+                songs={songs}
+                currentSong={currentSong}
+                isPlaying={isPlaying}
+                onSelect={handleSelectSong}
+              />
+            </section>
+          </div>
         </main>
 
         <PlayerBar

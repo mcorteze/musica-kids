@@ -86,9 +86,17 @@ html {
   overflow-y: auto;
 }
 
-.album-surface {
+.main-columns {
   width: 100%;
   max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.album-surface {
+  width: 100%;
   flex: none;
   border-radius: 20px;
   position: relative;
@@ -127,7 +135,6 @@ html {
 
 .playlist-surface {
   width: 100%;
-  max-width: 960px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -1221,6 +1228,125 @@ html {
 @media screen and (min-width: 1025px) {
   .app-content {
     padding: 16px 32px 24px;
+  }
+}
+
+/* ========== LAPTOP HORIZONTAL (pantalla ancha tipo notebook/desktop) ========== */
+@media screen and (min-width: 1180px) and (min-aspect-ratio: 4/3) {
+  .app-content {
+    align-items: stretch;
+    overflow-y: hidden;
+  }
+
+  .main-columns {
+    max-width: 1400px;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+    min-height: 0;
+  }
+
+  .album-surface {
+    width: 560px;
+    flex: none;
+    margin: 20px 0;
+    display: flex;
+    align-items: stretch;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  .album-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 32px;
+  }
+
+  .album-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .album-cover {
+    width: clamp(180px, 20vh, 280px);
+    height: clamp(180px, 20vh, 280px);
+  }
+
+  .album-title {
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: clamp(22px, 2.7vh, 31px);
+  }
+
+  .album-actions {
+    margin-top: 0;
+  }
+
+  .playlist-surface {
+    margin: 20px 0;
+    min-width: 0;
+  }
+
+  .playlist-list {
+    overflow-y: auto;
+  }
+
+  .player-bar {
+    height: 112px;
+    padding: 0 28px;
+    gap: 28px;
+  }
+
+  .player-bar-art {
+    width: 68px;
+    height: 68px;
+    border-radius: 10px;
+  }
+
+  .player-bar-title {
+    font-size: 16px;
+  }
+
+  .player-bar-artist {
+    font-size: 13px;
+  }
+
+  .control-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+
+  .play-btn {
+    width: 64px;
+    height: 64px;
+    font-size: 28px;
+  }
+
+  .volume-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 21px;
+  }
+
+  .player-bar-volume {
+    max-width: 200px;
+  }
+
+  .player-bar-progress {
+    max-width: 560px;
+  }
+
+  .time-label {
+    font-size: 13px;
   }
 }
 

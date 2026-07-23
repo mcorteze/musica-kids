@@ -1,3 +1,4 @@
+import { Tooltip } from 'antd';
 import {
   CaretRightOutlined,
   PauseOutlined,
@@ -54,17 +55,23 @@ export default function PlayerBar({
 
       <div className="player-bar-center">
         <div className="player-bar-controls">
-          <button type="button" onClick={onPrev} className="control-btn" aria-label="Anterior" disabled={!song}>
-            <StepBackwardOutlined />
-          </button>
+          <Tooltip title="Anterior">
+            <button type="button" onClick={onPrev} className="control-btn" aria-label="Anterior" disabled={!song}>
+              <StepBackwardOutlined />
+            </button>
+          </Tooltip>
 
-          <button type="button" onClick={onPlayPause} className="play-btn" aria-label={isPlaying ? 'Pausar' : 'Reproducir'} disabled={!song}>
-            {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
-          </button>
+          <Tooltip title={isPlaying ? 'Pausar' : 'Reproducir'}>
+            <button type="button" onClick={onPlayPause} className="play-btn" aria-label={isPlaying ? 'Pausar' : 'Reproducir'} disabled={!song}>
+              {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
+            </button>
+          </Tooltip>
 
-          <button type="button" onClick={onNext} className="control-btn" aria-label="Siguiente" disabled={!song}>
-            <StepForwardOutlined />
-          </button>
+          <Tooltip title="Siguiente">
+            <button type="button" onClick={onNext} className="control-btn" aria-label="Siguiente" disabled={!song}>
+              <StepForwardOutlined />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="player-bar-progress">
@@ -80,14 +87,16 @@ export default function PlayerBar({
       </div>
 
       <div className="player-bar-volume">
-        <button
-          type="button"
-          onClick={onToggleMute}
-          className="volume-btn"
-          aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
-        >
-          {isMuted || volume === 0 ? <SoundOutlined /> : <SoundFilled />}
-        </button>
+        <Tooltip title={isMuted ? 'Activar sonido' : 'Silenciar'}>
+          <button
+            type="button"
+            onClick={onToggleMute}
+            className="volume-btn"
+            aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
+          >
+            {isMuted || volume === 0 ? <SoundOutlined /> : <SoundFilled />}
+          </button>
+        </Tooltip>
         <ScrubBar
           value={isMuted ? 0 : volume}
           max={100}

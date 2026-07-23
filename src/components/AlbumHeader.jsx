@@ -1,3 +1,4 @@
+import { Tooltip } from 'antd';
 import {
   CaretRightOutlined,
   PauseOutlined,
@@ -58,35 +59,41 @@ export default function AlbumHeader({
       </div>
 
       <div className="album-actions">
-        <button
-          type="button"
-          onClick={onPlayPause}
-          className="album-play-btn"
-          aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-        >
-          {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
-        </button>
+        <Tooltip title={isPlaying ? 'Pausar' : 'Reproducir'}>
+          <button
+            type="button"
+            onClick={onPlayPause}
+            className="album-play-btn"
+            aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
+          >
+            {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
+          </button>
+        </Tooltip>
 
-        <button
-          type="button"
-          onClick={onShuffleToggle}
-          className={`album-action-btn ${shuffle ? 'active' : ''}`}
-          aria-label="Aleatorio"
-          aria-pressed={shuffle}
-        >
-          <SwapOutlined />
-        </button>
+        <Tooltip title="Aleatorio">
+          <button
+            type="button"
+            onClick={onShuffleToggle}
+            className={`album-action-btn ${shuffle ? 'active' : ''}`}
+            aria-label="Aleatorio"
+            aria-pressed={shuffle}
+          >
+            <SwapOutlined />
+          </button>
+        </Tooltip>
 
-        <button
-          type="button"
-          onClick={onRepeatToggle}
-          className={`album-action-btn ${repeat !== 'off' ? 'active' : ''}`}
-          aria-label="Repetir"
-          aria-pressed={repeat !== 'off'}
-        >
-          <RedoOutlined />
-          {repeat === 'one' && <span className="repeat-one-badge">1</span>}
-        </button>
+        <Tooltip title="Repetir">
+          <button
+            type="button"
+            onClick={onRepeatToggle}
+            className={`album-action-btn ${repeat !== 'off' ? 'active' : ''}`}
+            aria-label="Repetir"
+            aria-pressed={repeat !== 'off'}
+          >
+            <RedoOutlined />
+            {repeat === 'one' && <span className="repeat-one-badge">1</span>}
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
