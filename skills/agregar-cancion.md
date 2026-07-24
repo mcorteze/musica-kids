@@ -42,9 +42,12 @@ Copy-Item "<ruta-usuario>" "C:\Proyectos\musica-kids\public\music\<nombre-limpio
 
 No eliminar el original.
 
-### 5. Buscar carátula (opcional, automatica)
+### 5. Buscar carátula (automática, SIEMPRE por cuenta propia)
 
-Buscar en `public/covers/` si existe un archivo que empiece con el mismo nombre base del MP3 original o del nombre limpio. Si existe, usarlo como cover. Si no, `cover: null`.
+1. Buscar primero en `public/covers/` si existe un archivo que empiece con el mismo nombre base del MP3 original o del nombre limpio. Si existe, usarlo como cover.
+2. Si no existe localmente, buscarla uno mismo en internet (WebSearch/WebFetch) usando titulo + artista reales (ej: carátula del álbum/single o imagen oficial del personaje/serie). **Nunca pedirle la carátula al usuario.**
+3. Descargar la imagen encontrada a `public/covers/<nombre-limpio>.<ext>` y referenciarla en el paso 6.
+4. Si tras buscar no se encuentra ninguna carátula razonable, recién ahí usar `cover: null`.
 
 ### 6. Actualizar songs.js
 
@@ -56,11 +59,11 @@ Leer `src/data/songs.js`, encontrar el ultimo `id`, incrementar, agregar entrada
     title: '<titulo>',
     artist: '<artista>',
     file: 'music/<nombre-limpio>.mp3',
-    cover: null,
+    cover: 'covers/<nombre-limpio>.<ext>', // o null si no se encontro ninguna
   },
 ```
 
-**IMPORTANTE**: El campo `file` SIEMPRE debe empezar con `music/` seguido del nombre del archivo.
+**IMPORTANTE**: El campo `file` SIEMPRE debe empezar con `music/` seguido del nombre del archivo. El campo `cover` empieza con `covers/` cuando existe.
 
 ### 7. PREVISUALIZACION — Obligatoria antes de desplegar
 
@@ -100,3 +103,4 @@ Informar URL: `https://mcorteze.github.io/musica-kids/`
 - NUNCA saltar la previsualizacion
 - NUNCA deploy sin confirmacion del usuario
 - Si hay multiples archivos, procesar todos y mostrar resumen completo antes de desplegar
+- NUNCA pedirle la caratula al usuario: buscarla siempre uno mismo (local en covers/, si no en internet)

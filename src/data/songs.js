@@ -95,6 +95,62 @@ const songs = [
     file: 'music/bryson-tiller-down-like-that-paw-patrol.mp3',
     cover: 'covers/bryson-tiller-down-like-that-paw-patrol.jpg',
   },
+  {
+    id: 13,
+    title: 'Dance Mode',
+    artist: 'Bluey',
+    file: 'music/bluey-dance-mode.mp3',
+    cover: 'covers/bluey-dance-mode.jpg',
+  },
+  {
+    id: 14,
+    title: 'El gato del día',
+    artist: 'DJ Musicat',
+    file: 'music/dj-musicat-el-gato-del-dia.mp3',
+    cover: 'covers/dj-musicat-el-gato-del-dia.jpg',
+  },
+  {
+    id: 15,
+    title: "Everest is the Best (Skye's Music Party)",
+    artist: 'PAW Patrol',
+    file: 'music/paw-patrol-everest-is-the-best.mp3',
+    cover: 'covers/paw-patrol-everest-is-the-best.jpg',
+  },
+  {
+    id: 16,
+    title: 'Gabriela',
+    artist: 'KATSEYE',
+    file: 'music/katseye-gabriela.mp3',
+    cover: 'covers/katseye-gabriela.jpg',
+  },
+  {
+    id: 17,
+    title: 'Golden',
+    artist: 'KPop Demon Hunters',
+    file: 'music/golden-kpop-demon-hunters.mp3',
+    cover: 'covers/golden-kpop-demon-hunters.jpg',
+  },
+  {
+    id: 18,
+    title: 'Pollypocket',
+    artist: 'Martinwhite & Katteyes',
+    file: 'music/martinwhite-katteyes-pollypocket.mp3',
+    cover: 'covers/martinwhite-katteyes-pollypocket.jpg',
+  },
+  {
+    id: 19,
+    title: 'El gato del día',
+    artist: 'Pastelillo',
+    file: 'music/pastelillo-el-gato-del-dia.mp3',
+    cover: 'covers/pastelillo-el-gato-del-dia.jpg',
+  },
+  {
+    id: 20,
+    title: 'Dai Dai',
+    artist: 'Shakira, Burna Boy',
+    file: 'music/shakira-burna-boy-dai-dai.mp3',
+    cover: 'covers/shakira-burna-boy-dai-dai.jpg',
+  },
 ];
 
 export default songs;
