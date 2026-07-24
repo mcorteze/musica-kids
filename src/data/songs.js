@@ -104,10 +104,10 @@ const songs = [
   },
   {
     id: 14,
-    title: 'El gato del día',
-    artist: 'DJ Musicat',
+    title: 'DJ Musicat',
+    artist: 'Gabby Dollhouse',
     file: 'music/dj-musicat-el-gato-del-dia.mp3',
-    cover: 'covers/dj-musicat-el-gato-del-dia.jpg',
+    cover: 'covers/dj-musicat-el-gato-del-dia.png',
   },
   {
     id: 15,
@@ -139,8 +139,8 @@ const songs = [
   },
   {
     id: 19,
-    title: 'El gato del día',
-    artist: 'Pastelillo',
+    title: 'Pastelillo',
+    artist: 'Gabby Dollhouse',
     file: 'music/pastelillo-el-gato-del-dia.mp3',
     cover: 'covers/pastelillo-el-gato-del-dia.jpg',
   },

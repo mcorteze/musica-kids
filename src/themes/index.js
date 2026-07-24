@@ -16,6 +16,7 @@ const themes = {
   bluey: {
     name: 'Bluey',
     icon: '🐕',
+    cover: 'theme-covers/bluey.avif',
     token: {
       colorPrimary: '#4A90D9',
       colorBgContainer: '#EAF4FD',
@@ -53,6 +54,7 @@ const themes = {
   sky: {
     name: 'Sky - Paw Patrol',
     icon: '🐾',
+    cover: 'theme-covers/sky.avif',
     token: {
       colorPrimary: '#D63384',
       colorBgContainer: '#FFF0F6',
@@ -91,6 +93,7 @@ const themes = {
   trece: {
     name: '31 Minutos',
     icon: '🎤',
+    cover: 'theme-covers/trece.avif',
     token: {
       colorPrimary: '#E67E22',
       colorBgContainer: '#FFF5E6',
@@ -129,6 +132,7 @@ const themes = {
   munecas: {
     name: 'Casa de Munecas',
     icon: '🐱',
+    cover: 'theme-covers/munecas.avif',
     token: {
       colorPrimary: '#A855F7',
       colorBgContainer: '#F5EEFF',

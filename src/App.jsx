@@ -31,6 +31,11 @@ export default function App() {
 
   const theme = themes[currentTheme];
 
+  const sortedSongs = useMemo(
+    () => [...songs].sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })),
+    []
+  );
+
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--accent-color', theme.accentColor);
@@ -45,9 +50,9 @@ export default function App() {
   }, [theme]);
 
   const shuffledOrder = useMemo(() => {
-    if (shuffle) return shuffleArray(songs.map((s) => s.id));
-    return songs.map((s) => s.id);
-  }, [shuffle]);
+    if (shuffle) return shuffleArray(sortedSongs.map((s) => s.id));
+    return sortedSongs.map((s) => s.id);
+  }, [shuffle, sortedSongs]);
 
   const currentIndex = useMemo(() => {
     if (!currentSong) return -1;
@@ -64,30 +69,30 @@ export default function App() {
   }, [currentSong]);
 
   const handleNext = useCallback(() => {
-    if (songs.length === 0) return;
-    if (repeat === 'off' && currentIndex === songs.length - 1 && !shuffle) {
+    if (sortedSongs.length === 0) return;
+    if (repeat === 'off' && currentIndex === sortedSongs.length - 1 && !shuffle) {
       setIsPlaying(false);
       return;
     }
-    const nextIndex = (currentIndex + 1) % songs.length;
+    const nextIndex = (currentIndex + 1) % sortedSongs.length;
     const nextId = shuffledOrder[nextIndex];
-    const nextSong = songs.find((s) => s.id === nextId);
+    const nextSong = sortedSongs.find((s) => s.id === nextId);
     if (nextSong) {
       setCurrentSong(nextSong);
       setIsPlaying(true);
     }
-  }, [currentIndex, shuffledOrder, repeat]);
+  }, [currentIndex, shuffledOrder, repeat, sortedSongs]);
 
   const handlePrev = useCallback(() => {
-    if (songs.length === 0) return;
-    const prevIndex = currentIndex <= 0 ? songs.length - 1 : currentIndex - 1;
+    if (sortedSongs.length === 0) return;
+    const prevIndex = currentIndex <= 0 ? sortedSongs.length - 1 : currentIndex - 1;
     const prevId = shuffledOrder[prevIndex];
-    const prevSong = songs.find((s) => s.id === prevId);
+    const prevSong = sortedSongs.find((s) => s.id === prevId);
     if (prevSong) {
       setCurrentSong(prevSong);
       setIsPlaying(true);
     }
-  }, [currentIndex, shuffledOrder]);
+  }, [currentIndex, shuffledOrder, sortedSongs]);
 
   const handleShuffleToggle = useCallback(() => {
     setShuffle((prev) => !prev);
@@ -155,7 +160,7 @@ export default function App() {
                 onShuffleToggle={handleShuffleToggle}
                 repeat={repeat}
                 onRepeatToggle={handleRepeatToggle}
-                songCount={songs.length}
+                songCount={sortedSongs.length}
               />
             </div>
 
@@ -165,7 +170,7 @@ export default function App() {
                 <span className="playlist-col-title">Titulo</span>
               </div>
               <Playlist
-                songs={songs}
+                songs={sortedSongs}
                 currentSong={currentSong}
                 isPlaying={isPlaying}
                 onSelect={handleSelectSong}

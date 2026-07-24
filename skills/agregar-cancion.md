@@ -65,7 +65,26 @@ Leer `src/data/songs.js`, encontrar el ultimo `id`, incrementar, agregar entrada
 
 **IMPORTANTE**: El campo `file` SIEMPRE debe empezar con `music/` seguido del nombre del archivo. El campo `cover` empieza con `covers/` cuando existe.
 
-### 7. PREVISUALIZACION — Obligatoria antes de desplegar
+### 7. Verificar duplicados — Obligatorio, sin esperar que el usuario lo pida
+
+Antes de la previsualizacion, revisar TODO `songs.js` (no solo las canciones nuevas) en busca de:
+
+1. **Titulo+artista repetido**: dos entradas con el mismo `title` y `artist` (exacto o casi identico). Si aparece, es un error de datos: corregirlo (eliminar duplicado o ajustar titulo/artista si en verdad son dos cosas distintas mal nombradas) antes de seguir.
+2. **Titulo compartido por artistas distintos que en realidad es el mismo dato mal puesto**: si dos canciones tienen el mismo `title` mostrando artistas diferentes, revisar si el titulo real y el artista real quedaron invertidos o genericos (ej. "El gato del dia" como titulo cuando el titulo real es el nombre del personaje/segmento y el artista real es la serie). Corregir el nombre, no solo ignorarlo.
+3. **Caratulas duplicadas por accidente**: mismo tamaño en bytes es solo una señal, no prueba. Antes de tocar nada, comparar el HASH (MD5) de los archivos con tamaño igual — si el hash tambien coincide, son literalmente el mismo archivo (bug de copiado). Si el hash difiere, son imagenes distintas que coinciden en peso por casualidad: NO tocar.
+
+```powershell
+Get-ChildItem "C:\Proyectos\musica-kids\public\covers" | Group-Object Length | Where-Object { $_.Count -gt 1 }
+certutil -hashfile "<archivo1>" MD5
+certutil -hashfile "<archivo2>" MD5
+```
+
+Solo si el MD5 coincide: es un duplicado real → buscar la caratula correcta para la que quedo mal y reemplazarla.
+Este chequeo de hash aplica SOLO a las caratulas nuevas agregadas en esta corrida, no a reabrir/tocar caratulas de canciones ya existentes de antes — si se nota algo raro en datos viejos, reportarlo y preguntar, no corregir por cuenta propia.
+
+Si se detecta y corrige algo en este paso, incluirlo en el resumen de la previsualizacion (paso 8) como "Correccion aplicada: ...", no corregirlo en silencio.
+
+### 8. PREVISUALIZACION — Obligatoria antes de desplegar
 
 **ANTES de hacer build/deploy**, mostrar al usuario un resumen y ESPERAR confirmacion:
 
@@ -80,9 +99,9 @@ Confirmas? (s/n)
 ```
 
 Si el usuario dice que no o corrige algo, ajustar y volver a mostrar.
-Solo proceder al paso 8 cuando el usuario confirme.
+Solo proceder al paso 9 cuando el usuario confirme.
 
-### 8. Build + Commit + Push + Deploy
+### 9. Build + Commit + Push + Deploy
 
 ```powershell
 npm run build
@@ -92,7 +111,7 @@ git commit -m "feat: add <artista> - <titulo>"
 git push
 ```
 
-### 9. Confirmar
+### 10. Confirmar
 
 Informar URL: `https://mcorteze.github.io/musica-kids/`
 
@@ -104,3 +123,4 @@ Informar URL: `https://mcorteze.github.io/musica-kids/`
 - NUNCA deploy sin confirmacion del usuario
 - Si hay multiples archivos, procesar todos y mostrar resumen completo antes de desplegar
 - NUNCA pedirle la caratula al usuario: buscarla siempre uno mismo (local en covers/, si no en internet)
+- NUNCA saltar la verificacion de duplicados (titulo+artista, nombres invertidos, caratulas repetidas) ni dejarla para que el usuario la detecte despues

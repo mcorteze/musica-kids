@@ -54,10 +54,9 @@ export default function ThemeSelector({ currentTheme, onChange, disabled }) {
                     key={key}
                     onClick={() => { onChange(key); setOpen(false); }}
                     className={`theme-card ${isActive ? 'active' : ''}`}
-                    style={{ background: t.gradient }}
+                    aria-label={t.name}
                   >
-                    <span className="theme-card-icon">{t.icon}</span>
-                    <span className="theme-card-name">{t.name}</span>
+                    <img className="theme-card-img" src={t.cover} alt={t.name} />
                     {isActive && <CheckCircleFilled className="theme-card-check" />}
                   </button>
                 );
