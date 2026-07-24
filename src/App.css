@@ -141,32 +141,6 @@ html {
   flex-direction: column;
 }
 
-.playlist-columns {
-  flex: none;
-  display: grid;
-  grid-template-columns: 28px 44px 1fr auto;
-  gap: 12px;
-  padding: 0 12px 10px 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--ant-color-border, rgba(0, 0, 0, 0.08));
-}
-
-.playlist-col-index {
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
-  color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.45));
-}
-
-.playlist-col-title {
-  grid-column: 3 / 4;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.45));
-}
-
 /* ========== ALBUM HEADER (arriba, tipo Spotify) ========== */
 .album-header {
   position: relative;
@@ -300,7 +274,7 @@ html {
   height: 56px;
   border-radius: 50%;
   background: var(--accent-color, #ffffff);
-  color: #14141c;
+  color: var(--accent-ink, #14141c);
   font-size: 24px;
   display: inline-flex;
   align-items: center;
@@ -623,10 +597,10 @@ html {
   border: none;
   cursor: pointer;
   display: grid;
-  grid-template-columns: 28px 44px 1fr auto;
+  grid-template-columns: 28px 52px 1fr auto;
   align-items: center;
   gap: 12px;
-  min-height: 58px;
+  min-height: 64px;
   padding: 6px 12px 6px 8px;
   border-radius: 14px;
   background: transparent;
@@ -660,9 +634,9 @@ html {
 }
 
 .song-row-art {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  border-radius: 9px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.06);
   display: flex;
@@ -692,7 +666,7 @@ html {
 }
 
 .song-row-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ant-color-text, inherit);
   overflow: hidden;
@@ -705,7 +679,7 @@ html {
 }
 
 .song-row-artist {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   opacity: 0.6;
   overflow: hidden;
@@ -746,12 +720,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgb(var(--scrollbar-rgb, 120, 120, 120));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(var(--scrollbar-rgb, 120, 120, 120), 0.8);
 }
 
 /* Tooltip (identidad propia, no el default gris de antd) */
@@ -1245,13 +1219,9 @@ html {
     opacity: 1;
   }
 
-  .playlist-columns {
-    display: none;
-  }
-
   .song-row {
-    grid-template-columns: 24px 56px 1fr auto;
-    min-height: 72px;
+    grid-template-columns: 24px 62px 1fr auto;
+    min-height: 78px;
     gap: 12px;
     padding: 6px 8px;
   }
@@ -1265,18 +1235,18 @@ html {
   }
 
   .song-row-art {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
+    width: 62px;
+    height: 62px;
+    border-radius: 11px;
   }
 
   .song-row-title {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 800;
   }
 
   .song-row-artist {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     opacity: 0.7;
   }
@@ -1448,29 +1418,24 @@ html {
     max-width: 200px;
   }
 
-  .playlist-columns {
-    padding: 0 16px 12px 16px;
-    margin-bottom: 12px;
-  }
-
   .song-row {
-    grid-template-columns: 32px 52px 1fr auto;
+    grid-template-columns: 32px 58px 1fr auto;
     gap: 16px;
-    min-height: 66px;
+    min-height: 72px;
     padding: 8px 16px;
   }
 
   .song-row-art {
-    width: 52px;
-    height: 52px;
+    width: 58px;
+    height: 58px;
   }
 
   .song-row-title {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .song-row-artist {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 

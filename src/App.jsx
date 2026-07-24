@@ -40,6 +40,8 @@ export default function App() {
     const root = document.documentElement;
     root.style.setProperty('--accent-color', theme.accentColor);
     root.style.setProperty('--accent-rgb', theme.accentRgb);
+    root.style.setProperty('--accent-ink', theme.accentInk);
+    root.style.setProperty('--scrollbar-rgb', theme.scrollbarRgb);
     root.style.setProperty('--player-bg', theme.playerBg);
     root.style.setProperty('--player-overlay-rgb', theme.playerOverlayRgb);
     root.style.setProperty('--ant-color-text', theme.token.colorText);
@@ -165,10 +167,6 @@ export default function App() {
             </div>
 
             <section className="playlist-surface">
-              <div className="playlist-columns">
-                <span className="playlist-col-index">#</span>
-                <span className="playlist-col-title">Titulo</span>
-              </div>
               <Playlist
                 songs={sortedSongs}
                 currentSong={currentSong}
