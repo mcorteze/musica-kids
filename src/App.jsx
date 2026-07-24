@@ -7,6 +7,7 @@ import Playlist from './components/Playlist';
 import ThemeSelector from './components/ThemeSelector';
 import ChildLock from './components/ChildLock';
 import useAudioPlayer from './hooks/useAudioPlayer';
+import useLikedSongs from './hooks/useLikedSongs';
 import themes from './themes';
 import songs from './data/songs';
 import 'antd/dist/reset.css';
@@ -127,6 +128,12 @@ export default function App() {
     toggleMute,
   } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleNext, repeat });
 
+  const { isLiked, toggleLike } = useLikedSongs();
+
+  const handleToggleLike = useCallback(() => {
+    if (currentSong) toggleLike(currentSong.id);
+  }, [currentSong, toggleLike]);
+
   return (
     <ConfigProvider
       theme={{
@@ -163,6 +170,8 @@ export default function App() {
                 repeat={repeat}
                 onRepeatToggle={handleRepeatToggle}
                 songCount={sortedSongs.length}
+                liked={currentSong ? isLiked(currentSong.id) : false}
+                onToggleLike={handleToggleLike}
               />
             </div>
 

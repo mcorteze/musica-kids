@@ -82,13 +82,6 @@ const songs = [
     cover: 'covers/laurinha-costa-six-seven.jpg',
   },
   {
-    id: 11,
-    title: 'Hasta que me enamoro',
-    artist: 'María Becerra, TINI, YSY A',
-    file: 'music/maria-becerra-tini-ysy-a-hasta-que-me-enamoro.mp3',
-    cover: 'covers/maria-becerra-tini-ysy-a-hasta-que-me-enamoro.jpg',
-  },
-  {
     id: 12,
     title: 'Down Like That (Paw Patrol)',
     artist: 'Bryson Tiller',

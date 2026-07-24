@@ -317,6 +317,18 @@ html {
   color: var(--accent-color, #fff);
 }
 
+.like-btn.liked {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: likePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes likePop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
 /* ========== PLAYER BAR (fija abajo, tipo Spotify) ========== */
 .player-bar {
   flex: none;
@@ -1452,6 +1464,10 @@ html {
   }
 
   .song-row-live span {
+    animation: none !important;
+  }
+
+  .like-btn.liked {
     animation: none !important;
   }
 

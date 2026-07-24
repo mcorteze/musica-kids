@@ -5,6 +5,8 @@ import {
   SwapOutlined,
   RedoOutlined,
   CustomerServiceOutlined,
+  LikeFilled,
+  LikeOutlined,
 } from '@ant-design/icons';
 
 export default function AlbumHeader({
@@ -16,6 +18,8 @@ export default function AlbumHeader({
   repeat,
   onRepeatToggle,
   songCount,
+  liked,
+  onToggleLike,
 }) {
   if (!song) {
     return (
@@ -92,6 +96,18 @@ export default function AlbumHeader({
           >
             <RedoOutlined />
             {repeat === 'one' && <span className="repeat-one-badge">1</span>}
+          </button>
+        </Tooltip>
+
+        <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
+          <button
+            type="button"
+            onClick={onToggleLike}
+            className={`album-action-btn like-btn ${liked ? 'active liked' : ''}`}
+            aria-label="Me gusta"
+            aria-pressed={liked}
+          >
+            {liked ? <LikeFilled /> : <LikeOutlined />}
           </button>
         </Tooltip>
       </div>
