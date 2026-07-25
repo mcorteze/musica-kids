@@ -144,6 +144,34 @@ const songs = [
     file: 'music/shakira-burna-boy-dai-dai.mp3',
     cover: 'covers/shakira-burna-boy-dai-dai.jpg',
   },
+  {
+    id: 21,
+    title: 'Tropicoqueta',
+    artist: 'KAROL G',
+    file: 'music/karol-g-tropicoqueta.mp3',
+    cover: 'covers/karol-g-tropicoqueta.jpg',
+  },
+  {
+    id: 22,
+    title: 'ALO',
+    artist: 'Katteyes, SINAKA',
+    file: 'music/katteyes-sinaka-alo.mp3',
+    cover: 'covers/katteyes-sinaka-alo.jpg',
+  },
+  {
+    id: 23,
+    title: 'Otono Los mas congelados del genero',
+    artist: 'NTV',
+    file: 'music/otono-los-mas-congelados-del-genero.mp3',
+    cover: 'covers/otono-los-mas-congelados-del-genero.png',
+  },
+  {
+    id: 24,
+    title: 'Osito Gominola',
+    artist: 'Gummibär',
+    file: 'music/gummibar-osito-gominola.mp3',
+    cover: 'covers/gummibar-osito-gominola.jpg',
+  },
 ];
 
 export default songs;
