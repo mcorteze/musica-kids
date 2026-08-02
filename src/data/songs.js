@@ -172,6 +172,48 @@ const songs = [
     file: 'music/gummibar-osito-gominola.mp3',
     cover: 'covers/gummibar-osito-gominola.jpg',
   },
+  {
+    id: 25,
+    title: 'Salta conejito',
+    artist: 'Papelina y Papelón',
+    file: 'music/papelina-y-papelon-salta-conejito.mp3',
+    cover: 'covers/papelina-y-papelon-salta-conejito.jpg',
+  },
+  {
+    id: 26,
+    title: 'Flores de colores',
+    artist: 'Papelina y Papelón',
+    file: 'music/papelina-y-papelon-flores-de-colores.mp3',
+    cover: 'covers/papelina-y-papelon-flores-de-colores.jpg',
+  },
+  {
+    id: 27,
+    title: 'La luna y el sol',
+    artist: 'Papelina y Papelón',
+    file: 'music/papelina-y-papelon-la-luna-y-el-sol.mp3',
+    cover: 'covers/papelina-y-papelon-la-luna-y-el-sol.jpg',
+  },
+  {
+    id: 28,
+    title: 'La llave de Sol',
+    artist: 'Papelina y Papelón',
+    file: 'music/papelina-y-papelon-la-llave-de-sol.mp3',
+    cover: 'covers/papelina-y-papelon-la-llave-de-sol.jpg',
+  },
+  {
+    id: 29,
+    title: 'Pirata patata',
+    artist: 'Papelina y Papelón',
+    file: 'music/papelina-y-papelon-pirata-patata.mp3',
+    cover: 'covers/papelina-y-papelon-pirata-patata.jpg',
+  },
+  {
+    id: 30,
+    title: 'Ruedas a girar',
+    artist: 'Ruedas y Aventuras',
+    file: 'music/ruedas-y-aventuras-ruedas-a-girar.mp3',
+    cover: 'covers/ruedas-y-aventuras-ruedas-a-girar.jpg',
+  },
 ];
 
 export default songs;
