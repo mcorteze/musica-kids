@@ -13,7 +13,7 @@
   .ok { background: #14532d; }
   .mal { background: #7f1d1d; }
   .verdict { font-size: 22px; font-weight: 800; }
-  .nota { font-size: 13px; opacity: .8; line-height: 1.5; margin-top: 6px; }
+  .nota { font-size: 13px; opacity: .85; line-height: 1.5; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -21,64 +21,72 @@
 <div id="out">Cargando...</div>
 
 <script>
-// Misma ventana que la conversacion activa en src/data/conversaciones.js
+// Debe reflejar la ventana de la conversacion activa y la ZONA del proyecto.
 var VENTANA = { desde: '2026-08-03', hasta: '2026-08-03', desdeHora: '15:00', hastaHora: '21:00' };
+var ZONA = 'America/Santiago';
 
-function dosDigitos(n) { return String(n).padStart(2, '0'); }
-function fechaLocal(d) { return d.getFullYear() + '-' + dosDigitos(d.getMonth() + 1) + '-' + dosDigitos(d.getDate()); }
-function horaLocal(d) { return dosDigitos(d.getHours()) + ':' + dosDigitos(d.getMinutes()); }
+function dd(n) { return String(n).padStart(2, '0'); }
+
+// Misma logica que la app: se evalua en hora de Chile, no en la del aparato.
+function partesEnZona(d) {
+  try {
+    var fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    });
+    var p = {};
+    fmt.formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+    if (p.year && p.hour) return { fecha: p.year + '-' + p.month + '-' + p.day, hora: p.hour + ':' + p.minute, zona: true };
+  } catch (e) {}
+  return { fecha: d.getFullYear() + '-' + dd(d.getMonth() + 1) + '-' + dd(d.getDate()),
+           hora: dd(d.getHours()) + ':' + dd(d.getMinutes()), zona: false };
+}
 
 function card(k, v, clase) {
   return '<div class="card ' + (clase || '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
 }
 
-var d = new Date();
-var fecha = fechaLocal(d);
-var hora = horaLocal(d);
-var tz = 'no disponible';
-try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+function pintar(base, fuenteHora) {
+  var enChile = partesEnZona(base);
+  var motivos = [];
+  if (enChile.fecha < VENTANA.desde) motivos.push('la fecha en Chile es anterior al ' + VENTANA.desde);
+  if (enChile.fecha > VENTANA.hasta) motivos.push('la fecha en Chile es posterior al ' + VENTANA.hasta);
+  if (enChile.hora < VENTANA.desdeHora) motivos.push('en Chile aun no son las ' + VENTANA.desdeHora);
+  if (enChile.hora > VENTANA.hastaHora) motivos.push('en Chile ya pasaron las ' + VENTANA.hastaHora);
+  var dentro = motivos.length === 0;
 
-var motivos = [];
-if (fecha < VENTANA.desde) motivos.push('la fecha del dispositivo es ANTERIOR al ' + VENTANA.desde);
-if (fecha > VENTANA.hasta) motivos.push('la fecha del dispositivo es POSTERIOR al ' + VENTANA.hasta);
-if (hora < VENTANA.desdeHora) motivos.push('aun no son las ' + VENTANA.desdeHora + ' en este dispositivo');
-if (hora > VENTANA.hastaHora) motivos.push('ya pasaron las ' + VENTANA.hastaHora + ' en este dispositivo');
-var dentro = motivos.length === 0;
+  var aparato = dd(base.getHours()) + ':' + dd(base.getMinutes());
+  var tz = 'no disponible';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
 
-var html = '';
-html += card('Veredicto', '<span class="verdict">' + (dentro ? 'DEBERIA VERSE EL BOTON' : 'EL BOTON NO SE VE') + '</span>' +
-  (dentro ? '' : '<div class="nota">Motivo: ' + motivos.join(' y ') + '.</div>'), dentro ? 'ok' : 'mal');
-html += card('Ventana configurada', VENTANA.desde + ' de ' + VENTANA.desdeHora + ' a ' + VENTANA.hastaHora);
-html += card('Fecha de ESTE dispositivo', fecha);
-html += card('Hora de ESTE dispositivo', hora);
-html += card('Zona horaria del dispositivo', tz);
-html += card('Desfase respecto a UTC', (-d.getTimezoneOffset() / 60) + ' horas (Chile en agosto = -4)');
-html += card('Reloj completo', d.toString());
-html += card('Navegador', navigator.userAgent);
+  var html = '';
+  html += card('Veredicto',
+    '<span class="verdict">' + (dentro ? 'EL BOTON DEBE VERSE' : 'EL BOTON NO SE VE') + '</span>' +
+    (dentro ? '' : '<div class="nota">Motivo: ' + motivos.join(' y ') + '.</div>'),
+    dentro ? 'ok' : 'mal');
+  html += card('Ventana (hora de Chile)', VENTANA.desde + ' de ' + VENTANA.desdeHora + ' a ' + VENTANA.hastaHora);
+  html += card('Hora en Chile (la que manda)', enChile.fecha + '  ' + enChile.hora);
+  html += card('Hora que marca este aparato', aparato + '  (' + tz + ')');
+  html += card('De donde se saca la hora', fuenteHora);
+  html += card('Conversion de zona horaria', enChile.zona ? 'soportada por el navegador' : 'NO soportada, se usa la del aparato', enChile.zona ? 'ok' : 'mal');
+  html += card('Navegador', navigator.userAgent);
+  document.getElementById('out').innerHTML = html;
+}
 
-document.getElementById('out').innerHTML = html;
+// Primero con el reloj del aparato, y si el servidor responde se corrige.
+pintar(new Date(), 'reloj del aparato (aun sin respuesta del servidor)');
 
-// Ademas: revisar que la tablet este bajando el bundle actual y no uno viejo
-fetch('./', { cache: 'no-store' })
-  .then(function (r) { return r.text(); })
-  .then(function (t) {
-    var m = t.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
-    if (!m) throw new Error('no se encontro el bundle');
-    var url = './' + m[0].replace('assets/', 'assets/');
-    document.getElementById('out').innerHTML += card('Bundle que sirve el sitio', m[0]);
-    return fetch(url, { cache: 'no-store' }).then(function (r2) { return r2.text(); });
+fetch('./', { method: 'HEAD', cache: 'no-store' })
+  .then(function (r) {
+    var cab = r.headers.get('date');
+    var t = cab ? Date.parse(cab) : NaN;
+    if (isNaN(t)) { pintar(new Date(), 'reloj del aparato (el servidor no envio hora)'); return; }
+    var desfase = t - Date.now();
+    var seg = Math.round(desfase / 1000);
+    pintar(new Date(Date.now() + desfase),
+      'hora real del servidor' + (Math.abs(seg) > 60 ? ' (el reloj del aparato esta corrido ' + seg + ' segundos)' : ''));
   })
-  .then(function (js) {
-    var tiene = js.indexOf('enferma-doctora') !== -1;
-    document.getElementById('out').innerHTML += card(
-      'El codigo descargado incluye la conversacion',
-      tiene ? 'SI' : 'NO (la tablet tiene una version vieja)',
-      tiene ? 'ok' : 'mal'
-    );
-  })
-  .catch(function (e) {
-    document.getElementById('out').innerHTML += card('Revision del bundle', 'fallo: ' + e.message, 'mal');
-  });
+  .catch(function () { pintar(new Date(), 'reloj del aparato (fallo la consulta al servidor)'); });
 </script>
 </body>
 </html>
