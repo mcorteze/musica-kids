@@ -64,13 +64,13 @@ export default function ChildLock({ onChildModeChange }) {
 
   const activateChildMode = useCallback(() => {
     setChildMode(true);
-    onChildModeChange(true);
+    onChildModeChange?.(true);
   }, [onChildModeChange]);
 
   const deactivateChildMode = useCallback(() => {
     setChildMode(false);
     setIsLocked(false);
-    onChildModeChange(false);
+    onChildModeChange?.(false);
   }, [onChildModeChange]);
 
   const openUnlockModal = useCallback(() => {

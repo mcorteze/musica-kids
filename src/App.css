@@ -758,6 +758,7 @@ html {
 
 /* ========== THEME SELECTOR (modal a pantalla completa) ========== */
 .theme-trigger-btn {
+  position: relative;
   appearance: none;
   border: none;
   cursor: pointer;
@@ -792,7 +793,10 @@ html {
 }
 
 .theme-modal {
+  /* min-width 0: el carrusel interior no debe poder ensanchar el modal. */
   width: min(560px, 100%);
+  min-width: 0;
+  max-width: 100%;
   max-height: min(640px, 90vh);
   background: #ffffff;
   border-radius: 28px;
@@ -838,12 +842,176 @@ html {
   background: rgba(0, 0, 0, 0.12);
 }
 
-.theme-grid {
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 8px 24px 24px;
+/* Punto en el boton del header cuando hay un filtro activo */
+.theme-trigger-btn.filtering::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-color, #ffffff);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ========== CARRUSEL DE GRUPOS ========== */
+.group-carousel {
+  --card-size: 148px;
+  position: relative;
+  min-width: 0;
+  padding-bottom: 22px;
+}
+
+.group-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 24px;
+  padding: 6px 24px 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.group-track::-webkit-scrollbar {
+  display: none;
+}
+
+.group-card {
+  flex: 0 0 auto;
+  width: var(--card-size);
+  scroll-snap-align: center;
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-card-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 4px solid transparent;
+  background: #12121c;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.group-card:active .group-card-media {
+  transform: scale(0.97);
+}
+
+.group-card.active .group-card-media {
+  border-color: var(--accent-color, #ffffff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22), 0 0 0 4px rgba(0, 0, 0, 0.08);
+}
+
+.group-card-img,
+.group-card-blur {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fondo difuminado para los logos que no se pueden recortar */
+.group-card-blur {
+  filter: blur(18px) saturate(1.3);
+  transform: scale(1.3);
+}
+
+.group-card-img.contain {
+  object-fit: contain;
+  padding: 10px;
+}
+
+.group-card-all {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  color: #ffffff;
+  background: linear-gradient(150deg, #6C7BFF 0%, #B45BFF 55%, #FF7BC5 100%);
+}
+
+.group-card-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 24px;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+}
+
+.group-card-label {
+  display: block;
+  line-height: 1.25;
+  padding: 0 2px;
+}
+
+.group-card-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-card-count {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(26, 26, 46, 0.55);
+}
+
+.group-nav {
+  position: absolute;
+  top: calc(6px + var(--card-size) / 2);
+  transform: translateY(-50%);
+  z-index: 2;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: #1a1a2e;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  transition: opacity 0.18s ease;
+}
+
+.group-nav.prev {
+  left: 6px;
+}
+
+.group-nav.next {
+  right: 6px;
+}
+
+.group-nav[disabled] {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media screen and (min-width: 641px) {
@@ -851,48 +1019,9 @@ html {
     width: min(760px, 100%);
   }
 
-  .theme-grid {
-    grid-template-columns: repeat(4, 1fr);
+  .group-carousel {
+    --card-size: 168px;
   }
-}
-
-.theme-card {
-  position: relative;
-  appearance: none;
-  border: 4px solid transparent;
-  cursor: pointer;
-  border-radius: 22px;
-  aspect-ratio: 1 / 1;
-  padding: 0;
-  overflow: hidden;
-  font-family: inherit;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  transition: box-shadow 0.18s ease;
-}
-
-.theme-card:active {
-  transform: scale(0.97);
-}
-
-.theme-card.active {
-  border-color: var(--accent-color, #ffffff);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22), 0 0 0 4px rgba(0, 0, 0, 0.08);
-}
-
-.theme-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.theme-card-check {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 24px;
-  color: #ffffff;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
 }
 
 /* ========== CHILD LOCK ========== */
@@ -1263,9 +1392,14 @@ html {
     opacity: 0.7;
   }
 
-  .theme-grid {
-    gap: 14px;
-    padding: 8px 16px 20px;
+  .group-carousel {
+    --card-size: 132px;
+  }
+
+  .group-track {
+    gap: 12px;
+    padding: 6px 16px 8px;
+    scroll-padding-inline: 16px;
   }
 
   .unlock-modal {
@@ -1296,8 +1430,10 @@ html {
   }
 }
 
-/* ========== LAPTOP HORIZONTAL (pantalla ancha tipo notebook/desktop) ========== */
-@media screen and (min-width: 1180px) and (min-aspect-ratio: 4/3) {
+/* ========== HORIZONTAL ANCHO (notebook, desktop y tablet apaisada) ==========
+   Desde 1000px se activan las dos columnas: asi entra tambien el iPad clasico
+   en horizontal (1024x768, aspect-ratio exactamente 4/3). */
+@media screen and (min-width: 1000px) and (min-aspect-ratio: 4/3) {
   .app-content {
     align-items: stretch;
     overflow-y: hidden;
@@ -1322,7 +1458,8 @@ html {
   }
 
   .album-surface {
-    width: 560px;
+    /* Proporcional: en 1024px no alcanzan 560px fijos junto a la lista. */
+    width: clamp(340px, 42%, 560px);
     flex: none;
     align-self: flex-start;
     margin: 20px 0;
@@ -1451,6 +1588,228 @@ html {
   }
 }
 
+/* ========== VIEWPORT BAJO (telefono acostado) ==========
+   El problema aca no es el ancho sino el ALTO: un iPhone en horizontal mide
+   ~844x390, y ese ancho lo hacia caer en las reglas de tablet. Con header de
+   60px + barra de 78px quedaban 252px, y la portada sola se comia 236px:
+   la lista de canciones se aplastaba a una franja de ~15px.
+   Va despues del bloque anterior a proposito, para ganarle en los solapes
+   (ej. una ventana de notebook de 1200x450). */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .app-header {
+    height: 46px;
+    padding: 0 12px 0 14px;
+  }
+
+  .app-brand-icon {
+    font-size: 17px;
+  }
+
+  .app-brand-name {
+    font-size: 15px;
+  }
+
+  .theme-trigger-btn,
+  .child-lock-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+    font-size: 17px;
+  }
+
+  .app-content {
+    align-items: stretch;
+    overflow-y: hidden;
+    padding: 0 12px 10px;
+  }
+
+  /* Dos columnas: portada a la izquierda, lista a la derecha */
+  .main-columns {
+    max-width: none;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .album-surface {
+    width: clamp(220px, 32%, 320px);
+    flex: none;
+    align-self: stretch;
+    margin: 10px 0;
+    display: flex;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .album-header {
+    width: 100%;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 14px 16px;
+  }
+
+  /* La portada al lado del titulo, no encima: ahorra alto */
+  .album-header-top {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .album-cover {
+    width: clamp(72px, 26vh, 104px);
+    height: clamp(72px, 26vh, 104px);
+  }
+
+  .album-title {
+    font-size: clamp(15px, 4.4vh, 19px);
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .album-artist,
+  .album-sub {
+    font-size: 12px;
+  }
+
+  .album-kicker {
+    font-size: 10px;
+  }
+
+  .album-actions {
+    margin-top: 0;
+  }
+
+  .playlist-surface {
+    margin: 10px 0;
+    min-width: 0;
+  }
+
+  .playlist-list {
+    overflow-y: auto;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent 100%);
+    padding-bottom: 24px;
+  }
+
+  .song-row {
+    grid-template-columns: 26px 40px 1fr auto;
+    gap: 10px;
+    min-height: 50px;
+    padding: 4px 10px;
+  }
+
+  .song-row-art {
+    width: 40px;
+    height: 40px;
+  }
+
+  .song-row-title {
+    font-size: 14px;
+  }
+
+  .song-row-artist {
+    font-size: 12px;
+  }
+
+  /* 42px del boton play + 4 de gap + 18 del progreso = 64px de contenido:
+     con 62px de alto la fila de progreso quedaba cortada abajo. */
+  .player-bar {
+    grid-template-columns: minmax(110px, 1fr) minmax(0, 2fr) minmax(90px, 0.8fr);
+    height: 76px;
+    padding: 0 12px;
+    gap: 12px;
+  }
+
+  .player-bar-center {
+    gap: 4px;
+  }
+
+  .player-bar-art {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .player-bar-title {
+    font-size: 13px;
+  }
+
+  .player-bar-artist {
+    font-size: 11px;
+  }
+
+  .control-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+  }
+
+  .play-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 19px;
+  }
+
+  .volume-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+
+  .player-bar-progress {
+    gap: 10px;
+    max-width: none;
+  }
+
+  .time-label {
+    font-size: 11px;
+    min-width: 30px;
+  }
+
+  /* El carrusel usaba tarjetas de 168px por el ancho, sin mirar el alto */
+  .theme-modal {
+    max-height: 94vh;
+  }
+
+  .theme-modal-header {
+    padding: 12px 12px 4px 16px;
+  }
+
+  .theme-modal-header h2 {
+    font-size: 16px;
+  }
+
+  .group-carousel {
+    --card-size: 104px;
+    padding-bottom: 14px;
+  }
+
+  .group-track {
+    gap: 10px;
+    padding: 6px 16px 6px;
+    scroll-padding-inline: 16px;
+  }
+
+  .group-card-name {
+    font-size: 12px;
+  }
+
+  .group-card-count {
+    font-size: 10px;
+  }
+
+  .group-nav {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+}
+
 /* ========== REDUCED MOTION ========== */
 @media (prefers-reduced-motion: reduce) {
   .control-btn,
@@ -1459,8 +1818,12 @@ html {
   .play-btn,
   .child-lock-btn,
   .song-row,
-  .theme-card {
+  .group-card-media {
     transition: none !important;
+  }
+
+  .group-track {
+    scroll-behavior: auto !important;
   }
 
   .song-row-live span {

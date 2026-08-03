@@ -4,12 +4,13 @@ import { CustomerServiceOutlined } from '@ant-design/icons';
 import AlbumHeader from './components/AlbumHeader';
 import PlayerBar from './components/PlayerBar';
 import Playlist from './components/Playlist';
-import ThemeSelector from './components/ThemeSelector';
+import GroupSelector from './components/GroupSelector';
 import ChildLock from './components/ChildLock';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import themes from './themes';
 import songs from './data/songs';
+import groups, { ALL_GROUPS } from './data/groups';
 import 'antd/dist/reset.css';
 import './App.css';
 
@@ -23,19 +24,25 @@ function shuffleArray(array) {
 }
 
 export default function App() {
-  const [currentTheme, setCurrentTheme] = useState('sky');
+  const [activeGroup, setActiveGroup] = useState(ALL_GROUPS);
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
-  const [childMode, setChildMode] = useState(false);
 
-  const theme = themes[currentTheme];
-
-  const sortedSongs = useMemo(
-    () => [...songs].sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })),
-    []
+  // El grupo manda: define tanto el filtro de la lista como la paleta de colores.
+  const group = useMemo(
+    () => groups.find((g) => g.id === activeGroup) ?? groups[0],
+    [activeGroup]
   );
+  const theme = themes[group.theme];
+
+  const sortedSongs = useMemo(() => {
+    const visible = activeGroup === ALL_GROUPS
+      ? songs
+      : songs.filter((s) => s.groups?.includes(activeGroup));
+    return [...visible].sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
+  }, [activeGroup]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -109,12 +116,10 @@ export default function App() {
     });
   }, []);
 
-  const handleThemeChange = useCallback((value) => {
-    setCurrentTheme(value);
-  }, []);
-
-  const handleChildModeChange = useCallback((isChild) => {
-    setChildMode(isChild);
+  // Cambiar de grupo no interrumpe lo que suena: la cancion actual sigue hasta
+  // el final y recien ahi (o al tocar "siguiente") pasa a la primera del filtro.
+  const handleGroupChange = useCallback((value) => {
+    setActiveGroup(value);
   }, []);
 
   const {
@@ -149,12 +154,11 @@ export default function App() {
             <span className="app-brand-name">Musica de Sofia</span>
           </div>
           <div className="header-actions">
-            <ThemeSelector
-              currentTheme={currentTheme}
-              onChange={handleThemeChange}
-              disabled={childMode}
+            <GroupSelector
+              activeGroup={activeGroup}
+              onChange={handleGroupChange}
             />
-            <ChildLock onChildModeChange={handleChildModeChange} />
+            <ChildLock />
           </div>
         </header>
 

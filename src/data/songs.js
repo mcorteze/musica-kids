@@ -8,6 +8,10 @@
 //
 // El "id" debe ser unico. El "file" es el nombre exacto del MP3.
 // Si no tienes caratula, usa null en "cover".
+//
+// "groups" son los filtros del carrusel (ver src/data/groups.js).
+// Es un arreglo: una cancion puede estar en varios filtros a la vez.
+// El "artist" nunca se toca — es lo que se muestra en el reproductor.
 // ============================================
 
 const songs = [
@@ -17,6 +21,7 @@ const songs = [
     artist: 'Shakira',
     file: 'music/shakira-zoo-zootopia2.mp3',
     cover: 'covers/shakira-zoo-zootopia2.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 2,
@@ -24,6 +29,7 @@ const songs = [
     artist: '31 Minutos',
     file: 'music/31-minutos-mi-equilibrio-espiritual.mp3',
     cover: 'covers/31-minutos-mi-equilibrio-espiritual.jpg',
+    groups: ['31-minutos'],
   },
   {
     id: 3,
@@ -31,6 +37,7 @@ const songs = [
     artist: '31 Minutos',
     file: 'music/31-minutos-yo-opino.mp3',
     cover: 'covers/31-minutos-yo-opino.jpg',
+    groups: ['31-minutos'],
   },
   {
     id: 4,
@@ -38,6 +45,7 @@ const songs = [
     artist: '31 Minutos',
     file: 'music/31-minutos-rin-raja.mp3',
     cover: 'covers/31-minutos-rin-raja.jpg',
+    groups: ['31-minutos'],
   },
   {
     id: 5,
@@ -45,6 +53,7 @@ const songs = [
     artist: '31 Minutos',
     file: 'music/31-minutos-ratoncitos.mp3',
     cover: 'covers/31-minutos-ratoncitos.jpg',
+    groups: ['31-minutos'],
   },
   {
     id: 6,
@@ -52,6 +61,7 @@ const songs = [
     artist: 'Carly Rae Jepsen',
     file: 'music/carly-rae-jepsen-call-me-maybe.mp3',
     cover: 'covers/carly-rae-jepsen-call-me-maybe.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 7,
@@ -59,6 +69,7 @@ const songs = [
     artist: 'Guaypes Club',
     file: 'music/guaypes-club-alto-al-fuego.mp3',
     cover: 'covers/guaypes-club-alto-al-fuego.jpg',
+    groups: ['guaypes-club'],
   },
   {
     id: 8,
@@ -66,6 +77,7 @@ const songs = [
     artist: 'Guaypes Club',
     file: 'music/guaypes-club-bendiciones.mp3',
     cover: 'covers/guaypes-club-bendiciones.jpg',
+    groups: ['guaypes-club'],
   },
   {
     id: 9,
@@ -73,6 +85,7 @@ const songs = [
     artist: 'Guaypes Club',
     file: 'music/guaypes-club-soy-ninita.mp3',
     cover: 'covers/guaypes-club-soy-ninita.jpg',
+    groups: ['guaypes-club'],
   },
   {
     id: 10,
@@ -80,6 +93,7 @@ const songs = [
     artist: 'Laurinha Costa',
     file: 'music/laurinha-costa-six-seven.mp3',
     cover: 'covers/laurinha-costa-six-seven.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 12,
@@ -87,6 +101,7 @@ const songs = [
     artist: 'Bryson Tiller',
     file: 'music/bryson-tiller-down-like-that-paw-patrol.mp3',
     cover: 'covers/bryson-tiller-down-like-that-paw-patrol.jpg',
+    groups: ['paw-patrol'],
   },
   {
     id: 13,
@@ -94,6 +109,7 @@ const songs = [
     artist: 'Bluey',
     file: 'music/bluey-dance-mode.mp3',
     cover: 'covers/bluey-dance-mode.jpg',
+    groups: ['bluey'],
   },
   {
     id: 14,
@@ -101,6 +117,7 @@ const songs = [
     artist: 'Gabby Dollhouse',
     file: 'music/dj-musicat-el-gato-del-dia.mp3',
     cover: 'covers/dj-musicat-el-gato-del-dia.png',
+    groups: ['munecas'],
   },
   {
     id: 15,
@@ -108,6 +125,7 @@ const songs = [
     artist: 'PAW Patrol',
     file: 'music/paw-patrol-everest-is-the-best.mp3',
     cover: 'covers/paw-patrol-everest-is-the-best.jpg',
+    groups: ['paw-patrol'],
   },
   {
     id: 16,
@@ -115,6 +133,7 @@ const songs = [
     artist: 'KATSEYE',
     file: 'music/katseye-gabriela.mp3',
     cover: 'covers/katseye-gabriela.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 17,
@@ -122,6 +141,7 @@ const songs = [
     artist: 'KPop Demon Hunters',
     file: 'music/golden-kpop-demon-hunters.mp3',
     cover: 'covers/golden-kpop-demon-hunters.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 18,
@@ -129,6 +149,7 @@ const songs = [
     artist: 'Martinwhite & Katteyes',
     file: 'music/martinwhite-katteyes-pollypocket.mp3',
     cover: 'covers/martinwhite-katteyes-pollypocket.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 19,
@@ -136,6 +157,7 @@ const songs = [
     artist: 'Gabby Dollhouse',
     file: 'music/pastelillo-el-gato-del-dia.mp3',
     cover: 'covers/pastelillo-el-gato-del-dia.jpg',
+    groups: ['munecas'],
   },
   {
     id: 20,
@@ -143,6 +165,7 @@ const songs = [
     artist: 'Shakira, Burna Boy',
     file: 'music/shakira-burna-boy-dai-dai.mp3',
     cover: 'covers/shakira-burna-boy-dai-dai.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 21,
@@ -150,6 +173,7 @@ const songs = [
     artist: 'KAROL G',
     file: 'music/karol-g-tropicoqueta.mp3',
     cover: 'covers/karol-g-tropicoqueta.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 22,
@@ -157,6 +181,7 @@ const songs = [
     artist: 'Katteyes, SINAKA',
     file: 'music/katteyes-sinaka-alo.mp3',
     cover: 'covers/katteyes-sinaka-alo.jpg',
+    groups: ['efecto-n'],
   },
   {
     id: 23,
@@ -164,6 +189,7 @@ const songs = [
     artist: 'NTV',
     file: 'music/otono-los-mas-congelados-del-genero.mp3',
     cover: 'covers/otono-los-mas-congelados-del-genero.png',
+    groups: ['efecto-n'],
   },
   {
     id: 24,
@@ -171,6 +197,7 @@ const songs = [
     artist: 'Gummibär',
     file: 'music/gummibar-osito-gominola.mp3',
     cover: 'covers/gummibar-osito-gominola.jpg',
+    groups: ['gummibar'],
   },
   {
     id: 25,
@@ -178,6 +205,7 @@ const songs = [
     artist: 'Papelina y Papelón',
     file: 'music/papelina-y-papelon-salta-conejito.mp3',
     cover: 'covers/papelina-y-papelon-salta-conejito.jpg',
+    groups: ['papelina'],
   },
   {
     id: 26,
@@ -185,6 +213,7 @@ const songs = [
     artist: 'Papelina y Papelón',
     file: 'music/papelina-y-papelon-flores-de-colores.mp3',
     cover: 'covers/papelina-y-papelon-flores-de-colores.jpg',
+    groups: ['papelina'],
   },
   {
     id: 27,
@@ -192,6 +221,7 @@ const songs = [
     artist: 'Papelina y Papelón',
     file: 'music/papelina-y-papelon-la-luna-y-el-sol.mp3',
     cover: 'covers/papelina-y-papelon-la-luna-y-el-sol.jpg',
+    groups: ['papelina'],
   },
   {
     id: 28,
@@ -199,6 +229,7 @@ const songs = [
     artist: 'Papelina y Papelón',
     file: 'music/papelina-y-papelon-la-llave-de-sol.mp3',
     cover: 'covers/papelina-y-papelon-la-llave-de-sol.jpg',
+    groups: ['papelina'],
   },
   {
     id: 29,
@@ -206,6 +237,7 @@ const songs = [
     artist: 'Papelina y Papelón',
     file: 'music/papelina-y-papelon-pirata-patata.mp3',
     cover: 'covers/papelina-y-papelon-pirata-patata.jpg',
+    groups: ['papelina'],
   },
   {
     id: 30,
@@ -213,6 +245,7 @@ const songs = [
     artist: 'Ruedas y Aventuras',
     file: 'music/ruedas-y-aventuras-ruedas-a-girar.mp3',
     cover: 'covers/ruedas-y-aventuras-ruedas-a-girar.jpg',
+    groups: ['ruedas'],
   },
 ];
 
