@@ -4,10 +4,14 @@ import { MessageFilled, CloseOutlined } from '@ant-design/icons';
 import conversaciones, {
   personajes,
   respuestas as respuestasPorDefecto,
+  escondidas,
   SIEMPRE_VISIBLE,
 } from '../data/conversaciones';
 
 const STORAGE_KEY = 'musica-kids-chats-leidos';
+// Lo que ella contesto, por conversacion. Se guarda para que al reabrir el
+// hilo siga estando su respuesta y el "shhh" de los juguetes.
+const STORAGE_RESP = 'musica-kids-chats-respuestas';
 // Cada cuanto se revisa la ventana horaria. Si la app quedo abierta antes de
 // que empiece, el boton tiene que aparecer solo, sin recargar.
 const REVISAR_CADA_MS = 30000;
@@ -19,6 +23,16 @@ function leerLeidos() {
     return Array.isArray(arr) ? arr : [];
   } catch {
     return [];
+  }
+}
+
+function leerRespuestas() {
+  try {
+    const raw = localStorage.getItem(STORAGE_RESP);
+    const obj = raw ? JSON.parse(raw) : {};
+    return obj && typeof obj === 'object' ? obj : {};
+  } catch {
+    return {};
   }
 }
 
@@ -72,10 +86,27 @@ function Fila({ personaje, texto, esMia, seguido }) {
 
 export default function ToyChat() {
   const [leidos, setLeidos] = useState(leerLeidos);
+  const [guardadas, setGuardadas] = useState(leerRespuestas);
   const [ahora, setAhora] = useState(() => new Date());
   const [abierta, setAbierta] = useState(null);
-  const [respuesta, setRespuesta] = useState(null);
   const finRef = useRef(null);
+
+  // Lo que ella ya contesto en esta conversacion, si es que contesto.
+  const respondido = abierta ? guardadas[abierta.id] : null;
+
+  const responder = useCallback((texto) => {
+    if (!abierta) return;
+    // La reaccion se elige una sola vez y se guarda con la respuesta, para que
+    // al reabrir el hilo vea siempre la misma.
+    const escondida = escondidas[Math.floor(Math.random() * escondidas.length)];
+    const nuevas = { ...guardadas, [abierta.id]: { texto, escondida } };
+    setGuardadas(nuevas);
+    try {
+      localStorage.setItem(STORAGE_RESP, JSON.stringify(nuevas));
+    } catch {
+      // Sin localStorage la respuesta vive solo mientras el drawer este abierto.
+    }
+  }, [abierta, guardadas]);
 
   useEffect(() => {
     const t = setInterval(() => setAhora(new Date()), REVISAR_CADA_MS);
@@ -103,7 +134,6 @@ export default function ToyChat() {
       }
     }
     setAbierta(null);
-    setRespuesta(null);
   }, [abierta, leidos]);
 
   useEffect(() => {
@@ -117,10 +147,10 @@ export default function ToyChat() {
 
   // Al responder, bajar hasta el ultimo mensaje
   useEffect(() => {
-    if (respuesta && finRef.current) {
+    if (respondido && finRef.current) {
       finRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [respuesta]);
+  }, [respondido]);
 
   if (!conversacion && !abierta) return null;
 
@@ -171,13 +201,20 @@ export default function ToyChat() {
                   );
                 })}
 
-                {respuesta && (
+                {respondido && (
                   <>
-                    <Fila texto={respuesta} esMia />
+                    <Fila texto={respondido.texto} esMia />
                     {abierta.cierre && (
                       <Fila
                         personaje={personajes[abierta.cierre.de]}
                         texto={abierta.cierre.texto}
+                      />
+                    )}
+                    {/* Se dan cuenta de que los esta leyendo y se quedan tiesos */}
+                    {respondido.escondida && (
+                      <Fila
+                        personaje={personajes[respondido.escondida.de]}
+                        texto={respondido.escondida.texto}
                       />
                     )}
                   </>
@@ -187,13 +224,13 @@ export default function ToyChat() {
             </div>
 
             <div className="chat-respuestas">
-              {!respuesta ? (
+              {!respondido ? (
                 opciones.map((r) => (
                   <button
                     type="button"
                     key={r}
                     className="chat-respuesta-btn"
-                    onClick={() => setRespuesta(r)}
+                    onClick={() => responder(r)}
                   >
                     {r}
                   </button>

@@ -75,6 +75,22 @@ repartirlos: si todos los que hablan son de un solo lado, se ve mal.
    `respuestas` que ella puede tocar deben ser de ese tema, no las genericas.
    Siempre 3, siempre sin teclado.
 
+### El cierre del hilo
+
+Cuando ella contesta pasan dos cosas, en este orden:
+
+1. El `cierre` de la conversacion (opcional): la respuesta contextual al tema.
+2. Una de las `escondidas`: los juguetes se dan cuenta de que los esta leyendo
+   y se quedan tiesos ("¡Shhhh! Todos quietos"), como en la pelicula.
+
+Las `escondidas` son globales, se elige una al azar y **queda guardada junto a
+su respuesta**, asi que si reabre el hilo ve exactamente la misma. Su respuesta
+tambien se guarda: la conversacion no se "reinicia" al volver a entrar.
+
+Se guarda en localStorage bajo `musica-kids-chats-respuestas`, por id de
+conversacion. Para que una conversacion vuelva a estar sin responder hay que
+cambiarle el `id` o borrar esa clave.
+
 ### La ventana de disponibilidad
 
 ```js

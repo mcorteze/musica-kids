@@ -44,6 +44,17 @@ export const respuestas = [
   'Estaba donde mi abuela',
 ];
 
+// Cuando ella contesta, los juguetes se dan cuenta de que los esta leyendo y
+// se quedan tiesos, como en la pelicula. Es lo ultimo del hilo: despues de
+// esto no hablan mas. Se elige una al azar y queda guardada, asi que si
+// vuelve a abrir la conversacion ve exactamente la misma.
+export const escondidas = [
+  { de: 'raton', texto: '¡Shhhh! ¡Nos está leyendo!' },
+  { de: 'gato-loco', texto: '¡Shhhh! Todos quietos.' },
+  { de: 'turtle', texto: '¡Shhhh! Nadie se mueva.' },
+  { de: 'muneca', texto: '¡Shhhh! Hagan como que no pasó nada.' },
+];
+
 const conversaciones = [
   {
     id: 'enferma-doctora',
