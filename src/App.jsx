@@ -5,7 +5,7 @@ import AlbumHeader from './components/AlbumHeader';
 import PlayerBar from './components/PlayerBar';
 import Playlist from './components/Playlist';
 import GroupSelector from './components/GroupSelector';
-import ChildLock from './components/ChildLock';
+import ToyChat from './components/ToyChat';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import themes from './themes';
@@ -154,11 +154,13 @@ export default function App() {
             <span className="app-brand-name">Musica de Sofia</span>
           </div>
           <div className="header-actions">
+            {/* ChildLock (pantalla completa + candado) sacado por ahora.
+                El componente sigue en src/components/ para retomarlo despues. */}
+            <ToyChat />
             <GroupSelector
               activeGroup={activeGroup}
               onChange={handleGroupChange}
             />
-            <ChildLock />
           </div>
         </header>
 

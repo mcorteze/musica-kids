@@ -8,6 +8,7 @@ Stack: React + Ant Design + Vite. Deploy: GitHub Pages.
 | Skill | Archivo | Cuándo activarla |
 |-------|---------|-----------------|
 | Agregar cancion | skills/agregar-cancion.md | Cuando el usuario quiera agregar una cancion nueva |
+| Conversaciones de los juguetes | skills/conversaciones-juguetes.md | Crear, reutilizar o programar mensajes del chat de los juguetes |
 
 ## Estructura
 

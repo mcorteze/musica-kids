@@ -1024,6 +1024,292 @@ html {
   }
 }
 
+/* ========== CHAT DE LOS JUGUETES (drawer a pantalla completa) ==========
+   Fondo azul saturado, burbujas celestes de los juguetes repartidas entre
+   izquierda y derecha, verde la de ella, barras blancas arriba y abajo. */
+.chat-trigger-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ADE80;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+.chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-drawer {
+  /* Tamanos por dispositivo: se redefinen en los breakpoints de mas abajo */
+  --chat-avatar: 56px;
+  --chat-texto: 18px;
+  --chat-nombre: 13px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #6C8FD9 0%, #5872C8 55%, #5A61BC 100%);
+  animation: drawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.chat-drawer-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #ffffff;
+  box-shadow: 0 2px 14px rgba(20, 34, 74, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.chat-drawer-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1B3559;
+}
+
+.chat-cerrar-x {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(27, 53, 89, 0.08);
+  color: #1B3559;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease;
+}
+
+.chat-cerrar-x:hover {
+  background: rgba(27, 53, 89, 0.16);
+}
+
+.chat-hilo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 18px 16px;
+}
+
+/* A pantalla completa el hilo no debe estirarse a lo ancho de un monitor */
+.chat-hilo-interior {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.chat-fila.seguido {
+  margin-bottom: 8px;
+}
+
+.chat-fila.der {
+  justify-content: flex-end;
+}
+
+.chat-avatar {
+  flex: none;
+  width: var(--chat-avatar);
+  height: var(--chat-avatar);
+  border-radius: calc(var(--chat-avatar) * 0.28);
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(20, 34, 74, 0.28);
+}
+
+.chat-fila.seguido .chat-avatar {
+  background: transparent;
+  box-shadow: none;
+}
+
+.chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chat-avatar.mia {
+  background: linear-gradient(150deg, #6C7BFF 0%, #B45BFF 55%, #FF7BC5 100%);
+}
+
+.chat-burbuja {
+  position: relative;
+  max-width: 72%;
+  padding: 13px 18px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background-color: #E4F1FE;
+  box-shadow: 0 3px 12px rgba(20, 34, 74, 0.2);
+}
+
+.chat-fila.izq .chat-burbuja {
+  border-bottom-left-radius: 6px;
+}
+
+.chat-fila.der .chat-burbuja {
+  border-bottom-right-radius: 6px;
+}
+
+.chat-fila.mia .chat-burbuja {
+  background-color: #BCE68F;
+}
+
+/* Colita de la burbuja, como en WhatsApp */
+.chat-burbuja::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 16px;
+  background-color: inherit;
+}
+
+.chat-fila.izq .chat-burbuja::after {
+  left: -8px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.chat-fila.der .chat-burbuja::after {
+  right: -8px;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.chat-fila.seguido .chat-burbuja::after {
+  display: none;
+}
+
+.chat-nombre {
+  font-size: var(--chat-nombre);
+  font-weight: 800;
+  color: #3A6BA8;
+  letter-spacing: 0.01em;
+}
+
+.chat-texto {
+  font-size: var(--chat-texto);
+  line-height: 1.4;
+  font-weight: 600;
+  color: #16294A;
+}
+
+.chat-respuestas {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: #ffffff;
+  box-shadow: 0 -2px 16px rgba(20, 34, 74, 0.2);
+}
+
+.chat-respuesta-btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1B3559;
+  padding: 13px 22px;
+  border-radius: 999px;
+  background: #EAF2FD;
+  border: 2px solid #BCD6F3;
+  transition: background-color 0.18s ease;
+}
+
+.chat-respuesta-btn:hover {
+  background: #D8E8FB;
+}
+
+.chat-respuesta-btn:active {
+  transform: scale(0.97);
+}
+
+.chat-cerrar-btn {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  width: min(420px, 100%);
+  font-size: 19px;
+  font-weight: 800;
+  color: #123016;
+  padding: 15px 22px;
+  border-radius: 999px;
+  border: none;
+  background: #8FD46F;
+}
+
+.chat-cerrar-btn:active {
+  transform: scale(0.98);
+}
+
+/* Escala del chat por dispositivo. La tablet en horizontal (1024x768) entra
+   en el tramo de 1000px, igual que el layout de dos columnas. */
+@media screen and (min-width: 641px) {
+  .chat-drawer {
+    --chat-avatar: 68px;
+    --chat-texto: 20px;
+    --chat-nombre: 14px;
+  }
+}
+
+@media screen and (min-width: 1000px) {
+  .chat-drawer {
+    --chat-avatar: 88px;
+    --chat-texto: 22px;
+    --chat-nombre: 15px;
+  }
+
+  .chat-burbuja {
+    padding: 15px 20px;
+  }
+}
+
+@media screen and (min-width: 1600px) {
+  .chat-drawer {
+    --chat-avatar: 104px;
+    --chat-texto: 24px;
+    --chat-nombre: 16px;
+  }
+
+  .chat-hilo-interior {
+    max-width: 1100px;
+  }
+}
+
 /* ========== CHILD LOCK ========== */
 .child-lock-actions {
   display: flex;
@@ -1774,6 +2060,54 @@ html {
   /* El carrusel usaba tarjetas de 168px por el ancho, sin mirar el alto */
   .theme-modal {
     max-height: 94vh;
+  }
+
+  /* Drawer en pantalla baja: menos alto perdido en barras */
+  .chat-drawer-header {
+    padding: 10px 12px 10px 16px;
+  }
+
+  .chat-drawer-header h2 {
+    font-size: 18px;
+  }
+
+  .chat-cerrar-x {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .chat-hilo {
+    padding: 12px 14px 8px;
+  }
+
+  .chat-fila {
+    margin-bottom: 10px;
+  }
+
+  .chat-drawer {
+    --chat-avatar: 46px;
+    --chat-texto: 16px;
+    --chat-nombre: 12px;
+  }
+
+  .chat-burbuja {
+    padding: 10px 14px;
+  }
+
+  .chat-respuestas {
+    padding: 10px 14px 12px;
+    gap: 8px;
+  }
+
+  .chat-respuesta-btn {
+    font-size: 15px;
+    padding: 9px 16px;
+  }
+
+  .chat-cerrar-btn {
+    font-size: 16px;
+    padding: 11px 18px;
   }
 
   .theme-modal-header {
