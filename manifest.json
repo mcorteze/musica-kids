@@ -2,7 +2,7 @@
   "name": "Mi Musica",
   "short_name": "MiMusica",
   "description": "Musica para ninos sin videos ni anuncios",
-  "start_url": "/musica-kids/",
+  "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#D63384",
