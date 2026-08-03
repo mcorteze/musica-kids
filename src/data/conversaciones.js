@@ -26,6 +26,11 @@
 // comportamiento real. Ojo: esto NO salta la ventana de fecha/hora.
 export const SIEMPRE_VISIBLE = true;
 
+// Las ventanas se evaluan SIEMPRE en esta zona horaria, no en la del aparato.
+// Sin esto, una tablet mal configurada (en UTC, por ejemplo) apagaba el chat
+// 4 horas antes de tiempo. Las horas de arriba son hora de Chile, punto.
+export const ZONA = 'America/Santiago';
+
 // "lado" es de que lado del chat aparece cada juguete. Repartirlos entre
 // izquierda y derecha es lo que hace que se lea como conversacion y no como
 // una lista. Ella siempre va a la derecha, en verde.

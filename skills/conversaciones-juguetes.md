@@ -105,6 +105,15 @@ persistente: true,        // dentro de la ventana no se oculta nunca
 Se revisa cada 30 segundos, asi que si la app ya esta abierta el boton aparece
 solo al entrar la ventana. No hace falta recargar.
 
+**Las horas son SIEMPRE hora de Chile**, no la del aparato. La constante `ZONA`
+(`America/Santiago`) fija la referencia, y ademas la app pide la hora real al
+servidor (cabecera `Date`) por si el reloj del aparato esta corrido. Esto salio
+de un problema real: una tablet configurada en UTC apagaba el chat 4 horas
+antes de tiempo mientras en los telefonos se veia bien.
+
+Para depurar en un aparato sin consola esta `public/diag.html`, que muestra la
+hora en Chile, la del aparato, de donde se saco y el veredicto.
+
 `persistente: true` para conversaciones con ventana definida (puede abrirla
 todas las veces que quiera mientras dure). `persistente: false` para las de una
 sola vez, que desaparecen al cerrarlas.

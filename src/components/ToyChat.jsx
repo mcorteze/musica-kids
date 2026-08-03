@@ -6,6 +6,7 @@ import conversaciones, {
   respuestas as respuestasPorDefecto,
   escondidas,
   SIEMPRE_VISIBLE,
+  ZONA,
 } from '../data/conversaciones';
 
 const STORAGE_KEY = 'musica-kids-chats-leidos';
@@ -36,20 +37,37 @@ function leerRespuestas() {
   }
 }
 
-// Fecha y hora LOCALES (no UTC: de noche en Chile daria el dia equivocado)
-function fechaLocal(d) {
+// Fecha y hora en la zona horaria del proyecto, NO en la del aparato.
+// Una tablet configurada en otra zona apagaba el chat a destiempo.
+export function partesEnZona(d) {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ZONA,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    const p = {};
+    for (const parte of fmt.formatToParts(d)) p[parte.type] = parte.value;
+    if (p.year && p.hour) {
+      return { fecha: `${p.year}-${p.month}-${p.day}`, hora: `${p.hour}:${p.minute}` };
+    }
+  } catch {
+    // Navegador sin soporte de zonas horarias: se cae al reloj del aparato.
+  }
   const mes = String(d.getMonth() + 1).padStart(2, '0');
   const dia = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mes}-${dia}`;
+  return {
+    fecha: `${d.getFullYear()}-${mes}-${dia}`,
+    hora: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+  };
 }
 
-function horaLocal(d) {
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function dentroDeVentana(conv, ahora) {
-  const fecha = fechaLocal(ahora);
-  const hora = horaLocal(ahora);
+export function dentroDeVentana(conv, ahora) {
+  const { fecha, hora } = partesEnZona(ahora);
   if (conv.desde && fecha < conv.desde) return false;
   if (conv.hasta && fecha > conv.hasta) return false;
   if (conv.desdeHora && hora < conv.desdeHora) return false;
@@ -90,6 +108,7 @@ export default function ToyChat() {
   const [ahora, setAhora] = useState(() => new Date());
   const [abierta, setAbierta] = useState(null);
   const finRef = useRef(null);
+  const desfaseRef = useRef(0);
 
   // Lo que ella ya contesto en esta conversacion, si es que contesto.
   const respondido = abierta ? guardadas[abierta.id] : null;
@@ -108,9 +127,31 @@ export default function ToyChat() {
     }
   }, [abierta, guardadas]);
 
+  // El reloj del aparato tampoco es de fiar: si esta corrido, la ventana se
+  // corre con el. Se toma la hora real del servidor (cabecera Date de la
+  // respuesta) y se guarda la diferencia. Si falla, se sigue con la del aparato.
   useEffect(() => {
-    const t = setInterval(() => setAhora(new Date()), REVISAR_CADA_MS);
-    return () => clearInterval(t);
+    let vivo = true;
+    fetch('./', { method: 'HEAD', cache: 'no-store' })
+      .then((r) => {
+        const cabecera = r.headers.get('date');
+        if (!vivo || !cabecera) return;
+        const t = Date.parse(cabecera);
+        if (!Number.isNaN(t)) {
+          desfaseRef.current = t - Date.now();
+          setAhora(new Date(Date.now() + desfaseRef.current));
+        }
+      })
+      .catch(() => {});
+
+    const t = setInterval(
+      () => setAhora(new Date(Date.now() + desfaseRef.current)),
+      REVISAR_CADA_MS
+    );
+    return () => {
+      vivo = false;
+      clearInterval(t);
+    };
   }, []);
 
   const conversacion = useMemo(() => {
