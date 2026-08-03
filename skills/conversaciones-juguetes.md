@@ -77,11 +77,12 @@ repartirlos: si todos los que hablan son de un solo lado, se ve mal.
 
 ### El cierre del hilo
 
-Cuando ella contesta pasan dos cosas, en este orden:
+Cuando ella contesta, los juguetes responden **una sola cosa**: una de las
+`escondidas`. Se dan cuenta de que los esta leyendo y se quedan tiesos
+("¡Shhhh! Todos quietos"), como en la pelicula. Con eso termina el hilo.
 
-1. El `cierre` de la conversacion (opcional): la respuesta contextual al tema.
-2. Una de las `escondidas`: los juguetes se dan cuenta de que los esta leyendo
-   y se quedan tiesos ("¡Shhhh! Todos quietos"), como en la pelicula.
+**No agregar un mensaje contextual antes del shhh.** Se probo y sobra: el
+remate tiene que ser seco. El campo `cierre` existia para eso y se elimino.
 
 Las `escondidas` son globales, se elige una al azar y **queda guardada junto a
 su respuesta**, asi que si reabre el hilo ve exactamente la misma. Su respuesta

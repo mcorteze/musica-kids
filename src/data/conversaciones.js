@@ -75,7 +75,6 @@ const conversaciones = [
       'Todavía toso',
       'Estoy mejor',
     ],
-    cierre: { de: 'muneca', texto: 'Nosotros no hacemos ruido. Palabra de juguete.' },
   },
 
   // Plantilla de referencia. Desactivada: sirve de ejemplo para escribir otras.
@@ -92,7 +91,6 @@ const conversaciones = [
       { de: 'turtle', texto: 'Yo la vi. Llevaba la mochila.' },
       { de: 'raton', texto: 'Entonces la esperamos aquí. Yo me pido la ventana.' },
     ],
-    cierre: { de: 'gato-loco', texto: '¡Volvió! Les dije que volvía.' },
   },
 ];
 

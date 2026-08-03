@@ -204,13 +204,8 @@ export default function ToyChat() {
                 {respondido && (
                   <>
                     <Fila texto={respondido.texto} esMia />
-                    {abierta.cierre && (
-                      <Fila
-                        personaje={personajes[abierta.cierre.de]}
-                        texto={abierta.cierre.texto}
-                      />
-                    )}
-                    {/* Se dan cuenta de que los esta leyendo y se quedan tiesos */}
+                    {/* Unica respuesta: se dan cuenta de que los esta leyendo
+                        y se quedan tiesos. Con eso se cierra el hilo. */}
                     {respondido.escondida && (
                       <Fila
                         personaje={personajes[respondido.escondida.de]}
