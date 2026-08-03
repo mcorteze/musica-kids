@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Diagnostico - musica-kids</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #14142b; color: #fff; }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  .card { background: rgba(255,255,255,.08); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .k { font-size: 13px; opacity: .65; }
+  .v { font-size: 19px; font-weight: 700; word-break: break-all; }
+  .ok { background: #14532d; }
+  .mal { background: #7f1d1d; }
+  .verdict { font-size: 22px; font-weight: 800; }
+  .nota { font-size: 13px; opacity: .8; line-height: 1.5; margin-top: 6px; }
+</style>
+</head>
+<body>
+<h1>Diagnostico del chat de los juguetes</h1>
+<div id="out">Cargando...</div>
+
+<script>
+// Misma ventana que la conversacion activa en src/data/conversaciones.js
+var VENTANA = { desde: '2026-08-03', hasta: '2026-08-03', desdeHora: '15:00', hastaHora: '21:00' };
+
+function dosDigitos(n) { return String(n).padStart(2, '0'); }
+function fechaLocal(d) { return d.getFullYear() + '-' + dosDigitos(d.getMonth() + 1) + '-' + dosDigitos(d.getDate()); }
+function horaLocal(d) { return dosDigitos(d.getHours()) + ':' + dosDigitos(d.getMinutes()); }
+
+function card(k, v, clase) {
+  return '<div class="card ' + (clase || '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+}
+
+var d = new Date();
+var fecha = fechaLocal(d);
+var hora = horaLocal(d);
+var tz = 'no disponible';
+try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+
+var motivos = [];
+if (fecha < VENTANA.desde) motivos.push('la fecha del dispositivo es ANTERIOR al ' + VENTANA.desde);
+if (fecha > VENTANA.hasta) motivos.push('la fecha del dispositivo es POSTERIOR al ' + VENTANA.hasta);
+if (hora < VENTANA.desdeHora) motivos.push('aun no son las ' + VENTANA.desdeHora + ' en este dispositivo');
+if (hora > VENTANA.hastaHora) motivos.push('ya pasaron las ' + VENTANA.hastaHora + ' en este dispositivo');
+var dentro = motivos.length === 0;
+
+var html = '';
+html += card('Veredicto', '<span class="verdict">' + (dentro ? 'DEBERIA VERSE EL BOTON' : 'EL BOTON NO SE VE') + '</span>' +
+  (dentro ? '' : '<div class="nota">Motivo: ' + motivos.join(' y ') + '.</div>'), dentro ? 'ok' : 'mal');
+html += card('Ventana configurada', VENTANA.desde + ' de ' + VENTANA.desdeHora + ' a ' + VENTANA.hastaHora);
+html += card('Fecha de ESTE dispositivo', fecha);
+html += card('Hora de ESTE dispositivo', hora);
+html += card('Zona horaria del dispositivo', tz);
+html += card('Desfase respecto a UTC', (-d.getTimezoneOffset() / 60) + ' horas (Chile en agosto = -4)');
+html += card('Reloj completo', d.toString());
+html += card('Navegador', navigator.userAgent);
+
+document.getElementById('out').innerHTML = html;
+
+// Ademas: revisar que la tablet este bajando el bundle actual y no uno viejo
+fetch('./', { cache: 'no-store' })
+  .then(function (r) { return r.text(); })
+  .then(function (t) {
+    var m = t.match(/assets\/index-[A-Za-z0-9_-]+\.js/);
+    if (!m) throw new Error('no se encontro el bundle');
+    var url = './' + m[0].replace('assets/', 'assets/');
+    document.getElementById('out').innerHTML += card('Bundle que sirve el sitio', m[0]);
+    return fetch(url, { cache: 'no-store' }).then(function (r2) { return r2.text(); });
+  })
+  .then(function (js) {
+    var tiene = js.indexOf('enferma-doctora') !== -1;
+    document.getElementById('out').innerHTML += card(
+      'El codigo descargado incluye la conversacion',
+      tiene ? 'SI' : 'NO (la tablet tiene una version vieja)',
+      tiene ? 'ok' : 'mal'
+    );
+  })
+  .catch(function (e) {
+    document.getElementById('out').innerHTML += card('Revision del bundle', 'fallo: ' + e.message, 'mal');
+  });
+</script>
+</body>
+</html>
