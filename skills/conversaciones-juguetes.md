@@ -73,28 +73,60 @@ repartirlos: si todos los que hablan son de un solo lado, se ve mal.
 2. **Nunca asustados, tristes ni abandonados.** Aburridos, impacientes,
    chistosos o conspiradores, si. Un juguete que dice "tenia miedo de que no
    volvieras" le queda dando vueltas.
-3. **3 o 4 mensajes.** Mas que eso deja de ser un vistazo y pasa a ser una app
-   de chat.
-4. **No participan todos.** Dos o tres juguetes por conversacion. Dejar a uno
-   para el `cierre` funciona bien: aparece solo al final.
-5. **Alguien pregunta por ella.** Donde esta, a que hora vuelve, que le
+3. **4 o 5 mensajes.** Mas que eso deja de ser un vistazo y pasa a ser una app
+   de chat. Eran 3 o 4 hasta que ella paso a mandar dos mensajes: con dos
+   juguetes hablando dos veces ya no quedaba espacio para el que pregunta
+   por ella.
+4. **Ningun juguete manda mas de 2 mensajes.** Salio de un reclamo de ella:
+   un juguete hablaba dos veces y ella solo una. Si uno necesita un tercero,
+   se reparte con otro.
+5. **No participan todos.** Dos o tres juguetes por conversacion. Dejar a uno
+   solo para el final funciona bien.
+6. **Alguien pregunta por ella.** Donde esta, a que hora vuelve, que le
    dijeron. Ese es el corazon de la idea.
-6. **Respuestas propias.** Si la conversacion tiene un tema puntual, las
+7. **Respuestas propias.** Si la conversacion tiene un tema puntual, las
    `respuestas` que ella puede tocar deben ser de ese tema, no las genericas.
-   Siempre 3, siempre sin teclado.
+   Siempre 3, siempre sin teclado. **Ella elige 2**, asi que las tres tienen
+   que poder convivir en cualquier orden y ninguna puede ser un cierre.
+   Conviene que una se enganche con algo que dijo un juguete.
 
 ### El cierre del hilo
 
-Cuando ella contesta, los juguetes responden **una sola cosa**: una de las
-`escondidas`. Se dan cuenta de que los esta leyendo y se quedan tiesos
-("¡Shhhh! Todos quietos"), como en la pelicula. Con eso termina el hilo.
+Ella manda **dos** mensajes, no uno. El hilo escala en dos golpes:
 
-**No agregar un mensaje contextual antes del shhh.** Se probo y sobra: el
-remate tiene que ser seco. El campo `cierre` existia para eso y se elimino.
+```
+  ella    -> primera respuesta
+          ... escribiendo (2 a 3 segundos)
+  juguete -> una de las `sospechas`: escucharon algo pero no la ven
+  ella    -> segunda respuesta
+          ... escribiendo (2 a 3 segundos)
+  juguete -> una de las `escondidas`: la descubren y se quedan tiesos
+```
 
-Las `escondidas` son globales, se elige una al azar y **queda guardada junto a
-su respuesta**, asi que si reabre el hilo ve exactamente la misma. Su respuesta
-tambien se guarda: la conversacion no se "reinicia" al volver a entrar.
+Las `sospechas` y las `escondidas` son **globales**, viven en
+`conversaciones.js` y no hay que escribirlas por conversacion. Se elige una al
+azar de cada una y quedan guardadas junto a sus respuestas, asi que si reabre
+el hilo ve exactamente lo mismo. El que manda el shhh nunca es el que sospecho.
+
+**Entre su segundo mensaje y el shhh no va nada.** El remate sigue siendo seco
+(se probo en su momento y un mensaje contextual ahi sobra). La sospecha va
+despues del PRIMERO, que es otra posicion: sin ella, su segundo mensaje caia
+al vacio.
+
+**El juguete nunca le habla a ella hasta el shhh.** Sospechas y mensajes van en
+tercera persona: hasta el final no saben que esta ahi, y ese es todo el chiste.
+
+### Los tiempos de "escribiendo"
+
+Los puntitos aparecen 0,4 s despues de que ella toca y escriben entre 1,8 y
+2,6 s (al azar, para que no se sienta mecanico): el mensaje llega entre 2,2 y
+3 s. Salio de que el shhh instantaneo no se leia como respuesta, parecia parte
+del guion.
+
+Mientras escriben, los botones quedan bloqueados — si no, toca el segundo
+antes de que llegue la sospecha y se desordena el hilo. Si cierra el chat en
+pleno "escribiendo", el mensaje igual queda guardado y al volver lo encuentra
+puesto. Los puntitos no se guardan: al reabrir esta todo, sin animacion.
 
 Se guarda en localStorage bajo `musica-kids-chats-respuestas`, por id de
 conversacion. Para que una conversacion vuelva a estar sin responder hay que
@@ -140,7 +172,8 @@ no hay un paso manual donde acordarse: si se deja en `true`, se sube asi.
 
 | id | Motivo | Menciona | Estado |
 |----|--------|----------|--------|
-| `enferma-doctora` | Fue al doctor por estar enferma | tos, remedio, jugar bajito | Programada 2026-08-03 15:00-21:00 |
+| `caminata-mejor` | Mejoro de la tos y salio a caminar | remedios, aburrimiento, mamá, "la quiero mucho" del Ratón | Programada 2026-08-04 14:00-22:00 |
+| `enferma-doctora` | Fue al doctor por estar enferma | tos, remedio, jugar bajito | Usada 2026-08-03 15:00-21:00 |
 | `prueba-1` | Salio de la casa, no avisó | mochila, esperarla | Plantilla, desactivada |
 
 Al crear una nueva, agregarla aca con su motivo, para poder reutilizarla.

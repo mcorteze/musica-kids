@@ -4,6 +4,7 @@ import { MessageFilled, CloseOutlined } from '@ant-design/icons';
 import conversaciones, {
   personajes,
   respuestas as respuestasPorDefecto,
+  sospechas,
   escondidas,
   SIEMPRE_VISIBLE,
   ZONA,
@@ -16,6 +17,15 @@ const STORAGE_RESP = 'musica-kids-chats-respuestas';
 // Cada cuanto se revisa la ventana horaria. Si la app quedo abierta antes de
 // que empiece, el boton tiene que aparecer solo, sin recargar.
 const REVISAR_CADA_MS = 30000;
+
+// Ella manda dos mensajes: uno y le sospechan, otro y la descubren.
+const MAX_RESPUESTAS = 2;
+// El respiro antes de que aparezcan los puntitos y cuanto "escriben" antes de
+// mandar. Entre 2.2 y 3 segundos en total: la respuesta instantanea no se leia
+// como respuesta, parecia parte del guion.
+const PAUSA_ANTES_MS = 400;
+const ESCRIBIENDO_MIN_MS = 1800;
+const ESCRIBIENDO_MAX_MS = 2600;
 
 function leerLeidos() {
   try {
@@ -31,7 +41,21 @@ function leerRespuestas() {
   try {
     const raw = localStorage.getItem(STORAGE_RESP);
     const obj = raw ? JSON.parse(raw) : {};
-    return obj && typeof obj === 'object' ? obj : {};
+    if (!obj || typeof obj !== 'object') return {};
+    // El formato viejo guardaba un solo mensaje de ella: { texto, escondida }.
+    // Se convierte al vuelo para no borrarle las conversaciones que ya leyo.
+    const migradas = {};
+    for (const [id, v] of Object.entries(obj)) {
+      if (!v || typeof v !== 'object') continue;
+      migradas[id] = Array.isArray(v.textos)
+        ? v
+        : {
+            textos: v.texto ? [v.texto] : [],
+            sospecha: null,
+            escondida: v.escondida ?? null,
+          };
+    }
+    return migradas;
   } catch {
     return {};
   }
@@ -77,7 +101,7 @@ export function dentroDeVentana(conv, ahora) {
 
 // El avatar va antes o despues de la burbuja segun el lado, para que siempre
 // quede pegado al borde de la pantalla.
-function Fila({ personaje, texto, esMia, seguido }) {
+function Fila({ personaje, texto, esMia, seguido, puntos }) {
   const derecha = esMia || personaje?.lado === 'der';
 
   const avatar = (
@@ -95,7 +119,13 @@ function Fila({ personaje, texto, esMia, seguido }) {
         {!esMia && !seguido && personaje && (
           <span className="chat-nombre">{personaje.nombre}</span>
         )}
-        <span className="chat-texto">{texto}</span>
+        {puntos ? (
+          <span className="chat-puntos" role="status" aria-label="Está escribiendo">
+            <i /><i /><i />
+          </span>
+        ) : (
+          <span className="chat-texto">{texto}</span>
+        )}
       </div>
       {derecha && avatar}
     </div>
@@ -107,25 +137,80 @@ export default function ToyChat() {
   const [guardadas, setGuardadas] = useState(leerRespuestas);
   const [ahora, setAhora] = useState(() => new Date());
   const [abierta, setAbierta] = useState(null);
+  // Quien esta "escribiendo" en este momento, o null. Es solo del momento: no
+  // se guarda, asi que al reabrir el hilo ya esta todo puesto.
+  const [escribiendo, setEscribiendo] = useState(null);
+  // Se levanta apenas ella toca, no cuando aparecen los puntitos: entremedio
+  // hay 400 ms en los que alcanzaba a tocar el segundo y se disparaban dos
+  // respuestas a la vez.
+  const [esperando, setEsperando] = useState(false);
   const finRef = useRef(null);
   const desfaseRef = useRef(0);
+  // Los temporizadores escriben despues de que ella toco, cuando el estado ya
+  // quedo viejo. Se lee de la ref para no pisar lo guardado.
+  const guardadasRef = useRef(guardadas);
+  const temporizadoresRef = useRef([]);
 
   // Lo que ella ya contesto en esta conversacion, si es que contesto.
   const respondido = abierta ? guardadas[abierta.id] : null;
 
-  const responder = useCallback((texto) => {
-    if (!abierta) return;
-    // La reaccion se elige una sola vez y se guarda con la respuesta, para que
-    // al reabrir el hilo vea siempre la misma.
-    const escondida = escondidas[Math.floor(Math.random() * escondidas.length)];
-    const nuevas = { ...guardadas, [abierta.id]: { texto, escondida } };
+  const persistir = useCallback((id, datos) => {
+    const nuevas = { ...guardadasRef.current, [id]: datos };
+    guardadasRef.current = nuevas;
     setGuardadas(nuevas);
     try {
       localStorage.setItem(STORAGE_RESP, JSON.stringify(nuevas));
     } catch {
       // Sin localStorage la respuesta vive solo mientras el drawer este abierto.
     }
-  }, [abierta, guardadas]);
+  }, []);
+
+  useEffect(() => () => temporizadoresRef.current.forEach(clearTimeout), []);
+
+  const responder = useCallback((texto) => {
+    if (!abierta || esperando) return;
+    const id = abierta.id;
+    const previo = guardadasRef.current[id] ?? {
+      textos: [],
+      sospecha: null,
+      escondida: null,
+    };
+    if (previo.escondida || previo.textos.length >= MAX_RESPUESTAS) return;
+
+    const textos = [...previo.textos, texto];
+    const ultima = textos.length >= MAX_RESPUESTAS;
+
+    // Primero sospechan y recien con el segundo mensaje la descubren. El del
+    // shhh no puede ser el mismo que sospecho, o parece que hablara solo.
+    const candidatos = ultima
+      ? escondidas.filter((e) => e.de !== previo.sospecha?.de)
+      : sospechas;
+    const lista = candidatos.length ? candidatos : escondidas;
+    const proximo = lista[Math.floor(Math.random() * lista.length)];
+
+    // Su mensaje se ve al toque; el del juguete se hace esperar.
+    persistir(id, { ...previo, textos });
+    setEsperando(true);
+
+    const t1 = setTimeout(() => {
+      setEscribiendo(proximo);
+      const espera =
+        ESCRIBIENDO_MIN_MS + Math.random() * (ESCRIBIENDO_MAX_MS - ESCRIBIENDO_MIN_MS);
+      // Si cierra el chat mientras escriben, el temporizador igual termina y
+      // deja el mensaje guardado: al volver a entrar lo encuentra puesto.
+      const t2 = setTimeout(() => {
+        setEscribiendo(null);
+        setEsperando(false);
+        const actual = guardadasRef.current[id] ?? { textos, sospecha: null, escondida: null };
+        persistir(
+          id,
+          ultima ? { ...actual, escondida: proximo } : { ...actual, sospecha: proximo }
+        );
+      }, espera);
+      temporizadoresRef.current.push(t2);
+    }, PAUSA_ANTES_MS);
+    temporizadoresRef.current.push(t1);
+  }, [abierta, esperando, persistir]);
 
   // El reloj del aparato tampoco es de fiar: si esta corrido, la ventana se
   // corre con el. Se toma la hora real del servidor (cabecera Date de la
@@ -186,18 +271,24 @@ export default function ToyChat() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [abierta, cerrar]);
 
-  // Al responder, bajar hasta el ultimo mensaje
+  // Con cada burbuja nueva, incluidos los puntitos, bajar hasta el final
   useEffect(() => {
-    if (respondido && finRef.current) {
+    if ((respondido || escribiendo) && finRef.current) {
       finRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [respondido]);
+  }, [respondido, escribiendo]);
 
   if (!conversacion && !abierta) return null;
 
+  const enviadas = respondido?.textos ?? [];
+  // El hilo se cierra con el shhh, no con su segundo mensaje.
+  const cerrado = Boolean(respondido?.escondida);
   // Se lee de "abierta" para que la ventana no le cierre el drawer en la cara
-  // si vence justo mientras lo esta leyendo.
-  const opciones = abierta?.respuestas ?? respuestasPorDefecto;
+  // si vence justo mientras lo esta leyendo. Lo que ya mando no se le vuelve
+  // a ofrecer.
+  const opciones = (abierta?.respuestas ?? respuestasPorDefecto).filter(
+    (o) => !enviadas.includes(o)
+  );
 
   return (
     <>
@@ -242,30 +333,43 @@ export default function ToyChat() {
                   );
                 })}
 
-                {respondido && (
-                  <>
-                    <Fila texto={respondido.texto} esMia />
-                    {/* Unica respuesta: se dan cuenta de que los esta leyendo
-                        y se quedan tiesos. Con eso se cierra el hilo. */}
-                    {respondido.escondida && (
-                      <Fila
-                        personaje={personajes[respondido.escondida.de]}
-                        texto={respondido.escondida.texto}
-                      />
-                    )}
-                  </>
+                {enviadas[0] && <Fila texto={enviadas[0]} esMia />}
+
+                {/* Con el primero solo sospechan: escucharon algo pero todavia
+                    no la ven. */}
+                {respondido?.sospecha && (
+                  <Fila
+                    personaje={personajes[respondido.sospecha.de]}
+                    texto={respondido.sospecha.texto}
+                  />
                 )}
+
+                {enviadas[1] && <Fila texto={enviadas[1]} esMia />}
+
+                {/* Con el segundo la descubren y se quedan tiesos. Con eso se
+                    cierra el hilo. */}
+                {respondido?.escondida && (
+                  <Fila
+                    personaje={personajes[respondido.escondida.de]}
+                    texto={respondido.escondida.texto}
+                  />
+                )}
+
+                {escribiendo && <Fila personaje={personajes[escribiendo.de]} puntos />}
                 <div ref={finRef} />
               </div>
             </div>
 
             <div className="chat-respuestas">
-              {!respondido ? (
+              {!cerrado ? (
                 opciones.map((r) => (
                   <button
                     type="button"
                     key={r}
                     className="chat-respuesta-btn"
+                    // Mientras escriben no puede adelantarse: si toca el
+                    // segundo antes de que llegue la sospecha, se desordena.
+                    disabled={esperando}
                     onClick={() => responder(r)}
                   >
                     {r}
