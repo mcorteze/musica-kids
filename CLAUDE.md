@@ -38,6 +38,13 @@ online queda como estaba.
 **Manual:** `npm run build && npm run deploy` sigue funcionando desde el
 computador, apunta a la misma rama.
 
+**Musica y caratulas:** estan en `.gitignore` por pesadas, asi que no viajan
+al repositorio y el deploy automatico NO las publica. Solo llegan al sitio con
+`npm run deploy` desde el computador. Por eso el workflow usa `keep_files: true`:
+sin eso, cada deploy automatico las borraba de `gh-pages` y el sitio quedaba
+sin musica. **Al agregar una cancion nueva hay que desplegar desde el
+computador**, no basta con pushear.
+
 URL: `https://mcorteze.github.io/musica-kids/`
 
 ## Agregar una conversacion desde el telefono

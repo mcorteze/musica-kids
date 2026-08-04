@@ -33,8 +33,16 @@ jobs:
       # aqui y la version publicada sigue siendo la anterior.
       - run: npm run build
 
+      # keep_files es obligatorio aca, no una opcion. La musica y las
+      # caratulas estan en .gitignore por pesadas, asi que el repositorio no
+      # las tiene y el dist que se arma en GitHub sale sin ellas. Sin esto,
+      # cada deploy automatico borraba de la rama publicada los archivos que
+      # habias subido con `npm run deploy` y el sitio quedaba sin musica.
+      # El costo: un archivo que borres o renombres queda dando vueltas en
+      # gh-pages hasta que lo limpies a mano.
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: gh-pages
+          keep_files: true
