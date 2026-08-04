@@ -1,6 +1,14 @@
 // ============================================
-// CONVERSACIONES DE LOS JUGUETES - EDITAR AQUI
+// CONVERSACIONES DE LOS JUGUETES
 // ============================================
+// El contenido NO se edita aqui: vive en `conversaciones.json`, al lado de
+// este archivo. Se separo para poder editarlo desde el telefono en github.com
+// sin riesgo de romper el build con un parentesis mal cerrado. Al guardar en
+// GitHub, el workflow de .github/workflows/deploy.yml publica solo.
+//
+// Este archivo guarda lo que casi nunca cambia: personajes, zona horaria,
+// respuestas genericas y los remates escondidos.
+//
 // Reglas de escritura (importan mas que el codigo):
 // 1. Los mensajes van en PASADO. Son el registro de lo que paso mientras ella
 //    no estaba, no un chat en vivo.
@@ -10,7 +18,7 @@
 //
 // VENTANA DE DISPONIBILIDAD (todo opcional; lo que se omite no se evalua)
 //   desde / hasta          -> fechas 'AAAA-MM-DD'
-//   desdeHora / hastaHora  -> horas 'HH:MM' en 24h, hora local
+//   desdeHora / hastaHora  -> horas 'HH:MM' en 24h, hora de Chile
 // Fuera de la ventana el boton no aparece. Se revisa cada 30 segundos, asi
 // que si la app ya esta abierta el boton aparece solo al entrar la ventana.
 //
@@ -22,13 +30,15 @@
 // respuestas: propias de cada conversacion. Si no se define, usa las genericas.
 // ============================================
 
-// EN DESARROLLO: el boton no se oculta nunca. Poner en false para el
-// comportamiento real. Ojo: esto NO salta la ventana de fecha/hora.
-export const SIEMPRE_VISIBLE = true;
+import conversaciones from './conversaciones.json';
+
+// EN DESARROLLO: el boton no se oculta nunca. Tiene que quedar en false en lo
+// que se publica. Ojo: esto NO salta la ventana de fecha/hora.
+export const SIEMPRE_VISIBLE = false;
 
 // Las ventanas se evaluan SIEMPRE en esta zona horaria, no en la del aparato.
 // Sin esto, una tablet mal configurada (en UTC, por ejemplo) apagaba el chat
-// 4 horas antes de tiempo. Las horas de arriba son hora de Chile, punto.
+// 4 horas antes de tiempo. Las horas del JSON son hora de Chile, punto.
 export const ZONA = 'America/Santiago';
 
 // "lado" es de que lado del chat aparece cada juguete. Repartirlos entre
@@ -46,7 +56,7 @@ export const personajes = {
 export const respuestas = [
   '¡Ya llegué!',
   'Los extrañé',
-  'Estaba donde mi abuela',
+  '¡Los descubrí!',
 ];
 
 // Cuando ella contesta, los juguetes se dan cuenta de que los esta leyendo y
@@ -58,45 +68,6 @@ export const escondidas = [
   { de: 'gato-loco', texto: '¡Shhhh! Todos quietos.' },
   { de: 'turtle', texto: '¡Shhhh! Nadie se mueva.' },
   { de: 'muneca', texto: '¡Shhhh! Hagan como que no pasó nada.' },
-];
-
-const conversaciones = [
-  {
-    id: 'enferma-doctora',
-    activa: true,
-    persistente: true,
-    desde: '2026-08-03',
-    hasta: '2026-08-03',
-    desdeHora: '15:00',
-    hastaHora: '21:00',
-    mensajes: [
-      { de: 'gato-loco', texto: 'La escuché toser toda la mañana.' },
-      { de: 'turtle', texto: 'Por eso la llevaron donde la doctora.' },
-      { de: 'raton', texto: '¿Y a qué hora vuelve?' },
-      { de: 'turtle', texto: 'Cuando salga de la consulta. Hoy jugamos bajito.' },
-    ],
-    respuestas: [
-      'Ya me tomé el remedio',
-      'Todavía toso',
-      'Estoy mejor',
-    ],
-  },
-
-  // Plantilla de referencia. Desactivada: sirve de ejemplo para escribir otras.
-  {
-    id: 'prueba-1',
-    activa: false,
-    persistente: false,
-    desde: null,
-    hasta: null,
-    desdeHora: null,
-    hastaHora: null,
-    mensajes: [
-      { de: 'raton', texto: '¿Alguien la vio salir?' },
-      { de: 'turtle', texto: 'Yo la vi. Llevaba la mochila.' },
-      { de: 'raton', texto: 'Entonces la esperamos aquí. Yo me pido la ventana.' },
-    ],
-  },
 ];
 
 export default conversaciones;

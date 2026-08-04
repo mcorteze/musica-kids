@@ -39,9 +39,17 @@ escribir el archivo**. Nunca implemento sin el visto bueno.
 ## Lo que se de este proyecto
 
 ### Donde vive todo
-- Datos: `src/data/conversaciones.js` — es el unico archivo que se edita
+- Datos: `src/data/conversaciones.json` — es el unico archivo que se edita
+- Constantes: `src/data/conversaciones.js` — personajes, zona horaria,
+  respuestas genericas, escondidas y `SIEMPRE_VISIBLE`. Casi nunca cambia.
 - Componente: `src/components/ToyChat.jsx` — no se toca para agregar contenido
 - Fotos: `public/juguetes/`
+
+El contenido esta en JSON aparte para poder editarlo desde el telefono en
+github.com sin romper el build. Cada push a `main` publica solo (ver
+`.github/workflows/deploy.yml`), asi que se puede agregar una conversacion
+estando fuera de la casa. La plantilla `prueba-1` trae un campo `_nota` que
+explica como copiarla; ese campo lo ignora el componente.
 
 ### Los personajes
 
@@ -120,9 +128,13 @@ sola vez, que desaparecen al cerrarlas.
 
 ### El interruptor de desarrollo
 
-`SIEMPRE_VISIBLE` arriba del archivo. En `true` ignora el estado de leidas,
-pero **no** salta la ventana de fecha/hora. Para probar una conversacion
-programada hay que estar dentro de su horario o cambiarle la ventana.
+`SIEMPRE_VISIBLE`, en `conversaciones.js`. En `true` ignora el estado de
+leidas, pero **no** salta la ventana de fecha/hora. Para probar una
+conversacion programada hay que estar dentro de su horario o cambiarle la
+ventana.
+
+**Tiene que quedar en `false` en lo que se publica.** Con deploy automatico ya
+no hay un paso manual donde acordarse: si se deja en `true`, se sube asi.
 
 ## Catalogo de conversaciones reutilizables
 
@@ -140,7 +152,7 @@ Al crear una nueva, agregarla aca con su motivo, para poder reutilizarla.
 3. Escribo la propuesta **en el chat, no en el archivo**, con los lados
    marcados, las 3 respuestas y el cierre.
 4. Espero aprobacion explicita.
-5. Recien ahi edito `conversaciones.js`.
+5. Recien ahi edito `conversaciones.json`.
 6. `npm run build` para verificar. Nunca `npm run dev` sin que me lo pidan.
 7. Agrego la conversacion al catalogo de arriba.
 

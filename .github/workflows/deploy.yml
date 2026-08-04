@@ -1,0 +1,40 @@
+name: Build y deploy a GitHub Pages
+
+# Se dispara con cada push a main (incluido editar un archivo desde
+# github.com en el telefono) y tambien a mano desde la pestana Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Necesario para que la Action pueda empujar a la rama gh-pages.
+permissions:
+  contents: write
+
+# Si se guardan dos cambios seguidos, solo se publica el ultimo.
+concurrency:
+  group: deploy-gh-pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Si esto falla (por ejemplo, un JSON mal escrito), el job se detiene
+      # aqui y la version publicada sigue siendo la anterior.
+      - run: npm run build
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages

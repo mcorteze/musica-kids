@@ -1,0 +1,37 @@
+[
+  {
+    "id": "enferma-doctora",
+    "activa": true,
+    "persistente": true,
+    "desde": "2026-08-03",
+    "hasta": "2026-08-03",
+    "desdeHora": "15:00",
+    "hastaHora": "21:00",
+    "mensajes": [
+      { "de": "gato-loco", "texto": "La escuché toser toda la mañana." },
+      { "de": "turtle", "texto": "Por eso la llevaron donde la doctora." },
+      { "de": "raton", "texto": "¿Y a qué hora vuelve?" },
+      { "de": "turtle", "texto": "Cuando salga de la consulta. Hoy jugamos bajito." }
+    ],
+    "respuestas": [
+      "Ya me tomé el remedio",
+      "Todavía toso",
+      "Estoy mejor"
+    ]
+  },
+  {
+    "_nota": "Plantilla de referencia, desactivada. Copiar este bloque completo para escribir una nueva: cambiar el id, poner activa en true y definir la ventana. El campo respuestas es opcional; sin el se usan las genericas.",
+    "id": "prueba-1",
+    "activa": false,
+    "persistente": false,
+    "desde": null,
+    "hasta": null,
+    "desdeHora": null,
+    "hastaHora": null,
+    "mensajes": [
+      { "de": "raton", "texto": "¿Alguien la vio salir?" },
+      { "de": "turtle", "texto": "Yo la vi. Llevaba la mochila." },
+      { "de": "raton", "texto": "Entonces la esperamos aquí. Yo me pido la ventana." }
+    ]
+  }
+]
