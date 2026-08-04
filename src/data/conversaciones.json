@@ -1,5 +1,26 @@
 [
   {
+    "id": "caminata-mejor",
+    "activa": true,
+    "persistente": true,
+    "desde": "2026-08-04",
+    "hasta": "2026-08-04",
+    "desdeHora": "14:00",
+    "hastaHora": "22:00",
+    "mensajes": [
+      { "de": "muneca", "texto": "Anoche no la escuché toser ni una vez." },
+      { "de": "gato-loco", "texto": "Se tomó todos los remedios que le dejó la doctora." },
+      { "de": "muneca", "texto": "Se aburrió de estar en cama y salió a caminar con su mamá." },
+      { "de": "raton", "texto": "¿Y a qué hora vuelve?" },
+      { "de": "raton", "texto": "La quiero mucho." }
+    ],
+    "respuestas": [
+      "Ya no toso nada",
+      "Fui a caminar con mi mamá",
+      "Yo también los quiero"
+    ]
+  },
+  {
     "id": "enferma-doctora",
     "activa": true,
     "persistente": true,
