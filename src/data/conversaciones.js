@@ -59,20 +59,10 @@ export const respuestas = [
   '¡Los descubrí!',
 ];
 
-// Con su PRIMER mensaje todavia no la ven: escucharon algo y sospechan. Es lo
-// que hace que su segundo mensaje valga la pena y que el shhh sea el remate de
-// una escalada y no un golpe suelto. Se elige una al azar y queda guardada.
-export const sospechas = [
-  { de: 'gato-loco', texto: '¿Escucharon eso?' },
-  { de: 'muneca', texto: 'Yo escuché algo...' },
-  { de: 'turtle', texto: 'Aquí hay alguien.' },
-  { de: 'raton', texto: '¿Ustedes también lo escucharon?' },
-];
-
-// Con su SEGUNDO mensaje ya se dan cuenta de que los esta leyendo y se quedan
-// tiesos, como en la pelicula. Es lo ultimo del hilo: despues de esto no
-// hablan mas. Se elige una al azar (nunca del juguete que sospecho) y queda
-// guardada, asi que si vuelve a abrir la conversacion ve exactamente la misma.
+// Cuando ella contesta, los juguetes se dan cuenta de que los esta leyendo y
+// se quedan tiesos, como en la pelicula. Es lo ultimo del hilo: despues de
+// esto no hablan mas. Se elige una al azar y queda guardada, asi que si
+// vuelve a abrir la conversacion ve exactamente la misma.
 export const escondidas = [
   { de: 'raton', texto: '¡Shhhh! ¡Nos está leyendo!' },
   { de: 'gato-loco', texto: '¡Shhhh! Todos quietos.' },

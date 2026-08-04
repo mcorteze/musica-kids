@@ -1225,42 +1225,6 @@ html {
   color: #16294A;
 }
 
-/* Puntitos de "esta escribiendo". El mensaje instantaneo no se leia como
-   respuesta a lo que ella mando, parecia parte del guion. */
-.chat-puntos {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 2px;
-}
-
-.chat-puntos i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #3A6BA8;
-  animation: chatPunto 1.1s infinite ease-in-out;
-}
-
-.chat-puntos i:nth-child(2) {
-  animation-delay: 0.18s;
-}
-
-.chat-puntos i:nth-child(3) {
-  animation-delay: 0.36s;
-}
-
-@keyframes chatPunto {
-  0%, 60%, 100% {
-    opacity: 0.35;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
-}
-
 .chat-respuestas {
   flex: none;
   display: flex;
@@ -1292,16 +1256,6 @@ html {
 
 .chat-respuesta-btn:active {
   transform: scale(0.97);
-}
-
-/* Mientras un juguete escribe no puede adelantarse y mandar el segundo. */
-.chat-respuesta-btn:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-.chat-respuesta-btn:disabled:active {
-  transform: none;
 }
 
 .chat-cerrar-btn {
