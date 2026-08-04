@@ -118,10 +118,17 @@ tercera persona: hasta el final no saben que esta ahi, y ese es todo el chiste.
 
 ### Los tiempos de "escribiendo"
 
-Los puntitos aparecen 0,4 s despues de que ella toca y escriben entre 1,8 y
-2,6 s (al azar, para que no se sienta mecanico): el mensaje llega entre 2,2 y
-3 s. Salio de que el shhh instantaneo no se leia como respuesta, parecia parte
-del guion.
+Despues de que ella toca pasan **2 a 3 segundos sin absolutamente nada** — ni
+puntitos ni burbuja, como si el juguete todavia no se decidiera a contestar —
+y recien ahi aparece escribiendo. Los puntitos duran **5 a 6 segundos**. En
+total el mensaje llega entre 7 y 9 segundos despues.
+
+Los dos tramos son al azar dentro de su rango, para que no se sienta mecanico.
+
+De donde salieron: primero el shhh era instantaneo y no se leia como respuesta,
+parecia parte del guion. Con 0,4 s de espera y 2 segundos de puntitos seguia
+sin parecer que alguien escribiera del otro lado: el juguete aparecia demasiado
+rapido. Los tiempos largos son a proposito, no un descuido.
 
 Mientras escriben, los botones quedan bloqueados — si no, toca el segundo
 antes de que llegue la sospecha y se desordena el hilo. Si cierra el chat en

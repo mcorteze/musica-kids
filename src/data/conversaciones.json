@@ -1,11 +1,11 @@
 [
   {
     "id": "caminata-mejor",
-    "activa": true,
+    "activa": false,
     "persistente": true,
     "desde": "2026-08-04",
     "hasta": "2026-08-04",
-    "desdeHora": "14:00",
+    "desdeHora": "13:00",
     "hastaHora": "22:00",
     "mensajes": [
       { "de": "muneca", "texto": "Anoche no la escuché toser ni una vez." },

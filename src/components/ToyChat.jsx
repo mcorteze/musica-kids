@@ -20,12 +20,16 @@ const REVISAR_CADA_MS = 30000;
 
 // Ella manda dos mensajes: uno y le sospechan, otro y la descubren.
 const MAX_RESPUESTAS = 2;
-// El respiro antes de que aparezcan los puntitos y cuanto "escriben" antes de
-// mandar. Entre 2.2 y 3 segundos en total: la respuesta instantanea no se leia
-// como respuesta, parecia parte del guion.
-const PAUSA_ANTES_MS = 400;
-const ESCRIBIENDO_MIN_MS = 1800;
-const ESCRIBIENDO_MAX_MS = 2600;
+// Primero pasa un rato sin absolutamente nada, como si el juguete todavia no
+// se decidiera a contestar, y recien despues aparece con los puntitos. Entre
+// 7 y 9 segundos en total desde que ella toca. Con menos no se leia como que
+// alguien estuviera escribiendo del otro lado.
+const PAUSA_MIN_MS = 2000;
+const PAUSA_MAX_MS = 3000;
+const ESCRIBIENDO_MIN_MS = 5000;
+const ESCRIBIENDO_MAX_MS = 6000;
+
+const entre = (min, max) => min + Math.random() * (max - min);
 
 function leerLeidos() {
   try {
@@ -140,9 +144,9 @@ export default function ToyChat() {
   // Quien esta "escribiendo" en este momento, o null. Es solo del momento: no
   // se guarda, asi que al reabrir el hilo ya esta todo puesto.
   const [escribiendo, setEscribiendo] = useState(null);
-  // Se levanta apenas ella toca, no cuando aparecen los puntitos: entremedio
-  // hay 400 ms en los que alcanzaba a tocar el segundo y se disparaban dos
-  // respuestas a la vez.
+  // Se levanta apenas ella toca, no cuando aparecen los puntitos: en los
+  // segundos de silencio previos alcanzaba a tocar el segundo y se disparaban
+  // dos respuestas a la vez.
   const [esperando, setEsperando] = useState(false);
   const finRef = useRef(null);
   const desfaseRef = useRef(0);
@@ -194,8 +198,7 @@ export default function ToyChat() {
 
     const t1 = setTimeout(() => {
       setEscribiendo(proximo);
-      const espera =
-        ESCRIBIENDO_MIN_MS + Math.random() * (ESCRIBIENDO_MAX_MS - ESCRIBIENDO_MIN_MS);
+      const espera = entre(ESCRIBIENDO_MIN_MS, ESCRIBIENDO_MAX_MS);
       // Si cierra el chat mientras escriben, el temporizador igual termina y
       // deja el mensaje guardado: al volver a entrar lo encuentra puesto.
       const t2 = setTimeout(() => {
@@ -208,7 +211,7 @@ export default function ToyChat() {
         );
       }, espera);
       temporizadoresRef.current.push(t2);
-    }, PAUSA_ANTES_MS);
+    }, entre(PAUSA_MIN_MS, PAUSA_MAX_MS));
     temporizadoresRef.current.push(t1);
   }, [abierta, esperando, persistir]);
 
