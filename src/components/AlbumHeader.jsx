@@ -5,8 +5,8 @@ import {
   SwapOutlined,
   RedoOutlined,
   CustomerServiceOutlined,
-  LikeFilled,
-  LikeOutlined,
+  HeartFilled,
+  HeartOutlined,
 } from '@ant-design/icons';
 
 export default function AlbumHeader({
@@ -108,7 +108,7 @@ export default function AlbumHeader({
               aria-label="Me gusta"
               aria-pressed={liked}
             >
-              {liked ? <LikeFilled /> : <LikeOutlined />}
+              {liked ? <HeartFilled /> : <HeartOutlined />}
             </button>
           </Tooltip>
         </div>
