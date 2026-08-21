@@ -5,6 +5,8 @@ import {
   SwapOutlined,
   RedoOutlined,
   CustomerServiceOutlined,
+  LikeFilled,
+  LikeOutlined,
   HeartFilled,
   HeartOutlined,
 } from '@ant-design/icons';
@@ -106,6 +108,18 @@ export default function AlbumHeader({
               onClick={onToggleLike}
               className={`album-action-btn like-btn ${liked ? 'active liked' : ''}`}
               aria-label="Me gusta"
+              aria-pressed={liked}
+            >
+              {liked ? <LikeFilled /> : <LikeOutlined />}
+            </button>
+          </Tooltip>
+
+          <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
+            <button
+              type="button"
+              onClick={onToggleLike}
+              className={`album-action-btn heart-btn ${liked ? 'active loved' : ''}`}
+              aria-label="Me gusta (corazon)"
               aria-pressed={liked}
             >
               {liked ? <HeartFilled /> : <HeartOutlined />}

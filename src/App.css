@@ -318,12 +318,18 @@ html {
 }
 
 .like-btn.liked {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  animation: likePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.heart-btn.loved {
   color: #ff2d55;
   text-shadow: 0 0 10px rgba(255, 45, 85, 0.6);
   animation: likePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.like-btn.liked::after {
+.heart-btn.loved::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2265,7 +2271,11 @@ html {
     animation: none !important;
   }
 
-  .like-btn.liked::after {
+  .heart-btn.loved {
+    animation: none !important;
+  }
+
+  .heart-btn.loved::after {
     content: none;
   }
 
