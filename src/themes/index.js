@@ -455,10 +455,12 @@ const themes = {
   },
 
   // ========== DISNEY ==========
-  // Investigacion: caratula real (theme-covers/disney.jpg) — 4 cuadrantes de
-  // color (azul, verde, naranjo, magenta) con orejas de Mickey en filigrana
-  // y wordmark "Disney Classics". Ambiente: magia clasica, arcoiris de
-  // peliculas distintas — grupo mixto (Rey Leon + Coco), sin un solo personaje.
+  // Pedido explicito del usuario (2026-08-20): alusivo a azul, noche y
+  // estrellas — no al arcoiris de 4 cuadrantes de la caratula. El gradient
+  // principal queda 100% en familia azul (medianoche -> periwinkle claro) y
+  // se le suman estrellas reales via radial-gradient (sin agregar elementos
+  // nuevos al layout, solo pintura extra en el mismo fondo). El dorado del
+  // accent queda como el "deseo/estrella" de contraste sobre el azul.
   disney: {
     name: 'Disney',
     icon: '✨',
@@ -473,8 +475,18 @@ const themes = {
       borderRadius: 24,
       fontFamily: "'Fredoka', 'Nunito', sans-serif",
     },
-    gradient: 'linear-gradient(160deg, #6FD4A0 0%, #7FB8F0 30%, #FFB05C 65%, #FF6FB0 90%, #FFE0EC 100%)',
-    playerBg: 'linear-gradient(165deg, #1E3A8A 0%, #172B66 30%, #1A1F4A 55%, #1C1638 78%, #0F0B1F 100%)',
+    gradient: `radial-gradient(1.5px 1.5px at 10% 12%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 24% 6%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(2px 2px at 38% 18%, rgba(255,255,255,0.85), transparent),
+      radial-gradient(1px 1px at 52% 5%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 68% 10%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 82% 4%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(2px 2px at 92% 16%, rgba(255,255,255,0.85), transparent),
+      radial-gradient(1px 1px at 16% 30%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(1.5px 1.5px at 46% 25%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 76% 28%, rgba(255,255,255,0.5), transparent),
+      linear-gradient(165deg, #0F1B4D 0%, #1E2F72 25%, #3550A0 50%, #6B85C9 75%, #B8C8ED 100%)`,
+    playerBg: 'linear-gradient(165deg, #1E3A8A 0%, #172B66 28%, #141B38 55%, #0D1230 78%, #05070F 100%)',
     playerOverlayRgb: '23, 43, 102',
     cardBg: 'rgba(238, 241, 255, 0.92)',
     accentColor: '#FFB020',

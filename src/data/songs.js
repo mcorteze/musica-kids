@@ -260,7 +260,7 @@ const songs = [
     title: 'Cambios Extraños',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-cambios-extranos.mp3',
-    cover: 'covers/toy-story-canta-y-cuenta.jpg',
+    cover: 'covers/woody.jpg',
     groups: ['toy-story'],
   },
   {
@@ -268,7 +268,7 @@ const songs = [
     title: 'Cuando Alguien Me Amaba',
     artist: 'Alessandra Rosaldo',
     file: 'music/alessandra-rosaldo-cuando-alguien-me-amaba.mp3',
-    cover: 'covers/alessandra-rosaldo-cuando-alguien-me-amaba.jpg',
+    cover: 'covers/jessie.jpg',
     groups: ['toy-story'],
   },
   {
@@ -276,7 +276,7 @@ const songs = [
     title: 'El Rodeo de Woody',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-el-rodeo-de-woody.mp3',
-    cover: 'covers/toy-story-canta-y-cuenta.jpg',
+    cover: 'covers/woodys-roundup-trio.jpg',
     groups: ['toy-story'],
   },
   {
@@ -284,7 +284,7 @@ const songs = [
     title: 'No Navegaré Nunca Más',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-no-navegare-nunca-mas.mp3',
-    cover: 'covers/toy-story-canta-y-cuenta.jpg',
+    cover: 'covers/woody.jpg',
     groups: ['toy-story'],
   },
   {
@@ -292,7 +292,7 @@ const songs = [
     title: 'Yo Soy Tu Amigo Fiel',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-yo-soy-tu-amigo-fiel.mp3',
-    cover: 'covers/toy-story-canta-y-cuenta.jpg',
+    cover: 'covers/buzz-lightyear.jpg',
     groups: ['toy-story'],
   },
   {
@@ -308,7 +308,7 @@ const songs = [
     title: 'El Ciclo Sin Fin',
     artist: 'Tata Vega',
     file: 'music/tata-vega-el-ciclo-sin-fin.mp3',
-    cover: 'covers/rey-leon-soundtrack.jpg',
+    cover: 'covers/simba-rey-leon-2019.jpg',
     groups: ['disney'],
   },
   {
@@ -316,7 +316,7 @@ const songs = [
     title: 'Yo Quisiera Ya Ser El Rey',
     artist: 'Eduardo Tejedo, Kalimba Marichal & Maggie Vera',
     file: 'music/eduardo-tejedo-kalimba-maggie-vera-yo-quisiera-ya-ser-el-rey.mp3',
-    cover: 'covers/rey-leon-soundtrack.jpg',
+    cover: 'covers/simba-rey-leon-clasico.jpg',
     groups: ['disney'],
   },
 ];

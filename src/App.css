@@ -1793,34 +1793,50 @@ html {
     /* Proporcional: en 1024px no alcanzan 560px fijos junto a la lista. */
     width: clamp(340px, 42%, 560px);
     flex: none;
-    /* Estirado a la altura de la lista (align-items:stretch del padre): con
-       flex-start el card se dimensionaba solo por su contenido y en ventanas
-       bajas/anchas terminaba mas abajo que la lista, o mas corto que ella
-       dejando un vacio si la lista era mas larga. max-height:100% no alcanza
-       a resolverse aca (la cadena de flex:1 no da un alto "definido" para
-       porcentajes), asi que el contenido interno scrollea via overflow-y. */
+    /* Estirado a la altura de la lista (align-items:stretch del padre). */
     align-self: stretch;
-    /* album-surface es display:flex (row) con .album-header como unico hijo:
-       sin esto, el align-items:stretch por defecto fuerza a .album-header a
-       calzar exacto en el alto ya achicado del card, y como .album-header
-       tiene su propio overflow:hidden, el contenido que no entra (los
-       botones de accion) se recorta ahi mismo — antes de que el
-       overflow-y:auto de aca afuera tenga algo que scrollear. Con
-       flex-start, .album-header conserva su alto natural y el que scrollea
-       es este contenedor. */
-    align-items: flex-start;
     margin: 20px 0;
     display: flex;
     min-height: 0;
-    overflow-y: auto;
   }
 
   .album-header {
+    /* .album-header-bg-img/.album-header-bg-gradient son position:absolute
+       relativas a ESTE elemento y tienen inset:-4% (sangran un poco fuera
+       del borde para que el blur no deje artefactos). .album-header debe
+       estirarse siempre al alto completo del card (default align-items:
+       stretch del padre) para que esa imagen cubra el card entero — si no
+       llega a cubrirlo, el resto del card queda mostrando el theme.playerBg
+       plano y se ve como un borde cortado.
+       IMPORTANTE: el scroll para el contenido que no entra NO puede vivir
+       aca — este elemento es position:relative y contiene ese hijo absoluto
+       con inset negativo, y un position:relative + overflow-y:auto cuenta
+       ese sangrado decorativo como "contenido desbordado", mostrando una
+       scrollbar aunque el contenido real (caratula+texto+botones) entre
+       sobrado. Por eso .album-header solo recorta (overflow:hidden, ya
+       viene de la regla base) y el scroll real vive en .album-header-content
+       (ver abajo), que no tiene ningun hijo con inset negativo. */
+    width: 100%;
+    /* El padding pasa a .album-header-content: si se queda aca tambien,
+       queda duplicado (el de la regla base + el del content). */
+    padding: 0;
+  }
+
+  .album-header-content {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    /* Anclado abajo: cuando la lista es larga, .album-surface se estira
+       mucho mas alla de lo que el contenido necesita. Con flex-start ese
+       sobrante quedaba como espacio vacio debajo de los botones; con
+       flex-end el espacio de sobra sube (se ve como mas fondo difuminado
+       revelado arriba) y la caratula+texto+botones quedan pegados abajo,
+       como un hero de Spotify. */
+    justify-content: flex-end;
     width: 100%;
+    height: 100%;
     padding: clamp(18px, 4vh, 32px);
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .album-header-top {
@@ -1831,13 +1847,13 @@ html {
   }
 
   .album-cover {
-    /* Piso bajado de 180 a 120: en ventanas de laptop bajas (~550-650px de
-       alto), 180px fijos mas los botones de accion no entraban en el alto
-       ya estirado por .album-surface, y quedaban ocultos bajo el scroll sin
-       ninguna pista visual. Con piso mas chico la caratula cede espacio
-       primero para que los botones sigan visibles sin scroll. */
-    width: clamp(120px, 18vh, 280px);
-    height: clamp(120px, 18vh, 280px);
+    /* Con el contenido anclado abajo (justify-content:flex-end en
+       .album-header-content) y el scroll de seguridad ya separado del
+       sangrado decorativo del fondo, se puede volver a crecer sin
+       reintroducir el recorte de botones: si en una ventana muy baja no
+       entra, .album-header-content scrollea limpio (no hay falso positivo). */
+    width: clamp(140px, 22vh, 300px);
+    height: clamp(140px, 22vh, 300px);
   }
 
   .album-title {

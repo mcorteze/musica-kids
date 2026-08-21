@@ -42,74 +42,76 @@ export default function AlbumHeader({
         </>
       )}
 
-      <div className="album-header-top">
-        <div className="album-cover">
-          {song.cover ? (
-            <img src={song.cover} alt="" />
-          ) : (
-            <CustomerServiceOutlined className="album-cover-fallback" />
-          )}
-        </div>
+      <div className="album-header-content">
+        <div className="album-header-top">
+          <div className="album-cover">
+            {song.cover ? (
+              <img src={song.cover} alt="" />
+            ) : (
+              <CustomerServiceOutlined className="album-cover-fallback" />
+            )}
+          </div>
 
-        <div className="album-meta">
-          <span className="album-kicker">Reproduciendo</span>
-          <h1 className="album-title" title={song.title}>{song.title}</h1>
-          <div className="album-sub">
-            <span className="album-artist">{song.artist}</span>
-            <span className="album-dot">•</span>
-            <span>{songCount} {songCount === 1 ? 'cancion' : 'canciones'}</span>
+          <div className="album-meta">
+            <span className="album-kicker">Reproduciendo</span>
+            <h1 className="album-title" title={song.title}>{song.title}</h1>
+            <div className="album-sub">
+              <span className="album-artist">{song.artist}</span>
+              <span className="album-dot">•</span>
+              <span>{songCount} {songCount === 1 ? 'cancion' : 'canciones'}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="album-actions">
-        <Tooltip title={isPlaying ? 'Pausar' : 'Reproducir'}>
-          <button
-            type="button"
-            onClick={onPlayPause}
-            className="album-play-btn"
-            aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
-          >
-            {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
-          </button>
-        </Tooltip>
+        <div className="album-actions">
+          <Tooltip title={isPlaying ? 'Pausar' : 'Reproducir'}>
+            <button
+              type="button"
+              onClick={onPlayPause}
+              className="album-play-btn"
+              aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
+            >
+              {isPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
+            </button>
+          </Tooltip>
 
-        <Tooltip title="Aleatorio">
-          <button
-            type="button"
-            onClick={onShuffleToggle}
-            className={`album-action-btn ${shuffle ? 'active' : ''}`}
-            aria-label="Aleatorio"
-            aria-pressed={shuffle}
-          >
-            <SwapOutlined />
-          </button>
-        </Tooltip>
+          <Tooltip title="Aleatorio">
+            <button
+              type="button"
+              onClick={onShuffleToggle}
+              className={`album-action-btn ${shuffle ? 'active' : ''}`}
+              aria-label="Aleatorio"
+              aria-pressed={shuffle}
+            >
+              <SwapOutlined />
+            </button>
+          </Tooltip>
 
-        <Tooltip title="Repetir">
-          <button
-            type="button"
-            onClick={onRepeatToggle}
-            className={`album-action-btn ${repeat !== 'off' ? 'active' : ''}`}
-            aria-label="Repetir"
-            aria-pressed={repeat !== 'off'}
-          >
-            <RedoOutlined />
-            {repeat === 'one' && <span className="repeat-one-badge">1</span>}
-          </button>
-        </Tooltip>
+          <Tooltip title="Repetir">
+            <button
+              type="button"
+              onClick={onRepeatToggle}
+              className={`album-action-btn ${repeat !== 'off' ? 'active' : ''}`}
+              aria-label="Repetir"
+              aria-pressed={repeat !== 'off'}
+            >
+              <RedoOutlined />
+              {repeat === 'one' && <span className="repeat-one-badge">1</span>}
+            </button>
+          </Tooltip>
 
-        <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
-          <button
-            type="button"
-            onClick={onToggleLike}
-            className={`album-action-btn like-btn ${liked ? 'active liked' : ''}`}
-            aria-label="Me gusta"
-            aria-pressed={liked}
-          >
-            {liked ? <LikeFilled /> : <LikeOutlined />}
-          </button>
-        </Tooltip>
+          <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
+            <button
+              type="button"
+              onClick={onToggleLike}
+              className={`album-action-btn like-btn ${liked ? 'active liked' : ''}`}
+              aria-label="Me gusta"
+              aria-pressed={liked}
+            >
+              {liked ? <LikeFilled /> : <LikeOutlined />}
+            </button>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
