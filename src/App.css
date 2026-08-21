@@ -1800,6 +1800,15 @@ html {
        a resolverse aca (la cadena de flex:1 no da un alto "definido" para
        porcentajes), asi que el contenido interno scrollea via overflow-y. */
     align-self: stretch;
+    /* album-surface es display:flex (row) con .album-header como unico hijo:
+       sin esto, el align-items:stretch por defecto fuerza a .album-header a
+       calzar exacto en el alto ya achicado del card, y como .album-header
+       tiene su propio overflow:hidden, el contenido que no entra (los
+       botones de accion) se recorta ahi mismo — antes de que el
+       overflow-y:auto de aca afuera tenga algo que scrollear. Con
+       flex-start, .album-header conserva su alto natural y el que scrollea
+       es este contenedor. */
+    align-items: flex-start;
     margin: 20px 0;
     display: flex;
     min-height: 0;
@@ -1811,19 +1820,24 @@ html {
     flex-direction: column;
     justify-content: flex-start;
     width: 100%;
-    padding: 32px;
+    padding: clamp(18px, 4vh, 32px);
   }
 
   .album-header-top {
     flex-direction: column;
     align-items: flex-start;
-    gap: 18px;
-    margin-bottom: 18px;
+    gap: clamp(10px, 2.5vh, 18px);
+    margin-bottom: clamp(10px, 2.5vh, 18px);
   }
 
   .album-cover {
-    width: clamp(180px, 20vh, 280px);
-    height: clamp(180px, 20vh, 280px);
+    /* Piso bajado de 180 a 120: en ventanas de laptop bajas (~550-650px de
+       alto), 180px fijos mas los botones de accion no entraban en el alto
+       ya estirado por .album-surface, y quedaban ocultos bajo el scroll sin
+       ninguna pista visual. Con piso mas chico la caratula cede espacio
+       primero para que los botones sigan visibles sin scroll. */
+    width: clamp(120px, 18vh, 280px);
+    height: clamp(120px, 18vh, 280px);
   }
 
   .album-title {
