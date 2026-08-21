@@ -8,6 +8,7 @@ import GroupSelector from './components/GroupSelector';
 import ToyChat from './components/ToyChat';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
+import useLovedSongs from './hooks/useLovedSongs';
 import themes from './themes';
 import songs from './data/songs';
 import groups, { ALL_GROUPS } from './data/groups';
@@ -134,10 +135,15 @@ export default function App() {
   } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleNext, repeat });
 
   const { isLiked, toggleLike } = useLikedSongs();
+  const { isLoved, toggleLove } = useLovedSongs();
 
   const handleToggleLike = useCallback(() => {
     if (currentSong) toggleLike(currentSong.id);
   }, [currentSong, toggleLike]);
+
+  const handleToggleLove = useCallback(() => {
+    if (currentSong) toggleLove(currentSong.id);
+  }, [currentSong, toggleLove]);
 
   return (
     <ConfigProvider
@@ -178,6 +184,8 @@ export default function App() {
                 songCount={sortedSongs.length}
                 liked={currentSong ? isLiked(currentSong.id) : false}
                 onToggleLike={handleToggleLike}
+                loved={currentSong ? isLoved(currentSong.id) : false}
+                onToggleLove={handleToggleLove}
               />
             </div>
 

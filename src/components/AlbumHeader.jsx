@@ -22,6 +22,8 @@ export default function AlbumHeader({
   songCount,
   liked,
   onToggleLike,
+  loved,
+  onToggleLove,
 }) {
   if (!song) {
     return (
@@ -114,15 +116,15 @@ export default function AlbumHeader({
             </button>
           </Tooltip>
 
-          <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
+          <Tooltip title={loved ? 'Ya no es favorita' : 'Marcar como favorita'}>
             <button
               type="button"
-              onClick={onToggleLike}
-              className={`album-action-btn heart-btn ${liked ? 'active loved' : ''}`}
-              aria-label="Me gusta (corazon)"
-              aria-pressed={liked}
+              onClick={onToggleLove}
+              className={`album-action-btn heart-btn ${loved ? 'active loved' : ''}`}
+              aria-label="Marcar como favorita"
+              aria-pressed={loved}
             >
-              {liked ? <HeartFilled /> : <HeartOutlined />}
+              {loved ? <HeartFilled /> : <HeartOutlined />}
             </button>
           </Tooltip>
         </div>
