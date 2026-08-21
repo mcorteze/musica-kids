@@ -29,3 +29,6 @@ public/covers/*.webp
 *.njsproj
 *.sln
 *.sw?
+
+# capturas de verificación visual
+.verificacion-visual/

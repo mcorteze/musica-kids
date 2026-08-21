@@ -1793,11 +1793,16 @@ html {
     /* Proporcional: en 1024px no alcanzan 560px fijos junto a la lista. */
     width: clamp(340px, 42%, 560px);
     flex: none;
-    align-self: flex-start;
+    /* Estirado a la altura de la lista (align-items:stretch del padre): con
+       flex-start el card se dimensionaba solo por su contenido y en ventanas
+       bajas/anchas terminaba mas abajo que la lista, o mas corto que ella
+       dejando un vacio si la lista era mas larga. max-height:100% no alcanza
+       a resolverse aca (la cadena de flex:1 no da un alto "definido" para
+       porcentajes), asi que el contenido interno scrollea via overflow-y. */
+    align-self: stretch;
     margin: 20px 0;
     display: flex;
     min-height: 0;
-    max-height: 100%;
     overflow-y: auto;
   }
 

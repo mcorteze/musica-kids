@@ -28,14 +28,14 @@ const groups = [
     id: 'efecto-n',
     name: 'Efecto N',
     cover: 'theme-covers/efecto-n.jpg',
-    theme: 'sky',
+    theme: 'efecto-n',
     fit: 'contain',
   },
   {
     id: 'papelina',
     name: 'Papelina y Papelón',
     cover: 'theme-covers/papelina.jpg',
-    theme: 'sky',
+    theme: 'papelina',
   },
   {
     id: '31-minutos',
@@ -47,7 +47,7 @@ const groups = [
     id: 'guaypes-club',
     name: 'Guaypes Club',
     cover: 'theme-covers/guaypes-club.jpg',
-    theme: 'sky',
+    theme: 'guaypes-club',
     fit: 'contain',
   },
   {
@@ -72,13 +72,31 @@ const groups = [
     id: 'ruedas',
     name: 'Ruedas y Aventuras',
     cover: 'theme-covers/ruedas.jpg',
-    theme: 'sky',
+    theme: 'ruedas',
   },
   {
     id: 'gummibar',
     name: 'Gummibär',
     cover: 'theme-covers/gummibar.jpg',
-    theme: 'sky',
+    theme: 'gummibar',
+  },
+  {
+    id: 'gimnasia',
+    name: 'Gimnasia',
+    cover: 'theme-covers/gimnasia.avif',
+    theme: 'gimnasia',
+  },
+  {
+    id: 'toy-story',
+    name: 'Toy Story',
+    cover: 'theme-covers/toy-story.jpg',
+    theme: 'toy-story',
+  },
+  {
+    id: 'disney',
+    name: 'Disney',
+    cover: 'theme-covers/disney.jpg',
+    theme: 'disney',
   },
 ];
 
