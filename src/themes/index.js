@@ -493,6 +493,16 @@ const themes = {
     accentRgb: '255, 176, 32',
     accentInk: '#14141C',
     scrollbarRgb: '42, 79, 201',
+    // La lista de canciones se pinta directamente sobre este gradiente (no
+    // tiene tarjeta opaca detras), y aqui el gradiente empieza oscuro
+    // (medianoche) a diferencia de todos los demas temas que son claros de
+    // punta a punta. colorText (oscuro, pensado para fondos claros como
+    // colorBgContainer) queda ilegible ahi. Estos tokens son solo para el
+    // texto que cae sobre el gradiente de pagina (ver .song-row-title y
+    // companeros en App.css).
+    listTextColor: '#F1F4FF',
+    listTextSecondary: '#C7D0F5',
+    listTextShadow: '0 1px 4px rgba(8, 14, 46, 0.6)',
     headerStyle: {
       background: 'linear-gradient(90deg, #2A4FC9, #5A7AE0)',
     },

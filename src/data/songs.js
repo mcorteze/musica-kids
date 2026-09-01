@@ -284,7 +284,7 @@ const songs = [
     title: 'No Navegaré Nunca Más',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-no-navegare-nunca-mas.mp3',
-    cover: 'covers/woody.jpg',
+    cover: 'covers/buzz-lightyear.jpg',
     groups: ['toy-story'],
   },
   {
@@ -292,7 +292,7 @@ const songs = [
     title: 'Yo Soy Tu Amigo Fiel',
     artist: 'Ricardo Murguía',
     file: 'music/ricardo-murguia-yo-soy-tu-amigo-fiel.mp3',
-    cover: 'covers/buzz-lightyear.jpg',
+    cover: 'covers/woody.jpg',
     groups: ['toy-story'],
   },
   {

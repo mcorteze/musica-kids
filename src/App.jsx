@@ -1,14 +1,16 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ConfigProvider } from 'antd';
-import { CustomerServiceOutlined } from '@ant-design/icons';
+import { CustomerServiceOutlined, CarOutlined } from '@ant-design/icons';
 import AlbumHeader from './components/AlbumHeader';
 import PlayerBar from './components/PlayerBar';
 import Playlist from './components/Playlist';
 import GroupSelector from './components/GroupSelector';
 import ToyChat from './components/ToyChat';
+import DrivingMode from './components/DrivingMode';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
+import useWakeLock from './hooks/useWakeLock';
 import themes from './themes';
 import songs from './data/songs';
 import groups, { ALL_GROUPS } from './data/groups';
@@ -30,6 +32,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
+  const [drivingStage, setDrivingStage] = useState('off'); // 'off' | 'confirm' | 'active'
 
   // El grupo manda: define tanto el filtro de la lista como la paleta de colores.
   const group = useMemo(
@@ -38,12 +41,29 @@ export default function App() {
   );
   const theme = themes[group.theme];
 
-  const sortedSongs = useMemo(() => {
-    const visible = activeGroup === ALL_GROUPS
+  const getGroupSongs = useCallback((groupId) => {
+    const visible = groupId === ALL_GROUPS
       ? songs
-      : songs.filter((s) => s.groups?.includes(activeGroup));
+      : songs.filter((s) => s.groups?.includes(groupId));
     return [...visible].sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
-  }, [activeGroup]);
+  }, []);
+
+  const sortedSongs = useMemo(() => getGroupSongs(activeGroup), [activeGroup, getGroupSongs]);
+
+  // Precarga silenciosa: sin esto, cada carátula recién se pedía al
+  // navegador cuando el usuario la veía por primera vez (menu de grupos o
+  // reproductor), y se notaba un parpadeo de carga al navegar. Al pedirlas
+  // todas de una vez apenas abre la app, el navegador ya las tiene en
+  // cache cuando el usuario llega a verlas.
+  useEffect(() => {
+    const urls = new Set();
+    songs.forEach((s) => { if (s.cover) urls.add(s.cover); });
+    groups.forEach((g) => { if (g.cover) urls.add(g.cover); });
+    urls.forEach((url) => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -58,6 +78,9 @@ export default function App() {
     root.style.setProperty('--ant-color-border', theme.token.colorBorder);
     root.style.setProperty('--ant-color-bg-container', theme.token.colorBgContainer);
     root.style.setProperty('--ant-color-primary', theme.token.colorPrimary);
+    root.style.setProperty('--list-text-color', theme.listTextColor || theme.token.colorText);
+    root.style.setProperty('--list-text-secondary', theme.listTextSecondary || theme.token.colorTextSecondary);
+    root.style.setProperty('--list-text-shadow', theme.listTextShadow || 'none');
   }, [theme]);
 
   const shuffledOrder = useMemo(() => {
@@ -117,6 +140,25 @@ export default function App() {
     });
   }, []);
 
+  const handleOpenDrivingConfirm = useCallback(() => setDrivingStage('confirm'), []);
+  const handleCancelDriving = useCallback(() => setDrivingStage('off'), []);
+  const handleConfirmDriving = useCallback(() => setDrivingStage('active'), []);
+  const handleExitDriving = useCallback(() => setDrivingStage('off'), []);
+
+  // Desde el modo conduccion no hay lista para elegir una cancion puntual:
+  // se elige un grupo (carrusel de caratulas) y arranca directo en la
+  // primera cancion de ese grupo.
+  const handleDrivingPickGroup = useCallback((groupId) => {
+    setActiveGroup(groupId);
+    const firstSong = getGroupSongs(groupId)[0];
+    if (firstSong) {
+      setCurrentSong(firstSong);
+      setIsPlaying(true);
+    }
+  }, [getGroupSongs]);
+
+  useWakeLock(drivingStage === 'active');
+
   // Cambiar de grupo no interrumpe lo que suena: la cancion actual sigue hasta
   // el final y recien ahi (o al tocar "siguiente") pasa a la primera del filtro.
   const handleGroupChange = useCallback((value) => {
@@ -151,7 +193,7 @@ export default function App() {
         token: theme.token,
       }}
     >
-      <div className="app-shell" style={{ background: theme.gradient }}>
+      <div className="app-shell" style={{ background: theme.gradient }} inert={drivingStage !== 'off'}>
         {currentSong && <audio ref={audioRef} src={currentSong.file} preload="metadata" />}
 
         <header className="app-header" style={theme.headerStyle}>
@@ -163,6 +205,14 @@ export default function App() {
             {/* ChildLock (pantalla completa + candado) sacado por ahora.
                 El componente sigue en src/components/ para retomarlo despues. */}
             <ToyChat />
+            <button
+              type="button"
+              onClick={handleOpenDrivingConfirm}
+              className="theme-trigger-btn driving-trigger-btn"
+              aria-label="Modo conducción"
+            >
+              <CarOutlined />
+            </button>
             <GroupSelector
               activeGroup={activeGroup}
               onChange={handleGroupChange}
@@ -214,6 +264,30 @@ export default function App() {
           onVolumeChange={handleVolumeChange}
           onToggleMute={toggleMute}
         />
+
+        {drivingStage !== 'off' && (
+          <DrivingMode
+            stage={drivingStage}
+            song={currentSong}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            shuffle={shuffle}
+            onShuffleToggle={handleShuffleToggle}
+            repeat={repeat}
+            onRepeatToggle={handleRepeatToggle}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={handleSeek}
+            groups={groups}
+            activeGroup={activeGroup}
+            onPickGroup={handleDrivingPickGroup}
+            onConfirm={handleConfirmDriving}
+            onCancel={handleCancelDriving}
+            onExit={handleExitDriving}
+          />
+        )}
       </div>
     </ConfigProvider>
   );

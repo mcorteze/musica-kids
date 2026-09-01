@@ -40,14 +40,16 @@ export default function GroupSelector({ activeGroup, onChange }) {
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
   }, []);
 
-  // Al abrir, dejar la tarjeta activa a la vista sin mover el resto de la pagina.
+  // Al abrir, dejar la tarjeta activa a la vista. scrollIntoView funciona
+  // igual de bien centrando en el carrusel horizontal (desktop) que
+  // ubicando la fila correcta en la grilla vertical de movil/tablet.
   useEffect(() => {
     if (!open) return;
     const el = trackRef.current;
     if (!el) return;
     const card = el.querySelector('.group-card.active');
     if (card) {
-      el.scrollLeft = card.offsetLeft - (el.clientWidth - card.clientWidth) / 2;
+      card.scrollIntoView({ block: 'nearest', inline: 'center' });
     }
     updateEdges();
   }, [open, updateEdges]);
