@@ -10,7 +10,7 @@ import {
   HeartFilled,
   HeartOutlined,
 } from '@ant-design/icons';
-import UnicornIcon from './UnicornIcon';
+import { GiUnicorn } from 'react-icons/gi';
 
 export default function AlbumHeader({
   song,
@@ -139,7 +139,7 @@ export default function AlbumHeader({
               aria-label="Marcar como magica"
               aria-pressed={unicorned}
             >
-              <UnicornIcon />
+              <GiUnicorn />
             </button>
           </Tooltip>
         </div>
