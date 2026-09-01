@@ -306,6 +306,16 @@ html {
   align-items: center;
   justify-content: center;
   transition: background-color 0.18s ease, color 0.18s ease;
+  outline: none;
+}
+
+/* Sin esto, el anillo de foco nativo del navegador quedaba pegado al boton
+   despues de un simple click (un boton clickeado gana foco), y solo se
+   iba al hacer foco en otra cosa. Se mantiene :focus-visible para que la
+   navegacion por teclado siga teniendo una marca visible. */
+.album-action-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
 }
 
 .album-action-btn:hover {
@@ -332,6 +342,33 @@ html {
 .unicorn-btn.unicorned {
   color: #5EE7FF;
   filter: drop-shadow(0 0 6px rgba(94, 231, 255, 0.85));
+  animation: likePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Destello magico al activar: brilla y se disipa solo, dejando el celeste
+   neon fijo de arriba como estado final (no se repite en loop). */
+.unicorn-btn.unicorned::after {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(94, 231, 255, 0.55) 0%, rgba(94, 231, 255, 0) 60%),
+    radial-gradient(circle 2px at 50% 2%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 88% 18%, #5EE7FF 0, rgba(94, 231, 255, 0) 70%),
+    radial-gradient(circle 2.4px at 94% 58%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 72% 94%, #5EE7FF 0, rgba(94, 231, 255, 0) 70%),
+    radial-gradient(circle 2.4px at 22% 92%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 2% 62%, #5EE7FF 0, rgba(94, 231, 255, 0) 70%),
+    radial-gradient(circle 2px at 12% 14%, #ffffff 0, rgba(255, 255, 255, 0) 70%);
+  opacity: 0;
+  animation: unicornSparkle 0.7s ease-out;
+}
+
+@keyframes unicornSparkle {
+  0%   { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.6) rotate(20deg); }
 }
 
 /* Insignia solida (no texto suelto) para que el "1" de repetir-una sea
@@ -2863,6 +2900,14 @@ html {
   }
 
   .heart-btn.loved::after {
+    content: none;
+  }
+
+  .unicorn-btn.unicorned {
+    animation: none !important;
+  }
+
+  .unicorn-btn.unicorned::after {
     content: none;
   }
 
