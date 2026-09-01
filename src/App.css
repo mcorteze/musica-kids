@@ -317,14 +317,21 @@ html {
    difuminada de la cancion (clara u oscura segun la imagen), asi que un
    icono suelto recoloreado con el acento del tema podia perder contraste.
    Se excluyen like/love porque tienen su propio color fijo (no de tema). */
-.album-action-btn.active:not(.like-btn):not(.heart-btn) {
+.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn) {
   background: var(--accent-color, #fff);
   color: var(--accent-ink, #14141c);
 }
 
-.album-action-btn.active:not(.like-btn):not(.heart-btn) .repeat-one-badge {
+.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn) .repeat-one-badge {
   background: var(--accent-ink, #fff);
   color: var(--accent-color, #14141c);
+}
+
+/* Color fijo (no de tema), como like/love: es una reaccion, no un control
+   que deba combinar con cada paleta. */
+.unicorn-btn.unicorned {
+  color: #5EE7FF;
+  filter: drop-shadow(0 0 6px rgba(94, 231, 255, 0.85));
 }
 
 /* Insignia solida (no texto suelto) para que el "1" de repetir-una sea
@@ -1670,6 +1677,7 @@ html {
   font-size: 40px;
   line-height: 1;
   margin-bottom: 12px;
+  color: #1a1a2e;
 }
 
 .driving-confirm-modal h2 {

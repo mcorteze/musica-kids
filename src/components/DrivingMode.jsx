@@ -11,6 +11,7 @@ import {
   CustomerServiceOutlined,
   AppstoreOutlined,
   CheckCircleFilled,
+  CarOutlined,
 } from '@ant-design/icons';
 import ScrubBar from './ScrubBar';
 
@@ -63,7 +64,7 @@ export default function DrivingMode({
     return createPortal(
       <div className="driving-confirm-overlay" onClick={onCancel}>
         <div className="driving-confirm-modal" onClick={(e) => e.stopPropagation()}>
-          <span className="driving-confirm-icon" aria-hidden="true">🚗</span>
+          <CarOutlined className="driving-confirm-icon" aria-hidden="true" />
           <h2>¿Activar modo conducción?</h2>
           <div className="driving-confirm-actions">
             <button type="button" className="driving-confirm-btn ghost" onClick={onCancel}>

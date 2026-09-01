@@ -10,6 +10,7 @@ import DrivingMode from './components/DrivingMode';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
+import useUnicornSongs from './hooks/useUnicornSongs';
 import useWakeLock from './hooks/useWakeLock';
 import themes from './themes';
 import songs from './data/songs';
@@ -102,12 +103,12 @@ export default function App() {
     setIsPlaying((prev) => (currentSong ? !prev : prev));
   }, [currentSong]);
 
+  // El boton "siguiente" (toque manual) siempre da la vuelta al llegar al
+  // final del grupo activo, sin importar el modo de repetir — igual que
+  // "anterior". El modo repetir solo decide que pasa cuando una cancion
+  // termina sola (ver handleSongEnded), no cuando el usuario navega.
   const handleNext = useCallback(() => {
     if (sortedSongs.length === 0) return;
-    if (repeat === 'off' && currentIndex === sortedSongs.length - 1 && !shuffle) {
-      setIsPlaying(false);
-      return;
-    }
     const nextIndex = (currentIndex + 1) % sortedSongs.length;
     const nextId = shuffledOrder[nextIndex];
     const nextSong = sortedSongs.find((s) => s.id === nextId);
@@ -115,7 +116,19 @@ export default function App() {
       setCurrentSong(nextSong);
       setIsPlaying(true);
     }
-  }, [currentIndex, shuffledOrder, repeat, sortedSongs]);
+  }, [currentIndex, shuffledOrder, sortedSongs]);
+
+  // Cuando la cancion termina sola (no por toque del usuario): si "repetir"
+  // esta apagado y ya estabamos en la ultima del grupo, se detiene en vez
+  // de reiniciar el ciclo solo.
+  const handleSongEnded = useCallback(() => {
+    if (sortedSongs.length === 0) return;
+    if (repeat === 'off' && currentIndex === sortedSongs.length - 1 && !shuffle) {
+      setIsPlaying(false);
+      return;
+    }
+    handleNext();
+  }, [currentIndex, sortedSongs, repeat, shuffle, handleNext]);
 
   const handlePrev = useCallback(() => {
     if (sortedSongs.length === 0) return;
@@ -174,10 +187,11 @@ export default function App() {
     handleSeek,
     handleVolumeChange,
     toggleMute,
-  } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleNext, repeat });
+  } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleSongEnded, repeat });
 
   const { isLiked, toggleLike } = useLikedSongs();
   const { isLoved, toggleLove } = useLovedSongs();
+  const { isUnicorned, toggleUnicorn } = useUnicornSongs();
 
   const handleToggleLike = useCallback(() => {
     if (currentSong) toggleLike(currentSong.id);
@@ -186,6 +200,10 @@ export default function App() {
   const handleToggleLove = useCallback(() => {
     if (currentSong) toggleLove(currentSong.id);
   }, [currentSong, toggleLove]);
+
+  const handleToggleUnicorn = useCallback(() => {
+    if (currentSong) toggleUnicorn(currentSong.id);
+  }, [currentSong, toggleUnicorn]);
 
   return (
     <ConfigProvider
@@ -236,6 +254,8 @@ export default function App() {
                 onToggleLike={handleToggleLike}
                 loved={currentSong ? isLoved(currentSong.id) : false}
                 onToggleLove={handleToggleLove}
+                unicorned={currentSong ? isUnicorned(currentSong.id) : false}
+                onToggleUnicorn={handleToggleUnicorn}
               />
             </div>
 

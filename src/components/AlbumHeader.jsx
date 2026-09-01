@@ -10,6 +10,7 @@ import {
   HeartFilled,
   HeartOutlined,
 } from '@ant-design/icons';
+import UnicornIcon from './UnicornIcon';
 
 export default function AlbumHeader({
   song,
@@ -24,6 +25,8 @@ export default function AlbumHeader({
   onToggleLike,
   loved,
   onToggleLove,
+  unicorned,
+  onToggleUnicorn,
 }) {
   if (!song) {
     return (
@@ -125,6 +128,18 @@ export default function AlbumHeader({
               aria-pressed={loved}
             >
               {loved ? <HeartFilled /> : <HeartOutlined />}
+            </button>
+          </Tooltip>
+
+          <Tooltip title={unicorned ? 'Ya no es magica' : 'Marcar como magica'}>
+            <button
+              type="button"
+              onClick={onToggleUnicorn}
+              className={`album-action-btn unicorn-btn ${unicorned ? 'active unicorned' : ''}`}
+              aria-label="Marcar como magica"
+              aria-pressed={unicorned}
+            >
+              <UnicornIcon />
             </button>
           </Tooltip>
         </div>
