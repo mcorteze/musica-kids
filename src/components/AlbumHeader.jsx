@@ -107,7 +107,7 @@ export default function AlbumHeader({
             </button>
           </Tooltip>
 
-          <Tooltip title={liked ? 'Ya no me gusta' : 'Me gusta'}>
+          <Tooltip title={liked ? '' : 'Me gusta'}>
             <button
               type="button"
               onClick={onToggleLike}
@@ -119,24 +119,24 @@ export default function AlbumHeader({
             </button>
           </Tooltip>
 
-          <Tooltip title={loved ? 'Ya no es favorita' : 'Marcar como favorita'}>
+          <Tooltip title={loved ? '' : 'Me encanta'}>
             <button
               type="button"
               onClick={onToggleLove}
               className={`album-action-btn heart-btn ${loved ? 'active loved' : ''}`}
-              aria-label="Marcar como favorita"
+              aria-label="Me encanta"
               aria-pressed={loved}
             >
               {loved ? <HeartFilled /> : <HeartOutlined />}
             </button>
           </Tooltip>
 
-          <Tooltip title={unicorned ? 'Ya no es magica' : 'Marcar como magica'}>
+          <Tooltip title={unicorned ? '' : '¡Es mágica!'}>
             <button
               type="button"
               onClick={onToggleUnicorn}
               className={`album-action-btn unicorn-btn ${unicorned ? 'active unicorned' : ''}`}
-              aria-label="Marcar como magica"
+              aria-label="¡Es mágica!"
               aria-pressed={unicorned}
             >
               <GiUnicorn />

@@ -5,6 +5,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* Sin esto, iOS/Android muestran su propio resalte semitransparente al
+     tocar cualquier boton (en uno circular, se ve como un aro que lo
+     envuelve) — no se reproduce en un navegador de escritorio, por eso no
+     habia salido en las verificaciones anteriores. Declarado en cada
+     elemento (no solo heredado desde body): algunas versiones de Safari
+     no aplican el heredado de forma confiable sobre <button>. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
