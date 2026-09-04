@@ -139,7 +139,9 @@ export default function AlbumHeader({
               aria-label="¡Es mágica!"
               aria-pressed={unicorned}
             >
-              <GiUnicorn />
+              <span className="unicorn-icon-glow">
+                <GiUnicorn />
+              </span>
             </button>
           </Tooltip>
         </div>
