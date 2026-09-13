@@ -197,7 +197,7 @@ const songs = [
     artist: 'Gummibär',
     file: 'music/gummibar-osito-gominola.mp3',
     cover: 'covers/gummibar-osito-gominola.jpg',
-    groups: ['gummibar'],
+    groups: ['varias'],
   },
   {
     id: 25,
@@ -662,6 +662,14 @@ const songs = [
     file: 'music/gabby-dollhouse-escurrigato.mp3',
     cover: 'covers/gabby-dollhouse-escurrigato.png',
     groups: ['munecas'],
+  },
+  {
+    id: 83,
+    title: 'Baby Shark Dance',
+    artist: 'Pinkfong',
+    file: 'music/pinkfong-baby-shark-dance.mp3',
+    cover: 'covers/pinkfong-baby-shark-dance.jpg',
+    groups: ['varias'],
   },
 ];
 

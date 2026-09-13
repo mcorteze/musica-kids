@@ -332,14 +332,17 @@ const themes = {
     },
   },
 
-  // ========== GUMMIBAR ==========
-  // Investigacion: caratula real (theme-covers/gummibar.jpg) — oso gomita
-  // verde brillante tipo caramelo, wordmark rosa chicle en relieve glossy,
-  // fondo celeste con remolino. Ambiente: candy-glossy, brillante y elastico.
-  gummibar: {
-    name: 'Gummibär',
+  // ========== VARIAS ==========
+  // Antes era el grupo "Gummibar" (solo Osito Gominola); se renombro a
+  // "Varias" al sumar Baby Shark Dance (Pinkfong) porque ya no es un solo
+  // personaje. Caratula actualizada a la miniatura oficial de Baby Shark
+  // Dance. Paleta e icono siguen siendo los originales de Gummibar (verde
+  // candy / oso) — pendiente de revisar si conviene una paleta mas neutra
+  // ahora que el grupo mezcla contenido distinto.
+  varias: {
+    name: 'Varias',
     icon: '🐻',
-    cover: 'theme-covers/gummibar.jpg',
+    cover: 'theme-covers/varias.jpg',
     token: {
       colorPrimary: '#0E9E5C',
       colorBgContainer: '#EFFCF7',

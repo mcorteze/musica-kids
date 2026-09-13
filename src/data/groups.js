@@ -75,10 +75,10 @@ const groups = [
     theme: 'ruedas',
   },
   {
-    id: 'gummibar',
-    name: 'Gummibär',
-    cover: 'theme-covers/gummibar.jpg',
-    theme: 'gummibar',
+    id: 'varias',
+    name: 'Varias',
+    cover: 'theme-covers/varias.jpg',
+    theme: 'varias',
   },
   {
     id: 'gimnasia',
