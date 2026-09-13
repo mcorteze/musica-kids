@@ -516,6 +516,48 @@ const themes = {
       borderWidth: 2,
     },
   },
+
+  // ========== MI PERRO CHOCOLO ==========
+  // Investigacion: caratula real (theme-covers/perro-chocolo.jpg) — wordmark
+  // rojo intenso "Mi Perro Chocolo", anillo amarillo con lunares tipo hueso,
+  // insignia azul con huella. Escenario tipico: patio/campo con animales
+  // (Chocolo el perro, Pancho el chancho, Josefina la gallina).
+  // Ambiente: granja calida, folclore infantil chileno, alegre y rustico.
+  'perro-chocolo': {
+    name: 'Mi Perro Chocolo',
+    icon: '🐶',
+    cover: 'theme-covers/perro-chocolo.jpg',
+    token: {
+      colorPrimary: '#D64545',
+      colorBgContainer: '#FFF8EC',
+      colorBgLayout: '#FFEBC2',
+      colorText: '#4A2410',
+      colorTextSecondary: '#9A6A3E',
+      colorBorder: '#F5CE94',
+      borderRadius: 22,
+      fontFamily: "'Fredoka', 'Nunito', sans-serif",
+    },
+    gradient: 'linear-gradient(160deg, #8FD9F5 0%, #C8ECAE 30%, #FFE98A 60%, #FFC55C 85%, #F0934A 100%)',
+    playerBg: 'linear-gradient(165deg, #7A2E1E 0%, #5A1F15 30%, #3A140E 55%, #241009 78%, #140705 100%)',
+    playerOverlayRgb: '90, 31, 21',
+    cardBg: 'rgba(255, 248, 236, 0.92)',
+    accentColor: '#3E9ED6',
+    accentRgb: '62, 158, 214',
+    accentInk: '#14141C',
+    scrollbarRgb: '214, 69, 69',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #D64545, #F0704A)',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #D64545, #A82F2F)',
+      borderColor: '#C23838',
+      boxShadow: '0 4px 12px rgba(214, 69, 69, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#F5CE94',
+      borderWidth: 2,
+    },
+  },
 };
 
 export default themes;

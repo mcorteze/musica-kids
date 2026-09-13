@@ -98,6 +98,13 @@ const groups = [
     cover: 'theme-covers/disney.jpg',
     theme: 'disney',
   },
+  {
+    id: 'perro-chocolo',
+    name: 'Mi Perro Chocolo',
+    cover: 'theme-covers/perro-chocolo.jpg',
+    theme: 'perro-chocolo',
+    fit: 'contain',
+  },
 ];
 
 export default groups;
