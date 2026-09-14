@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ConfigProvider } from 'antd';
-import { CustomerServiceOutlined, CarOutlined } from '@ant-design/icons';
+import { CustomerServiceOutlined, CarOutlined, LeftOutlined } from '@ant-design/icons';
 import AlbumHeader from './components/AlbumHeader';
 import PlayerBar from './components/PlayerBar';
+import MiniPlayerFab from './components/MiniPlayerFab';
 import Playlist from './components/Playlist';
-import GroupSelector from './components/GroupSelector';
+import GroupMenuPage from './components/GroupMenuPage';
 import ToyChat from './components/ToyChat';
 import DrivingMode from './components/DrivingMode';
 import useAudioPlayer from './hooks/useAudioPlayer';
@@ -35,6 +36,9 @@ export default function App() {
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
   const [drivingStage, setDrivingStage] = useState('off'); // 'off' | 'confirm' | 'active'
+  // Pagina de entrada en todos los responsives: al cargar se ve la grilla de
+  // grupos en vez del reproductor.
+  const [showGroupMenu, setShowGroupMenu] = useState(true);
 
   // El grupo manda: define tanto el filtro de la lista como la paleta de colores.
   const group = useMemo(
@@ -173,11 +177,16 @@ export default function App() {
 
   useWakeLock(drivingStage === 'active');
 
-  // Cambiar de grupo no interrumpe lo que suena: la cancion actual sigue hasta
-  // el final y recien ahi (o al tocar "siguiente") pasa a la primera del filtro.
-  const handleGroupChange = useCallback((value) => {
+  // Elegir un grupo en la pagina de menu la cierra y pasa al reproductor
+  // (cambiar de grupo no interrumpe lo que suena: la cancion actual sigue
+  // hasta el final y recien ahi, o al tocar "siguiente", pasa a la primera
+  // del filtro). El boton de volver del header la vuelve a abrir.
+  const handleMenuPickGroup = useCallback((value) => {
     setActiveGroup(value);
+    setShowGroupMenu(false);
   }, []);
+
+  const handleOpenGroupMenu = useCallback(() => setShowGroupMenu(true), []);
 
   const {
     audioRef,
@@ -217,13 +226,32 @@ export default function App() {
         token: theme.token,
       }}
     >
-      <div className="app-shell" style={{ background: theme.gradient }} inert={drivingStage !== 'off'}>
+      <div
+        className={`app-shell${showGroupMenu ? ' menu-open' : ''}`}
+        style={{ background: theme.gradient }}
+        inert={drivingStage !== 'off'}
+      >
         {currentSong && <audio ref={audioRef} src={currentSong.file} preload="metadata" />}
 
         <header className="app-header" style={theme.headerStyle}>
-          <div className="app-brand">
-            <CustomerServiceOutlined className="app-brand-icon" />
-            <span className="app-brand-name">Musica de Sofia</span>
+          <div className="app-header-left">
+            {/* Un icono de volver es mas comprensible que tocar el logo para
+                quien todavia no lee. Solo aparece cuando hay algo a que
+                volver, es decir cuando el menu esta cerrado. */}
+            {!showGroupMenu && (
+              <button
+                type="button"
+                className="theme-trigger-btn header-back-btn"
+                onClick={handleOpenGroupMenu}
+                aria-label="Volver al menu"
+              >
+                <LeftOutlined />
+              </button>
+            )}
+            <div className="app-brand">
+              <CustomerServiceOutlined className="app-brand-icon" />
+              <span className="app-brand-name">Musica de Sofia</span>
+            </div>
           </div>
           <div className="header-actions">
             {/* ChildLock (pantalla completa + candado) sacado por ahora.
@@ -237,12 +265,10 @@ export default function App() {
             >
               <CarOutlined />
             </button>
-            <GroupSelector
-              activeGroup={activeGroup}
-              onChange={handleGroupChange}
-            />
           </div>
         </header>
+
+        <GroupMenuPage activeGroup={activeGroup} onPick={handleMenuPickGroup} />
 
         <main className="app-content">
           <div className="main-columns">
@@ -278,20 +304,36 @@ export default function App() {
           </div>
         </main>
 
-        <PlayerBar
-          song={currentSong}
-          isPlaying={isPlaying}
-          onPlayPause={handlePlayPause}
-          onNext={handleNext}
-          onPrev={handlePrev}
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={handleSeek}
-          volume={volume}
-          isMuted={isMuted}
-          onVolumeChange={handleVolumeChange}
-          onToggleMute={toggleMute}
-        />
+        {showGroupMenu ? (
+          // La barra completa le resta demasiado alto a la grilla en el
+          // menu (sobre todo en pantallas anchas y bajas): mientras se ve
+          // el menu, un cluster flotante compacto basta para seguir
+          // controlando la reproduccion. Sin cancion todavia no hay nada
+          // que controlar, no se muestra nada.
+          currentSong && (
+            <MiniPlayerFab
+              isPlaying={isPlaying}
+              onPlayPause={handlePlayPause}
+              onNext={handleNext}
+              onPrev={handlePrev}
+            />
+          )
+        ) : (
+          <PlayerBar
+            song={currentSong}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={handleSeek}
+            volume={volume}
+            isMuted={isMuted}
+            onVolumeChange={handleVolumeChange}
+            onToggleMute={toggleMute}
+          />
+        )}
 
         {drivingStage !== 'off' && (
           <DrivingMode

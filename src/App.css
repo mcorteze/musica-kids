@@ -57,11 +57,26 @@ html {
   z-index: 2;
 }
 
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .app-brand {
   display: flex;
   align-items: center;
   gap: 8px;
   color: #ffffff;
+  min-width: 0;
+}
+
+/* Mismo tamaño/forma que los demas botones del header (ToyChat, conduccion):
+   solo cambia el icono. Se muestra/oculta segun showGroupMenu en App.jsx, no
+   por CSS — vale para todos los responsives por igual. */
+.header-back-btn {
+  flex: none;
 }
 
 .app-brand-icon {
@@ -74,6 +89,10 @@ html {
   font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
@@ -411,25 +430,30 @@ html {
   50%      { filter: drop-shadow(0 0 12px rgba(255, 197, 66, 0.95)); }
 }
 
-/* Destello inicial al activar, mismo criterio que el unicornio: rayos que
-   estallan y se disipan, dejando el pulso continuo de arriba como estado
-   permanente. */
+/* Destello inicial al activar: a diferencia de las chispas dispersas del
+   unicornio (unicornSparkle, puntitos que se disipan), aca son rayos solidos
+   que giran y se abren desde el centro, como un sol — misma logica de
+   "estalla y se disipa" pero con forma y movimiento propios, para que las
+   dos reacciones se lean distintas y no solo con otro color. */
 .star-btn.starred::after {
   content: '';
   position: absolute;
-  inset: -18px;
+  inset: -20px;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 197, 66, 0.55) 0%, rgba(255, 197, 66, 0) 60%),
-    radial-gradient(circle 2px at 50% 2%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(circle 2px at 88% 18%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
-    radial-gradient(circle 2.4px at 94% 58%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(circle 2px at 72% 94%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
-    radial-gradient(circle 2.4px at 22% 92%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
-    radial-gradient(circle 2px at 2% 62%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
-    radial-gradient(circle 2px at 12% 14%, #ffffff 0, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 197, 66, 0.9) 0deg 8deg,
+    rgba(255, 197, 66, 0) 8deg 30deg
+  );
   opacity: 0;
-  animation: unicornSparkle 0.7s ease-out;
+  animation: sunRays 0.6s ease-out;
+}
+
+@keyframes sunRays {
+  0%   { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  45%  { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.5) rotate(50deg); }
 }
 
 /* Insignia solida (no texto suelto) para que el "1" de repetir-una sea
@@ -485,6 +509,24 @@ html {
 @keyframes likeBurst {
   0%   { transform: scale(0.6); opacity: 0.8; }
   100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ========== MINI PLAYER FLOTANTE (sobre el menu de grupos) ==========
+   Reemplaza a .player-bar mientras se ve el menu: mismos botones de
+   control-btn/play-btn (mismo look), pero sin reservar una franja fija de
+   alto en el layout — flota encima de la grilla. */
+.mini-player-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--ant-color-bg-container, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 /* ========== PLAYER BAR (fija abajo, tipo Spotify) ========== */
@@ -935,111 +977,9 @@ html {
   background: rgba(255, 255, 255, 0.24);
 }
 
-.theme-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: rgba(10, 8, 16, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-.theme-modal {
-  /* min-width 0: el carrusel interior no debe poder ensanchar el modal. */
-  width: min(560px, 100%);
-  min-width: 0;
-  max-width: 100%;
-  max-height: min(640px, 90vh);
-  background: #ffffff;
-  border-radius: 28px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: modalSlide 0.25s ease;
-}
-
-.theme-modal-header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 12px 24px;
-}
-
-.theme-modal-header h2 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 800;
-  color: #1a1a2e;
-}
-
-.theme-modal-close {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  color: #1a1a2e;
-  font-size: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.18s ease;
-}
-
-.theme-modal-close:hover {
-  background: rgba(0, 0, 0, 0.12);
-}
-
-/* Punto en el boton del header cuando hay un filtro activo */
-.theme-trigger-btn.filtering::after {
-  content: '';
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent-color, #ffffff);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
-}
-
-/* ========== CARRUSEL DE GRUPOS ========== */
-.group-carousel {
-  --card-size: 148px;
-  position: relative;
-  min-width: 0;
-  padding-bottom: 22px;
-}
-
-.group-track {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: 24px;
-  padding: 6px 24px 8px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.group-track::-webkit-scrollbar {
-  display: none;
-}
-
+/* ========== TARJETA DE GRUPO (grilla de GroupMenuPage) ========== */
 .group-card {
-  flex: 0 0 auto;
-  width: var(--card-size);
-  scroll-snap-align: center;
+  width: 100%;
   appearance: none;
   border: none;
   background: none;
@@ -1137,47 +1077,74 @@ html {
   color: rgba(26, 26, 46, 0.55);
 }
 
-.group-nav {
-  position: absolute;
-  top: calc(6px + var(--card-size) / 2);
-  transform: translateY(-50%);
-  z-index: 2;
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.96);
-  color: #1a1a2e;
-  font-size: 15px;
-  display: inline-flex;
+/* ========== MENU DE GRUPOS DE PAGINA COMPLETA (todos los responsives) ==========
+   Reemplaza al viejo boton+modal de "elegir musica": esta grilla se ve
+   directo como pagina de entrada al cargar, y se vuelve a ella con el boton
+   de volver del header (ver .app-shell.menu-open en App.jsx). */
+.group-menu-page {
+  display: none;
+  /* Abajo con espacio de sobra (no solo 16px): si hay cancion sonando el
+     mini player flotante (.mini-player-fab) queda encima de este scroll y
+     no debe taparse con la ultima fila de cards. */
+  padding: 20px 16px 90px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-  transition: opacity 0.18s ease;
 }
 
-.group-nav.prev {
-  left: 6px;
+.group-menu-title {
+  margin: 4px 0 16px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: center;
 }
 
-.group-nav.next {
-  right: 6px;
+.group-menu-grid {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
 }
 
-.group-nav[disabled] {
-  opacity: 0;
-  pointer-events: none;
+.app-shell.menu-open .group-menu-page {
+  display: flex;
 }
 
-@media screen and (min-width: 641px) {
-  .theme-modal {
-    width: min(760px, 100%);
+.app-shell.menu-open .app-content {
+  display: none;
+}
+
+/* Tablet: 3 columnas con ancho proporcional al viewport (las cards siguen
+   cuadradas por el aspect-ratio de .group-card-media, no por un ancho fijo). */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .group-menu-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+}
+
+/* Escritorio: mas espacio disponible, mas columnas. auto-fill en vez de un
+   numero fijo para que se acomode solo tanto en laptop como en pantallas
+   grandes, sin quedar cards enormes ni un numero de columnas fijo de mas. */
+@media screen and (min-width: 1025px) {
+  .group-menu-page {
+    padding: 32px 32px 90px;
   }
 
-  .group-carousel {
-    --card-size: 168px;
+  .group-menu-title {
+    font-size: 24px;
+    margin: 8px 0 24px;
+  }
+
+  .group-menu-grid {
+    max-width: 1100px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 20px;
   }
 }
 
@@ -2407,16 +2374,6 @@ html {
     opacity: 0.7;
   }
 
-  .group-carousel {
-    --card-size: 132px;
-  }
-
-  .group-track {
-    gap: 12px;
-    padding: 6px 16px 8px;
-    scroll-padding-inline: 16px;
-  }
-
   .unlock-modal {
     padding: 28px 24px 22px;
     border-radius: 24px;
@@ -2435,36 +2392,6 @@ html {
 @media screen and (min-width: 641px) and (max-width: 1024px) {
   .app-content {
     padding: 12px 20px 20px;
-  }
-}
-
-/* ========== SELECTOR DE GRUPOS EN MOVIL/TABLET: GRILLA VERTICAL ==========
-   El carrusel horizontal resultaba incomodo de recorrer con el dedo. Hasta
-   1024px pasa a una grilla de 2 columnas que se scrollea hacia abajo (el
-   scroll ahora vive en .group-carousel, no en .group-track). Desde 1025px
-   (laptop/desktop) se mantiene el carrusel horizontal de siempre. */
-@media screen and (max-width: 1024px) {
-  .group-carousel {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding-bottom: 4px;
-  }
-
-  .group-track {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    overflow: visible;
-    scroll-snap-type: none;
-    scroll-padding-inline: 0;
-  }
-
-  .group-card {
-    width: 100%;
-  }
-
-  .group-nav {
-    display: none;
   }
 }
 
@@ -2851,11 +2778,6 @@ html {
     min-width: 30px;
   }
 
-  /* El carrusel usaba tarjetas de 168px por el ancho, sin mirar el alto */
-  .theme-modal {
-    max-height: 94vh;
-  }
-
   /* Drawer en pantalla baja: menos alto perdido en barras */
   .chat-drawer-header {
     padding: 10px 12px 10px 16px;
@@ -2904,37 +2826,12 @@ html {
     padding: 11px 18px;
   }
 
-  .theme-modal-header {
-    padding: 12px 12px 4px 16px;
-  }
-
-  .theme-modal-header h2 {
-    font-size: 16px;
-  }
-
-  .group-carousel {
-    --card-size: 104px;
-    padding-bottom: 14px;
-  }
-
-  .group-track {
-    gap: 10px;
-    padding: 6px 16px 6px;
-    scroll-padding-inline: 16px;
-  }
-
   .group-card-name {
     font-size: 12px;
   }
 
   .group-card-count {
     font-size: 10px;
-  }
-
-  .group-nav {
-    width: 34px;
-    height: 34px;
-    font-size: 13px;
   }
 }
 
@@ -2948,10 +2845,6 @@ html {
   .song-row,
   .group-card-media {
     transition: none !important;
-  }
-
-  .group-track {
-    scroll-behavior: auto !important;
   }
 
   .song-row-live span {
