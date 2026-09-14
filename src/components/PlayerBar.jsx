@@ -4,7 +4,6 @@ import {
   PauseOutlined,
   StepForwardOutlined,
   StepBackwardOutlined,
-  SoundOutlined,
   SoundFilled,
   CustomerServiceOutlined,
 } from '@ant-design/icons';
@@ -91,10 +90,10 @@ export default function PlayerBar({
           <button
             type="button"
             onClick={onToggleMute}
-            className="volume-btn"
+            className={`volume-btn ${isMuted || volume === 0 ? 'muted' : ''}`}
             aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
           >
-            {isMuted || volume === 0 ? <SoundOutlined /> : <SoundFilled />}
+            <SoundFilled />
           </button>
         </Tooltip>
         <ScrubBar

@@ -46,6 +46,10 @@ export default function App() {
     [activeGroup]
   );
   const theme = themes[group.theme];
+  // La pantalla de inicio (menu de grupos) no debe heredar el color del
+  // ultimo grupo elegido — eso la hacia verse distinta cada vez que se
+  // volvia a ella. Queda fija con el tema Disney, sea cual sea activeGroup.
+  const menuTheme = themes.disney;
 
   const getGroupSongs = useCallback((groupId) => {
     const visible = groupId === ALL_GROUPS
@@ -228,12 +232,15 @@ export default function App() {
     >
       <div
         className={`app-shell${showGroupMenu ? ' menu-open' : ''}`}
-        style={{ background: theme.gradient }}
+        style={{ background: showGroupMenu ? menuTheme.gradient : theme.gradient }}
         inert={drivingStage !== 'off'}
       >
         {currentSong && <audio ref={audioRef} src={currentSong.file} preload="metadata" />}
 
-        <header className="app-header" style={theme.headerStyle}>
+        {/* Sin fondo propio en la pantalla de inicio: se deja ver el
+            gradiente Disney del app-shell de atras en vez de un color de
+            header aparte. */}
+        <header className="app-header" style={showGroupMenu ? { background: 'transparent' } : theme.headerStyle}>
           <div className="app-header-left">
             {/* Un icono de volver es mas comprensible que tocar el logo para
                 quien todavia no lee. Solo aparece cuando hay algo a que

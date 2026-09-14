@@ -57,6 +57,13 @@ html {
   z-index: 2;
 }
 
+/* Sin fondo propio en la pantalla de inicio (App.jsx pone background:
+   transparent ahi): la sombra sola, sin bloque de color, se veia como una
+   linea flotando encima del degradado Disney. */
+.app-shell.menu-open .app-header {
+  box-shadow: none;
+}
+
 .app-header-left {
   display: flex;
   align-items: center;
@@ -771,11 +778,29 @@ html {
 }
 
 .volume-btn {
+  position: relative;
   color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.5));
   font-size: 15px;
   width: 26px;
   height: 26px;
   transition: color 0.18s ease;
+}
+
+/* Antd no trae un icono de altavoz con barra cruzada (el de "Audio" es un
+   microfono, y "Muted" es el mismo altavoz sin ondas, ambiguo igual): se
+   dibuja la barra encima del mismo SoundFilled con un pseudo-elemento, en
+   em para que escale con el font-size del boton en cada breakpoint. */
+.volume-btn.muted::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.3em;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  pointer-events: none;
 }
 
 .volume-btn:hover {
@@ -998,7 +1023,13 @@ html {
   aspect-ratio: 1 / 1;
   border-radius: 22px;
   overflow: hidden;
-  border: 4px solid transparent;
+  /* padding-box: sin esto el fondo #12121c se pinta tambien debajo del
+     borde (el comportamiento por defecto de background-clip), y con el
+     borde en "transparent" eso se veia como un aro negro feo alrededor de
+     cada card en vez de quedar realmente invisible. Sin color por defecto:
+     el borde es solo para marcar la card activa (ver .group-card.active). */
+  background-clip: padding-box;
+  border: 3px solid transparent;
   background: #12121c;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
@@ -1009,7 +1040,7 @@ html {
 }
 
 .group-card.active .group-card-media {
-  border-color: var(--accent-color, #ffffff);
+  border-color: var(--accent-color, #FFB020);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22), 0 0 0 4px rgba(0, 0, 0, 0.08);
 }
 

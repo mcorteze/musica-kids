@@ -464,6 +464,12 @@ const themes = {
   // se le suman estrellas reales via radial-gradient (sin agregar elementos
   // nuevos al layout, solo pintura extra en el mismo fondo). El dorado del
   // accent queda como el "deseo/estrella" de contraste sobre el azul.
+  // 2026-09-14: se subio la cantidad de puntitos (10 -> 32) variando el
+  // grosor (0.5px a 2.5px) para que se sientan estrellas de distinto brillo,
+  // no una grilla pareja; y se sumo un neon blanco tenue (halos grandes y
+  // muy transparentes detras de las estrellas mas brillantes) como detalle
+  // extra. Todas se concentran en y<=45% — mas abajo el azul se aclara (ver
+  // linear-gradient) y un puntito blanco ahi pierde contraste.
   disney: {
     name: 'Disney',
     icon: '✨',
@@ -488,6 +494,35 @@ const themes = {
       radial-gradient(1px 1px at 16% 30%, rgba(255,255,255,0.55), transparent),
       radial-gradient(1.5px 1.5px at 46% 25%, rgba(255,255,255,0.6), transparent),
       radial-gradient(1px 1px at 76% 28%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(0.5px 0.5px at 6% 22%, rgba(255,255,255,0.45), transparent),
+      radial-gradient(1px 1px at 30% 35%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(0.5px 0.5px at 42% 8%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 58% 32%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(0.5px 0.5px at 64% 22%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 88% 30%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(1px 1px at 8% 40%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 96% 8%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(0.5px 0.5px at 34% 42%, rgba(255,255,255,0.35), transparent),
+      radial-gradient(2.5px 2.5px at 72% 40%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 2% 8%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(0.5px 0.5px at 20% 16%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 28% 4%, rgba(255,255,255,0.65), transparent),
+      radial-gradient(0.5px 0.5px at 44% 35%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 50% 22%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 56% 12%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(0.5px 0.5px at 62% 44%, rgba(255,255,255,0.35), transparent),
+      radial-gradient(0.5px 0.5px at 78% 8%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 84% 40%, rgba(255,255,255,0.45), transparent),
+      radial-gradient(0.5px 0.5px at 90% 36%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 98% 24%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(1px 1px at 14% 45%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(9px 9px at 10% 12%, rgba(255,255,255,0.12), transparent 70%),
+      radial-gradient(9px 9px at 38% 18%, rgba(255,255,255,0.12), transparent 70%),
+      radial-gradient(9px 9px at 92% 16%, rgba(255,255,255,0.1), transparent 70%),
+      radial-gradient(9px 9px at 96% 8%, rgba(255,255,255,0.1), transparent 70%),
+      radial-gradient(9px 9px at 72% 40%, rgba(255,255,255,0.1), transparent 70%),
+      radial-gradient(8px 8px at 56% 12%, rgba(255,255,255,0.1), transparent 70%),
+      radial-gradient(8px 8px at 98% 24%, rgba(255,255,255,0.1), transparent 70%),
       linear-gradient(165deg, #0F1B4D 0%, #1E2F72 25%, #3550A0 50%, #6B85C9 75%, #B8C8ED 100%)`,
     playerBg: 'linear-gradient(165deg, #1E3A8A 0%, #172B66 28%, #141B38 55%, #0D1230 78%, #05070F 100%)',
     playerOverlayRgb: '23, 43, 102',
