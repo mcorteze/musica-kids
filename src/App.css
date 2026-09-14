@@ -59,9 +59,32 @@ html {
 
 /* Sin fondo propio en la pantalla de inicio (App.jsx pone background:
    transparent ahi): la sombra sola, sin bloque de color, se veia como una
-   linea flotando encima del degradado Disney. */
+   linea flotando encima del fondo rosa. */
 .app-shell.menu-open .app-header {
   box-shadow: none;
+}
+
+/* La pantalla de inicio quedo con fondo claro (rosa "princesa"/Skye, ver
+   menuTheme en App.jsx) en vez del Disney oscuro original: el texto e
+   iconos blancos de siempre (pensados para fondo oscuro) dejaban de
+   contrastar ahi. #5C1642 es el colorText que ya trae el tema 'sky' para
+   este mismo gradiente, no un color inventado. Solo aplica mientras el
+   menu esta abierto — el resto de la app (con un grupo elegido) sigue
+   igual que antes. */
+.app-shell.menu-open .app-brand,
+.app-shell.menu-open .app-brand-icon,
+.app-shell.menu-open .theme-trigger-btn,
+.app-shell.menu-open .group-menu-title,
+.app-shell.menu-open .group-card-name {
+  color: #5C1642;
+}
+
+.app-shell.menu-open .theme-trigger-btn {
+  background: rgba(92, 22, 66, 0.1);
+}
+
+.app-shell.menu-open .theme-trigger-btn:hover {
+  background: rgba(92, 22, 66, 0.18);
 }
 
 .app-header-left {

@@ -17,12 +17,13 @@ export default function GroupCard({ group, isActive, count, onPick }) {
         {group.cover ? (
           <>
             {group.fit === 'contain' && (
-              <img className="group-card-blur" src={group.cover} alt="" aria-hidden="true" />
+              <img className="group-card-blur" src={group.cover} alt="" aria-hidden="true" loading="lazy" />
             )}
             <img
               className={`group-card-img ${group.fit === 'contain' ? 'contain' : ''}`}
               src={group.cover}
               alt=""
+              loading="lazy"
             />
           </>
         ) : (

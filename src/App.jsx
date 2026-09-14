@@ -48,8 +48,11 @@ export default function App() {
   const theme = themes[group.theme];
   // La pantalla de inicio (menu de grupos) no debe heredar el color del
   // ultimo grupo elegido — eso la hacia verse distinta cada vez que se
-  // volvia a ella. Queda fija con el tema Disney, sea cual sea activeGroup.
-  const menuTheme = themes.disney;
+  // volvia a ella. Queda fija con look "princesa"/Skye (rosa), sea cual sea
+  // activeGroup — se reusa el tema 'sky' completo (no solo el gradiente)
+  // porque su colorText ya esta pensado para fondo claro: el tema Disney
+  // real (fondo oscuro) sigue intacto para cuando se elige ese grupo.
+  const menuTheme = themes.sky;
 
   const getGroupSongs = useCallback((groupId) => {
     const visible = groupId === ALL_GROUPS
@@ -60,20 +63,20 @@ export default function App() {
 
   const sortedSongs = useMemo(() => getGroupSongs(activeGroup), [activeGroup, getGroupSongs]);
 
-  // Precarga silenciosa: sin esto, cada carátula recién se pedía al
-  // navegador cuando el usuario la veía por primera vez (menu de grupos o
-  // reproductor), y se notaba un parpadeo de carga al navegar. Al pedirlas
-  // todas de una vez apenas abre la app, el navegador ya las tiene en
-  // cache cuando el usuario llega a verlas.
+  // Precarga silenciosa de las caratulas del grupo activo: evita el
+  // parpadeo de carga al entrar a esa lista de canciones. Las portadas del
+  // menu de grupos no necesitan este truco (esas ya se piden solas al
+  // pintar GroupMenuPage). Antes se precargaba TODA la app de una (todas
+  // las canciones de todos los grupos, se hayan abierto o no) — ahora es
+  // solo el grupo que realmente se eligio.
   useEffect(() => {
     const urls = new Set();
-    songs.forEach((s) => { if (s.cover) urls.add(s.cover); });
-    groups.forEach((g) => { if (g.cover) urls.add(g.cover); });
+    sortedSongs.forEach((s) => { if (s.cover) urls.add(s.cover); });
     urls.forEach((url) => {
       const img = new Image();
       img.src = url;
     });
-  }, []);
+  }, [sortedSongs]);
 
   useEffect(() => {
     const root = document.documentElement;

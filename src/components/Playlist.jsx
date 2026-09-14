@@ -30,7 +30,7 @@ export default function Playlist({ songs, currentSong, isPlaying, onSelect }) {
 
             <span className="song-row-art">
               {song.cover ? (
-                <img src={song.cover} alt="" />
+                <img src={song.cover} alt="" loading="lazy" />
               ) : (
                 <CustomerServiceOutlined className="song-row-art-fallback" />
               )}
