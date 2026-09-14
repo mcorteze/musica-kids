@@ -12,7 +12,9 @@
 //           Detras se pinta la misma imagen difuminada para rellenar el cuadrado.
 //
 // El grupo 'all' es especial: no filtra nada y no tiene portada.
-// El orden de este arreglo es el orden del carrusel (de mas a menos canciones).
+// El orden de ESTE arreglo no importa para el despliegue (se puede agregar un
+// grupo nuevo en cualquier parte de abajo): lo que se exporta al final va
+// ordenado solo, "Todas" primero y el resto alfabetico por nombre.
 // ============================================
 
 export const ALL_GROUPS = 'all';
@@ -107,4 +109,14 @@ const groups = [
   },
 ];
 
-export default groups;
+// "Todas" siempre primera (es la opcion de no-filtro, no un grupo de
+// contenido); el resto, alfabetico. Automatico para cualquier grupo que se
+// agregue al arreglo de arriba, sin tener que ubicarlo a mano en orden.
+const sortedGroups = [
+  ...groups.filter((g) => g.id === ALL_GROUPS),
+  ...groups
+    .filter((g) => g.id !== ALL_GROUPS)
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
+];
+
+export default sortedGroups;
