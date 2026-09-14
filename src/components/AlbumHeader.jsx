@@ -9,6 +9,8 @@ import {
   LikeOutlined,
   HeartFilled,
   HeartOutlined,
+  StarFilled,
+  StarOutlined,
 } from '@ant-design/icons';
 import { GiUnicorn } from 'react-icons/gi';
 
@@ -27,6 +29,8 @@ export default function AlbumHeader({
   onToggleLove,
   unicorned,
   onToggleUnicorn,
+  starred,
+  onToggleStar,
 }) {
   if (!song) {
     return (
@@ -141,6 +145,21 @@ export default function AlbumHeader({
             >
               <span className="unicorn-icon-glow">
                 <GiUnicorn />
+              </span>
+            </button>
+          </Tooltip>
+
+          {/* Solo tablet/laptop/desktop: se oculta en movil por breakpoint (max-width: 640px) en App.css */}
+          <Tooltip title={starred ? '' : '¡Brilla!'}>
+            <button
+              type="button"
+              onClick={onToggleStar}
+              className={`album-action-btn star-btn ${starred ? 'active starred' : ''}`}
+              aria-label="¡Brilla!"
+              aria-pressed={starred}
+            >
+              <span className="star-icon-glow">
+                {starred ? <StarFilled /> : <StarOutlined />}
               </span>
             </button>
           </Tooltip>

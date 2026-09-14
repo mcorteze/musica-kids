@@ -334,12 +334,12 @@ html {
    difuminada de la cancion (clara u oscura segun la imagen), asi que un
    icono suelto recoloreado con el acento del tema podia perder contraste.
    Se excluyen like/love porque tienen su propio color fijo (no de tema). */
-.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn) {
+.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn):not(.star-btn) {
   background: var(--accent-color, #fff);
   color: var(--accent-ink, #14141c);
 }
 
-.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn) .repeat-one-badge {
+.album-action-btn.active:not(.like-btn):not(.heart-btn):not(.unicorn-btn):not(.star-btn) .repeat-one-badge {
   background: var(--accent-ink, #fff);
   color: var(--accent-color, #14141c);
 }
@@ -387,6 +387,49 @@ html {
   0%   { opacity: 0; transform: scale(0.4) rotate(0deg); }
   30%  { opacity: 1; }
   100% { opacity: 0; transform: scale(1.6) rotate(20deg); }
+}
+
+/* Cuarta reaccion, color fijo (no de tema) como las otras. A diferencia del
+   unicornio (destello que se disipa dejando un color fijo), la estrella
+   queda con un brillo que pulsa sin parar mientras este activa: "brilla
+   como el sol", no un flash unico. */
+.star-icon-glow {
+  display: inline-flex;
+}
+
+.star-btn.starred {
+  color: #FFC542;
+  animation: likePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.star-btn.starred .star-icon-glow {
+  animation: sunGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes sunGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 197, 66, 0.65)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(255, 197, 66, 0.95)); }
+}
+
+/* Destello inicial al activar, mismo criterio que el unicornio: rayos que
+   estallan y se disipan, dejando el pulso continuo de arriba como estado
+   permanente. */
+.star-btn.starred::after {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 197, 66, 0.55) 0%, rgba(255, 197, 66, 0) 60%),
+    radial-gradient(circle 2px at 50% 2%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 88% 18%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
+    radial-gradient(circle 2.4px at 94% 58%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 72% 94%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
+    radial-gradient(circle 2.4px at 22% 92%, #ffffff 0, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle 2px at 2% 62%, #FFC542 0, rgba(255, 197, 66, 0) 70%),
+    radial-gradient(circle 2px at 12% 14%, #ffffff 0, rgba(255, 255, 255, 0) 70%);
+  opacity: 0;
+  animation: unicornSparkle 0.7s ease-out;
 }
 
 /* Insignia solida (no texto suelto) para que el "1" de repetir-una sea
@@ -2156,6 +2199,12 @@ html {
 
 /* ========== MOBILE (max-width: 640px) ========== */
 @media screen and (max-width: 640px) {
+  /* La estrella es solo para tablet/laptop/desktop: en movil el header del
+     album ya esta apretado con like/love/unicornio, se excluye esta cuarta. */
+  .star-btn {
+    display: none;
+  }
+
   /* El modo conduccion solo tiene sentido en el celular: en tablet/laptop
      la lista de canciones ya se ve comoda y no compite con manejar. Los
      controles se agrandan y suben un poco solo aqui, en movil. */
@@ -2926,6 +2975,18 @@ html {
   }
 
   .unicorn-btn.unicorned::after {
+    content: none;
+  }
+
+  .star-btn.starred {
+    animation: none !important;
+  }
+
+  .star-btn.starred .star-icon-glow {
+    animation: none !important;
+  }
+
+  .star-btn.starred::after {
     content: none;
   }
 

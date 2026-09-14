@@ -11,6 +11,7 @@ import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
 import useUnicornSongs from './hooks/useUnicornSongs';
+import useStarredSongs from './hooks/useStarredSongs';
 import useWakeLock from './hooks/useWakeLock';
 import themes from './themes';
 import songs from './data/songs';
@@ -192,6 +193,7 @@ export default function App() {
   const { isLiked, toggleLike } = useLikedSongs();
   const { isLoved, toggleLove } = useLovedSongs();
   const { isUnicorned, toggleUnicorn } = useUnicornSongs();
+  const { isStarred, toggleStar } = useStarredSongs();
 
   const handleToggleLike = useCallback(() => {
     if (currentSong) toggleLike(currentSong.id);
@@ -204,6 +206,10 @@ export default function App() {
   const handleToggleUnicorn = useCallback(() => {
     if (currentSong) toggleUnicorn(currentSong.id);
   }, [currentSong, toggleUnicorn]);
+
+  const handleToggleStar = useCallback(() => {
+    if (currentSong) toggleStar(currentSong.id);
+  }, [currentSong, toggleStar]);
 
   return (
     <ConfigProvider
@@ -256,6 +262,8 @@ export default function App() {
                 onToggleLove={handleToggleLove}
                 unicorned={currentSong ? isUnicorned(currentSong.id) : false}
                 onToggleUnicorn={handleToggleUnicorn}
+                starred={currentSong ? isStarred(currentSong.id) : false}
+                onToggleStar={handleToggleStar}
               />
             </div>
 
