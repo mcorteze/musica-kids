@@ -1027,11 +1027,13 @@ html {
      borde (el comportamiento por defecto de background-clip), y con el
      borde en "transparent" eso se veia como un aro negro feo alrededor de
      cada card en vez de quedar realmente invisible. Sin color por defecto:
-     el borde es solo para marcar la card activa (ver .group-card.active). */
+     el borde es solo para marcar la card activa (ver .group-card.active).
+     Tampoco hay box-shadow por defecto: una sombra negra sobre el fondo
+     oscuro de Disney no se lee como sombra, se ve como el mismo borde
+     negro que se queria sacar — solo la card activa la usa, mas abajo. */
   background-clip: padding-box;
   border: 3px solid transparent;
-  background: #12121c;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  background: transparent;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -1085,27 +1087,46 @@ html {
   filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
 }
 
+/* Numero de canciones como badge sobre la imagen, no como texto chico
+   debajo (ver GroupCard.jsx): para quien todavia no lee, un numero corto
+   se reconoce mejor que una frase pequeña. Fondo solido oscuro para que se
+   lea encima de cualquier imagen, clara u oscura. */
+.group-card-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: rgba(15, 15, 25, 0.72);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .group-card-label {
   display: block;
   line-height: 1.25;
   padding: 0 2px;
 }
 
+/* Blanco: el color oscuro original (#1a1a2e) se leia bien sobre el fondo
+   claro de la vieja grilla, pero la pantalla de inicio quedo fija al tema
+   Disney (fondo azul oscuro) y ahi no contrastaba. Tambien un poco mas
+   grande ahora que no compite con la linea de "N canciones" de abajo. */
 .group-card-name {
   display: block;
-  font-size: 13px;
-  font-weight: 800;
-  color: #1a1a2e;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.group-card-count {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(26, 26, 46, 0.55);
 }
 
 /* ========== MENU DE GRUPOS DE PAGINA COMPLETA (todos los responsives) ==========
@@ -1148,6 +1169,14 @@ html {
 
 .app-shell.menu-open .app-content {
   display: none;
+}
+
+/* En movil/tablet el titulo sobra: la grilla ya es obviamente el menu, y
+   ese espacio sirve mejor para ver una fila mas de cards sin scroll. */
+@media screen and (max-width: 1024px) {
+  .group-menu-title {
+    display: none;
+  }
 }
 
 /* Tablet: 3 columnas con ancho proporcional al viewport (las cards siguen
@@ -2858,11 +2887,7 @@ html {
   }
 
   .group-card-name {
-    font-size: 12px;
-  }
-
-  .group-card-count {
-    font-size: 10px;
+    font-size: 13px;
   }
 }
 

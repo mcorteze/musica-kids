@@ -1,13 +1,16 @@
 import { AppstoreOutlined, CheckCircleFilled } from '@ant-design/icons';
 
-// Tarjeta de grupo usada por la pagina de menu (GroupMenuPage).
+// Tarjeta de grupo usada por la pagina de menu (GroupMenuPage). La cantidad
+// de canciones va como badge numerico sobre la imagen (no como texto chico
+// debajo): para quien todavia no lee, un numero corto se lee mejor que una
+// frase pequeña.
 export default function GroupCard({ group, isActive, count, onPick }) {
   return (
     <button
       type="button"
       onClick={() => onPick(group.id)}
       className={`group-card ${isActive ? 'active' : ''}`}
-      aria-label={group.name}
+      aria-label={`${group.name}, ${count} ${count === 1 ? 'cancion' : 'canciones'}`}
       aria-pressed={isActive}
     >
       <span className="group-card-media">
@@ -28,12 +31,10 @@ export default function GroupCard({ group, isActive, count, onPick }) {
           </span>
         )}
         {isActive && <CheckCircleFilled className="group-card-check" />}
+        <span className="group-card-badge">{count}</span>
       </span>
       <span className="group-card-label">
         <span className="group-card-name">{group.name}</span>
-        <span className="group-card-count">
-          {count} {count === 1 ? 'cancion' : 'canciones'}
-        </span>
       </span>
     </button>
   );
