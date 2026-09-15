@@ -1025,6 +1025,18 @@ html {
   background: rgba(255, 255, 255, 0.24);
 }
 
+/* Sin el fondo tipo pildora de los demas botones del header: solo el icono. */
+.gallery-trigger-btn,
+.gallery-trigger-btn:hover {
+  background: transparent;
+}
+
+/* El icono es el emoji propio de cada tema (theme.icon): line-height 1
+   para que no quede corrido verticalmente dentro del boton de 44px. */
+.gallery-trigger-icon {
+  line-height: 1;
+}
+
 /* ========== TARJETA DE GRUPO (grilla de GroupMenuPage) ========== */
 .group-card {
   width: 100%;
@@ -1202,11 +1214,12 @@ html {
   }
 }
 
-/* Tablet: 3 columnas con ancho proporcional al viewport (las cards siguen
-   cuadradas por el aspect-ratio de .group-card-media, no por un ancho fijo). */
+/* Tablet: 2 columnas (antes 3) — las cards crecen, mas comodo al tacto.
+   Solo este rango; movil sigue en 2 por su propia regla base y
+   laptop/desktop siguen con el auto-fill de mas abajo, sin cambios. */
 @media screen and (min-width: 641px) and (max-width: 1024px) {
   .group-menu-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 18px;
   }
 }
@@ -1561,6 +1574,109 @@ html {
   .chat-hilo-interior {
     max-width: 1100px;
   }
+}
+
+/* ========== GALERIA PAW PATROL (drawer lateral, no a pantalla completa) ==========
+   A diferencia del chat (100% de ancho siempre), este drawer deja ver un
+   resto de pantalla atenuado: 100% en movil, 80% en tablet, 40% en
+   laptop/desktop (ver breakpoints mas abajo). Reusa la animacion drawerIn
+   ya definida arriba para el chat. */
+.gallery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(10, 8, 16, 0.55);
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.gallery-drawer {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #FFF6FA;
+  animation: drawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .gallery-drawer {
+    width: 80%;
+  }
+}
+
+@media screen and (min-width: 1025px) {
+  .gallery-drawer {
+    width: 40%;
+  }
+}
+
+.gallery-drawer-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, #E0298C, #F0559E);
+  box-shadow: 0 2px 14px rgba(20, 34, 74, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.gallery-drawer-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gallery-cerrar-x {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease;
+}
+
+.gallery-cerrar-x:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.gallery-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gallery-img {
+  width: 100%;
+  display: block;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.gallery-empty {
+  margin: auto;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #A94D82;
 }
 
 /* ========== CHILD LOCK ========== */

@@ -7,6 +7,7 @@ import MiniPlayerFab from './components/MiniPlayerFab';
 import Playlist from './components/Playlist';
 import GroupMenuPage from './components/GroupMenuPage';
 import ToyChat from './components/ToyChat';
+import GroupGallery from './components/GroupGallery';
 import DrivingMode from './components/DrivingMode';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
@@ -19,6 +20,15 @@ import songs from './data/songs';
 import groups, { ALL_GROUPS } from './data/groups';
 import 'antd/dist/reset.css';
 import './App.css';
+
+// Que grupos tienen galeria de fotos y en que carpeta de src/assets/ estan
+// (ver skills/agregar-imagen-galeria.md). Titulo/icono/color de cada una
+// salen del propio grupo/tema activo, no hace falta repetirlos aca.
+const GALLERY_FOLDERS = {
+  'paw-patrol': 'paw-patrol-gallery',
+  'toy-story': 'toy-story-gallery',
+  disney: 'disney-gallery',
+};
 
 function shuffleArray(array) {
   const arr = [...array];
@@ -264,6 +274,16 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
+            {/* Solo dentro del reproductor de un grupo con galeria (no en el
+                menu de grupos), a la izquierda del boton de chat. */}
+            {GALLERY_FOLDERS[activeGroup] && !showGroupMenu && (
+              <GroupGallery
+                folder={GALLERY_FOLDERS[activeGroup]}
+                title={group.name}
+                icon={theme.icon}
+                headerGradient={theme.headerStyle.background}
+              />
+            )}
             {/* ChildLock (pantalla completa + candado) sacado por ahora.
                 El componente sigue en src/components/ para retomarlo despues. */}
             <ToyChat />
