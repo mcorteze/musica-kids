@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/07-disney-BuROuEMO.jpg`;export{e as default};

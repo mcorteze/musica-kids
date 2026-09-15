@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/02-paw-patrol-B3N4WXkl.jpg`;export{e as default};

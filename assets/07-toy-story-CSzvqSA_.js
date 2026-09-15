@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/07-toy-story-DY15ZOER.jpg`;export{e as default};

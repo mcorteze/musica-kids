@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/10-disney-DJt--l44.jpg`;export{e as default};

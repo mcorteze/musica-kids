@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/04-toy-story-BvtXiIy1.jpg`;export{e as default};

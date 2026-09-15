@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/12-disney-CV_jhoDm.jpg`;export{e as default};

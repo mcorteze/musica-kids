@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/06-disney-VJ2FPS4_.jpg`;export{e as default};
