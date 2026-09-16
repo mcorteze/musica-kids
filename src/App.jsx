@@ -28,6 +28,13 @@ const GALLERY_FOLDERS = {
   'paw-patrol': 'paw-patrol-gallery',
   'toy-story': 'toy-story-gallery',
   disney: 'disney-gallery',
+  '31-minutos': '31-minutos-gallery',
+  bluey: 'bluey-gallery',
+  munecas: 'munecas-gallery',
+  gimnasia: 'gimnasia-gallery',
+  'efecto-n': 'efecto-n-gallery',
+  'perro-chocolo': 'perro-chocolo-gallery',
+  varias: 'varias-gallery',
 };
 
 function shuffleArray(array) {
