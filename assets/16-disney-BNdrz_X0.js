@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/16-disney-GCKBSsdr.jpg`;export{e as default};

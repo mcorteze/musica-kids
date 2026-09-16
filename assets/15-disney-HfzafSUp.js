@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/15-disney-DPM2Z4HB.jpg`;export{e as default};

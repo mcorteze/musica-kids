@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/01-gimnasia-CO7Rcd_z.jpg`;export{e as default};

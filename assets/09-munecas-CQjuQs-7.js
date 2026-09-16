@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/09-munecas-BsLHYUM6.jpg`;export{e as default};

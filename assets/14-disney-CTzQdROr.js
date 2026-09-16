@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/14-disney-Ntbp1JUG.jpg`;export{e as default};

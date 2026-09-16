@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/06-munecas-B4-Dlflo.jpg`;export{e as default};

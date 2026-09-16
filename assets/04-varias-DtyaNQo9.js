@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/04-varias-Dn65kqiy.jpg`;export{e as default};

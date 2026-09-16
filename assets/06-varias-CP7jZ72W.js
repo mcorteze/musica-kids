@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/06-varias-B8WOH1nC.jpg`;export{e as default};

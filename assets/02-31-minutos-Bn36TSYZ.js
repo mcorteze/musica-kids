@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/02-31-minutos-aouXuOKA.jpg`;export{e as default};

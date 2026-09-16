@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/01-efecto-n-BuiKtBXr.jpg`;export{e as default};

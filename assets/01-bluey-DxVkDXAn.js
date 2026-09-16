@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/01-bluey-sn8LT4Fq.jpg`;export{e as default};
