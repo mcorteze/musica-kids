@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/07-31-minutos-Bw-1ju93.jpg`;export{e as default};

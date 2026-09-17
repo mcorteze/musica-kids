@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/05-31-minutos-D2pSDtAQ.jpg`;export{e as default};

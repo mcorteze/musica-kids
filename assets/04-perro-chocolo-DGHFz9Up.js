@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/04-perro-chocolo-Do0LzLmM.jpg`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/06-31-minutos-J_mrfVTK.jpg`;export{e as default};
