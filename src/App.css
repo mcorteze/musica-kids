@@ -2371,9 +2371,10 @@ html {
     display: none;
   }
 
-  /* El modo conduccion solo tiene sentido en el celular: en tablet/laptop
-     la lista de canciones ya se ve comoda y no compite con manejar. Los
-     controles se agrandan y suben un poco solo aqui, en movil. */
+  /* El modo conduccion tiene sentido en movil y tablet (ver tambien el
+     bloque TABLET mas abajo); en laptop/desktop la lista de canciones ya
+     se ve comoda y no compite con manejar. Los controles se agrandan y
+     suben un poco solo aqui, en movil. */
   .driving-trigger-btn {
     display: inline-flex;
   }
@@ -2591,6 +2592,12 @@ html {
 @media screen and (min-width: 641px) and (max-width: 1024px) {
   .app-content {
     padding: 12px 20px 20px;
+  }
+
+  /* Mismo boton de modo conduccion del bloque MOBILE, ahora tambien
+     visible en tablet. */
+  .driving-trigger-btn {
+    display: inline-flex;
   }
 }
 
