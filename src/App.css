@@ -1679,6 +1679,453 @@ html {
   color: #A94D82;
 }
 
+/* ========== MEMORICE (drawer lateral, borrador) ==========
+   Boton + tablero de memoria (dar vuelta pares de cartas hasta encontrar
+   las coincidencias). Pensado por ahora para tablet/laptop/desktop: el
+   boton de entrada se oculta en movil hasta que el tablero se ajuste
+   tambien a esa pantalla. */
+.memory-trigger-btn {
+  display: none;
+}
+
+@media screen and (min-width: 641px) {
+  .memory-trigger-btn {
+    display: inline-flex;
+  }
+}
+
+.memory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(8, 18, 36, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.memory-drawer {
+  /* Siempre a todo el ancho (no solo en movil): con el tablero mas grande
+     (16 cartas) un drawer angosto obligaba a scrollear o a cartas
+     diminutas. Ancho completo le da a la grilla el espacio que necesita
+     para no scrollear nunca (ver .memory-body / .memory-grid). El fondo
+     (background-image, puesto inline desde MemoryGame.jsx) es la escena de
+     la torre de Paw Patrol; el color solido queda de resguardo mientras
+     carga o si fallara. */
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  /* right bottom (no center): en tablet vertical, "center" recorta tanto
+     de los costados que la torre de Paw Patrol queda totalmente afuera de
+     cuadro (verificado recortando la imagen con la misma matematica que
+     usa cover). La torre esta pegada al borde derecho de la imagen
+     original, asi que anclar ahi la deja siempre visible sin afectar el
+     caso desktop (ahi no hay recorte horizontal). */
+  background-color: #BEE6F5;
+  background-size: cover;
+  background-position: right bottom;
+  animation: drawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.memory-drawer-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  background: linear-gradient(120deg, #0BA3E0 0%, #0E8FD1 55%, #E31A22 100%);
+  box-shadow: 0 2px 14px rgba(8, 40, 66, 0.28);
+  position: relative;
+  z-index: 1;
+}
+
+.memory-drawer-title h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.memory-drawer-title p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Dentro de una partida, el volver reemplaza el titulo "Memorice" (pedido
+   explicito: menos texto fijo, mas control util a mano en el mismo lugar). */
+.memory-titulo-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.memory-volver-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease;
+}
+
+.memory-volver-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.memory-cerrar-x {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease;
+}
+
+.memory-cerrar-x:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* El "Reiniciar" vive en la misma barra que el titulo y el cerrar (no una
+   franja aparte abajo, que desperdiciaba una fila entera de alto) —
+   pedido explicito para no restarle espacio util al tablero. */
+.memory-header-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.memory-reiniciar-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background-color 0.18s ease;
+}
+
+.memory-reiniciar-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* Nunca debe hacer falta scrollear para ver el tablero completo (en
+   tablet/laptop/desktop, unico rango donde el juego esta disponible por
+   ahora): columna flex (selector de tema, o mensaje de victoria + area del
+   tablero) donde el area del tablero siempre es la que se estira con
+   flex:1 para ocupar el alto que sobra bajo el header. overflow:hidden
+   queda de resguardo final por si algun calculo se pasara por poco.
+   justify-content:center es para el selector de tema (contenido chico, sin
+   flex:1 propio) — no afecta al tablero porque ese ya llena todo el alto
+   disponible solo. */
+.memory-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ========== SELECTOR DE TEMA (paso previo, ver README.txt de
+   src/assets/memorice/) ========== */
+.memory-picker {
+  display: flex;
+  justify-content: center;
+}
+
+.memory-picker-grid {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.memory-picker-tile {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 26px rgba(8, 40, 66, 0.22);
+  font-family: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.memory-picker-tile:not(:disabled):hover {
+  box-shadow: 0 14px 30px rgba(8, 40, 66, 0.3);
+}
+
+.memory-picker-tile:disabled {
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.6);
+  filter: grayscale(0.5);
+  opacity: 0.75;
+}
+
+/* Dorso real de las cartas de ese tema (no un emoji generico) — mientras
+   no cargue o el tema no tenga fotos todavia, un icono neutro de
+   "imagen" hace de placeholder. */
+.memory-picker-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(8, 40, 66, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memory-picker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.memory-picker-placeholder {
+  font-size: 36px;
+  color: rgba(8, 40, 66, 0.28);
+}
+
+.memory-picker-nombre {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0B4F73;
+  text-align: center;
+}
+
+.memory-picker-badge {
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: rgba(8, 40, 66, 0.75);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Area donde MemoryGame.jsx mide el espacio real disponible (ResizeObserver)
+   para calcular la celda cuadrada mas grande que entra sin scroll. Al medir
+   en JS en vez de depender de porcentajes en cascada, tambien se recalcula
+   solo si la tablet pasa a horizontal o cualquier otro resize. */
+.memory-board-area {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal superpuesto sobre el tablero (no un item mas de .memory-body): asi
+   nunca empuja ni achica la fila de cartas al aparecer. */
+.memory-victoria-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(224, 246, 255, 0.85);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fadeIn 0.25s ease;
+}
+
+.memory-victoria {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 28px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(8, 60, 100, 0.28);
+  text-align: center;
+  animation: memoryModalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes memoryModalPop {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.memory-victoria-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.memory-victoria p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.memory-victoria-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #E31A22, #C4141B);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(227, 26, 34, 0.4);
+  transition: box-shadow 0.18s ease;
+}
+
+.memory-victoria-btn:hover {
+  box-shadow: 0 6px 16px rgba(227, 26, 34, 0.5);
+}
+
+.memory-grid {
+  /* El ancho/alto exactos (en px) los pone MemoryGame.jsx inline, ya
+     calculados para que cada celda sea cuadrada y el tablero entero entre
+     sin scroll (ver .memory-board-area). El gap de aca tiene que coincidir
+     con la constante GAP del componente. */
+  display: grid;
+  grid-template-columns: repeat(var(--memory-cols), 1fr);
+  grid-template-rows: repeat(var(--memory-rows), 1fr);
+  gap: 14px;
+}
+
+.memory-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+  perspective: 900px;
+}
+
+.memory-card:disabled {
+  cursor: default;
+}
+
+.memory-card-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(8, 40, 66, 0.28);
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+}
+
+.memory-card:not(:disabled):hover .memory-card-inner {
+  box-shadow: 0 8px 20px rgba(8, 40, 66, 0.38);
+}
+
+.memory-card.volteada .memory-card-inner {
+  transform: rotateY(180deg);
+}
+
+.memory-card.encontrada .memory-card-inner {
+  animation: memoryMatchPop 0.5s ease;
+  box-shadow: 0 0 0 3px #FFDD05, 0 6px 18px rgba(255, 176, 32, 0.4);
+}
+
+@keyframes memoryMatchPop {
+  0% { transform: rotateY(180deg) scale(1); }
+  45% { transform: rotateY(180deg) scale(1.12); }
+  100% { transform: rotateY(180deg) scale(1); }
+}
+
+.memory-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(28px, 6vw, 44px);
+}
+
+.memory-card-back {
+  /* El dorso ahora es la imagen real (escudo de Paw Patrol, carta-back.avif
+     en MemoryGame.jsx) — el blanco queda de respaldo si tardara en cargar. */
+  background: #ffffff;
+}
+
+.memory-card-front {
+  background: #ffffff;
+  transform: rotateY(180deg);
+}
+
+.memory-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.memory-cargando {
+  margin: 0;
+  padding: 10px 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  font-weight: 600;
+  color: #0B6FA0;
+}
+
 /* ========== CHILD LOCK ========== */
 .child-lock-actions {
   display: flex;

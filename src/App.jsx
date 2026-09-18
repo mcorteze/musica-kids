@@ -9,6 +9,7 @@ import GroupMenuPage from './components/GroupMenuPage';
 import ToyChat from './components/ToyChat';
 import GroupGallery from './components/GroupGallery';
 import DrivingMode from './components/DrivingMode';
+import MemoryGame from './components/MemoryGame';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
@@ -294,6 +295,7 @@ export default function App() {
             {/* ChildLock (pantalla completa + candado) sacado por ahora.
                 El componente sigue en src/components/ para retomarlo despues. */}
             <ToyChat />
+            <MemoryGame />
             <button
               type="button"
               onClick={handleOpenDrivingConfirm}
