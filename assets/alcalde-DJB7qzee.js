@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/alcalde-CAIDDeFJ.avif`;export{e as default};

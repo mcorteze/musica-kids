@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/robodog-DXCdxvPt.avif`;export{e as default};

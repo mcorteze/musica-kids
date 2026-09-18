@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sky-BaSwTw9Z.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/marshall-CIpgJg1S.avif`;export{e as default};

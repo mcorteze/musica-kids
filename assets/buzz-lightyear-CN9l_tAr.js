@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/buzz-lightyear-BQmH7I_T.avif`;export{e as default};

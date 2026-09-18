@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/alcaldesa-COOHX90h.avif`;export{e as default};

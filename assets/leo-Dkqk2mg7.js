@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/leo-5R2qSohr.avif`;export{e as default};

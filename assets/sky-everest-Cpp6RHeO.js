@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sky-everest-CnbfTCfH.avif`;export{e as default};

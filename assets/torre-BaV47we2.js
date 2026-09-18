@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/torre-DyBWWrMA.avif`;export{e as default};

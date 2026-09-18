@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/tracker-B0OCeG7O.avif`;export{e as default};

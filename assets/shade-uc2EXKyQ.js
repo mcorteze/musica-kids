@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/shade-QRr_pEZ_.avif`;export{e as default};

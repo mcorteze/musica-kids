@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/woody-Dk_8Xx_f.avif`;export{e as default};

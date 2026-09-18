@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/rubble-BSRop5P4.avif`;export{e as default};

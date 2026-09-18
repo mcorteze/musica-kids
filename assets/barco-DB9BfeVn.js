@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/barco-DjxQMSZ1.avif`;export{e as default};

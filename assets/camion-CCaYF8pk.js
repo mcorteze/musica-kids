@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/camion-DIB8sDu8.avif`;export{e as default};

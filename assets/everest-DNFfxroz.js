@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/everest-BJMq76MH.avif`;export{e as default};

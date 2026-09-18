@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/zuma-VYbvLtHJ.avif`;export{e as default};

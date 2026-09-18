@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sky-superpower-2FW3JVi6.avif`;export{e as default};

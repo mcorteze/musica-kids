@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/rocky-BWZOFDKS.avif`;export{e as default};
