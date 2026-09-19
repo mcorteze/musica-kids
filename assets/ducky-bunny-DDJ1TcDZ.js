@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/ducky-bunny-BCAxSXIH.avif`;export{e as default};

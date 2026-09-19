@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/poder2-BEeULYOZ.avif`;export{e as default};

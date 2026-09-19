@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/ennieve-osljLUMe.avif`;export{e as default};

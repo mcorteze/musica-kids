@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bonnie-DHOCkIIq.avif`;export{e as default};

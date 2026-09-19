@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/viento-D_6-e2j_.avif`;export{e as default};

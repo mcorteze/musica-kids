@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/cumpleanos-H5jyHuIa.avif`;export{e as default};

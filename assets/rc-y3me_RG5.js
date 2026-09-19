@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/rc-tbRbUU2Y.avif`;export{e as default};

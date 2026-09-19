@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gabby-DZ3ZNVKr.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/cantando-B9qixVKe.avif`;export{e as default};

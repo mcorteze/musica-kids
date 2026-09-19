@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/elsa--hbHc4pp.avif`;export{e as default};

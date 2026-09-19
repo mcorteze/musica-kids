@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/djmusicat-BLvBu_yb.avif`;export{e as default};

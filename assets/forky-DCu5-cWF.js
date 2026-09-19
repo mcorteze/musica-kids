@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/forky-vwJ5iuc9.avif`;export{e as default};

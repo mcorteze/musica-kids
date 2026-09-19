@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/copo-DsvN1ws9.avif`;export{e as default};

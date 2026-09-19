@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/duke-caboom-CY_LJAuN.avif`;export{e as default};

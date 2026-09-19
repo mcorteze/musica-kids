@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/forky-girl-BeFtzVvp.avif`;export{e as default};

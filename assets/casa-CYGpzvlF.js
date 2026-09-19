@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/casa-DN4781Rs.avif`;export{e as default};

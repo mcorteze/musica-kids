@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bo-peep-DTzp7xqc.avif`;export{e as default};

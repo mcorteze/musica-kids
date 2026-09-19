@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/olaf-B7nQNqi0.avif`;export{e as default};

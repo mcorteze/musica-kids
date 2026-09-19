@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/energia-CFCAt_bx.avif`;export{e as default};

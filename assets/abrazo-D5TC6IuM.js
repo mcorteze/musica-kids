@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/abrazo-gCJWqIv8.avif`;export{e as default};

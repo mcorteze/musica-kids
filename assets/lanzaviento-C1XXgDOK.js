@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/lanzaviento-DtCyfK3Z.avif`;export{e as default};

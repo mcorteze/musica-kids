@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/zurg-CJXlBNbS.avif`;export{e as default};

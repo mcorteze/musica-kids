@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/anna-Dvw02gk-.avif`;export{e as default};

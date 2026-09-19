@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/poder-CRkljg5-.avif`;export{e as default};

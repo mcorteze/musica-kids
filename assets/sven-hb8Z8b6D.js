@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sven-BgGP5TBX.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/todos_noche-DK5ilfCP.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mascotas-CMBU0cbn.avif`;export{e as default};

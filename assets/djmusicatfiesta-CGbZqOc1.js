@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/djmusicatfiesta-DL1IErLl.avif`;export{e as default};

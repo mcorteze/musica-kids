@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/slinky-n8wkz86U.avif`;export{e as default};

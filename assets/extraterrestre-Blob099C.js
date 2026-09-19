@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/extraterrestre-lSjkBuXb.avif`;export{e as default};

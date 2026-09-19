@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sr-papa-i7H0moTM.avif`;export{e as default};

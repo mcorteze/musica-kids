@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/escurrigato-MvPpC3Va.avif`;export{e as default};

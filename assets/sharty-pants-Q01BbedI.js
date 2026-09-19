@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sharty-pants-D3tI8FXf.avif`;export{e as default};

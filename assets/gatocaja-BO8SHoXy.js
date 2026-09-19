@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gatocaja-Cw9ILRsJ.avif`;export{e as default};

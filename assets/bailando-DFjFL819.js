@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bailando-CFlDfK_1.avif`;export{e as default};

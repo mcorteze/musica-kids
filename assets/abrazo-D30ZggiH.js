@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/abrazo-CaGSTK8s.avif`;export{e as default};

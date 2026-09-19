@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pelota-CXVaf_-h.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/lenny-Ch2eOfqF.avif`;export{e as default};

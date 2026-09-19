@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pastelillo-CAM4ypOk.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/explorando-R8sGb5pR.avif`;export{e as default};

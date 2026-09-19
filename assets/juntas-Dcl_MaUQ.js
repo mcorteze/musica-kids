@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/juntas-DMAxrXg2.avif`;export{e as default};

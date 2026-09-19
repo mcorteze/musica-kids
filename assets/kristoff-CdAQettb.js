@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/kristoff-DKPEBuuT.avif`;export{e as default};

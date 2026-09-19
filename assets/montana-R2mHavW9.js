@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/montana-CWQbKvAI.avif`;export{e as default};

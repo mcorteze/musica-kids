@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/dolly-IqxaPHRx.avif`;export{e as default};

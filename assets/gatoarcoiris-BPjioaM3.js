@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gatoarcoiris-C5_IEVVV.avif`;export{e as default};

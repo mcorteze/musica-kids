@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/todos-CP24s0qQ.avif`;export{e as default};

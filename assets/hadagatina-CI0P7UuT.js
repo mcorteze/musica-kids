@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/hadagatina-Dw8khT3u.avif`;export{e as default};

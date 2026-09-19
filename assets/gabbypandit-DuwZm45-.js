@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gabbypandit-BL6wAkCP.avif`;export{e as default};

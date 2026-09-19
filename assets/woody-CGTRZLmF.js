@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/woody-DUvoxpoJ.avif`;export{e as default};

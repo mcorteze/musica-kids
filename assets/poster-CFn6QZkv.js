@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/poster-BvkDL0E8.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/navidad-Bm4K44va.avif`;export{e as default};

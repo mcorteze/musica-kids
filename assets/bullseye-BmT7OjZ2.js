@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bullseye-CUR4Xg_e.avif`;export{e as default};

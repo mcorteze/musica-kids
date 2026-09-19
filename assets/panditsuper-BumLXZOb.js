@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/panditsuper-DKPE-SI3.avif`;export{e as default};

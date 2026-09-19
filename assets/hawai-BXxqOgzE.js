@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/hawai-DC49oQqE.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/fondorosa-DpAqVJIM.avif`;export{e as default};

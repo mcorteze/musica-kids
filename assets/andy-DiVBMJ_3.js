@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/andy-CBVvCwYv.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/soldadito-sEINulCk.avif`;export{e as default};

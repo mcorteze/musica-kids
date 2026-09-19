@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gatoalmohada-D85Epnz_.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gatocajamama-MyFIpacE.avif`;export{e as default};

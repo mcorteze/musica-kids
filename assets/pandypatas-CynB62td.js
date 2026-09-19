@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pandypatas-DRn1pLR5.avif`;export{e as default};
