@@ -9,6 +9,7 @@ Stack: React + Ant Design + Vite. Deploy: GitHub Pages.
 |-------|---------|-----------------|
 | Agregar cancion | skills/agregar-cancion.md | Cuando el usuario quiera agregar una cancion nueva |
 | Agregar imagen a galeria | skills/agregar-imagen-galeria.md | Cuando el usuario tenga fotos propias para sumar a una galeria (ej. Paw Patrol) |
+| Agregar set de Memorice | skills/agregar-set-memorice.md | Cuando el usuario traiga (o renueve) las fotos de personajes + fondo + dorso de un tema del juego Memorice |
 | Conversaciones de los juguetes | skills/conversaciones-juguetes.md | Crear, reutilizar o programar mensajes del chat de los juguetes |
 
 ## Estructura
@@ -18,6 +19,7 @@ musica-kids/
 ├── public/music/       ← MP3s
 ├── public/covers/      ← Caratulas
 ├── src/assets/*-gallery/ ← Fotos de galerias (ej. paw-patrol-gallery), SI viajan en git
+├── src/assets/memorice/ ← Sets del juego Memorice (por tema), SI viajan en git
 ├── src/data/songs.js   ← Lista de canciones
 ├── src/themes/         ← Paletas de colores
 └── skills/             ← Skills del proyecto

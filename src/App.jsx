@@ -7,9 +7,8 @@ import MiniPlayerFab from './components/MiniPlayerFab';
 import Playlist from './components/Playlist';
 import GroupMenuPage from './components/GroupMenuPage';
 import ToyChat from './components/ToyChat';
-import GroupGallery from './components/GroupGallery';
 import DrivingMode from './components/DrivingMode';
-import MemoryGame from './components/MemoryGame';
+import MenuActividades from './components/MenuActividades';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
@@ -21,22 +20,6 @@ import songs from './data/songs';
 import groups, { ALL_GROUPS } from './data/groups';
 import 'antd/dist/reset.css';
 import './App.css';
-
-// Que grupos tienen galeria de fotos y en que carpeta de src/assets/ estan
-// (ver skills/agregar-imagen-galeria.md). Titulo/icono/color de cada una
-// salen del propio grupo/tema activo, no hace falta repetirlos aca.
-const GALLERY_FOLDERS = {
-  'paw-patrol': 'paw-patrol-gallery',
-  'toy-story': 'toy-story-gallery',
-  disney: 'disney-gallery',
-  '31-minutos': '31-minutos-gallery',
-  bluey: 'bluey-gallery',
-  munecas: 'munecas-gallery',
-  gimnasia: 'gimnasia-gallery',
-  'efecto-n': 'efecto-n-gallery',
-  'perro-chocolo': 'perro-chocolo-gallery',
-  varias: 'varias-gallery',
-};
 
 function shuffleArray(array) {
   const arr = [...array];
@@ -57,6 +40,11 @@ export default function App() {
   // Pagina de entrada en todos los responsives: al cargar se ve la grilla de
   // grupos en vez del reproductor.
   const [showGroupMenu, setShowGroupMenu] = useState(true);
+  // Si el drawer de Actividades (Memorice/Imprimir) esta abierto: mientras
+  // lo esta, el reproductor debe verse como cluster flotante igual que en
+  // el menu de grupos, aunque se haya abierto desde la pantalla de una
+  // cancion puntual.
+  const [activitiesOpen, setActivitiesOpen] = useState(false);
 
   // El grupo manda: define tanto el filtro de la lista como la paleta de colores.
   const group = useMemo(
@@ -282,20 +270,10 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
-            {/* Solo dentro del reproductor de un grupo con galeria (no en el
-                menu de grupos), a la izquierda del boton de chat. */}
-            {GALLERY_FOLDERS[activeGroup] && !showGroupMenu && (
-              <GroupGallery
-                folder={GALLERY_FOLDERS[activeGroup]}
-                title={group.name}
-                icon={theme.icon}
-                headerGradient={theme.headerStyle.background}
-              />
-            )}
             {/* ChildLock (pantalla completa + candado) sacado por ahora.
                 El componente sigue en src/components/ para retomarlo despues. */}
             <ToyChat />
-            <MemoryGame />
+            <MenuActividades onOpenChange={setActivitiesOpen} />
             <button
               type="button"
               onClick={handleOpenDrivingConfirm}
@@ -343,12 +321,14 @@ export default function App() {
           </div>
         </main>
 
-        {showGroupMenu ? (
+        {showGroupMenu || activitiesOpen ? (
           // La barra completa le resta demasiado alto a la grilla en el
           // menu (sobre todo en pantallas anchas y bajas): mientras se ve
-          // el menu, un cluster flotante compacto basta para seguir
-          // controlando la reproduccion. Sin cancion todavia no hay nada
-          // que controlar, no se muestra nada.
+          // el menu, o mientras el drawer de Actividades esta abierto (se
+          // superpone a toda la pantalla igual que el menu), un cluster
+          // flotante compacto basta para seguir controlando la
+          // reproduccion. Sin cancion todavia no hay nada que controlar,
+          // no se muestra nada.
           currentSong && (
             <MiniPlayerFab
               isPlaying={isPlaying}

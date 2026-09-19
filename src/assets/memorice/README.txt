@@ -1,9 +1,14 @@
-El Memorice tiene TEMAS (Paw Patrol, Toy Story, Casa de Muñecas por
-ahora — se agregan mas editando TEMAS_META en MemoryGame.jsx).
+El Memorice tiene TEMAS (Paw Patrol, Toy Story, Casa de Muñecas, Frozen
+por ahora — se agregan mas editando TEMAS_META en MenuActividades.jsx).
 
-paw-patrol/ es el set completo (24 fotos + fondo + dorso): con luz verde,
-listo para jugar hasta el tablero maximo de 48 cartas. toy-story/ y
-munecas/ siguen en espera de imagenes (ver el README.txt de cada una).
+paw-patrol/, toy-story/, munecas/ y frozen/ son sets completos (fondo +
+dorso + 23-24 fotos): los cuatro listos para jugar.
+
+Nota sobre TEMAS_META: cada entrada tiene "grupo" (id de groups.js, para
+reusar el nombre que ya usa el reproductor) O "nombre" fijo cuando el tema
+no corresponde a ningun grupo de canciones existente — asi quedo Frozen,
+que no tiene grupo propio en el reproductor (el "Disney" que hay es mas
+generico que el set real).
 
 Cada tema es una carpeta acá adentro con esta forma:
 
