@@ -1623,13 +1623,47 @@ html {
 /* Tarjeta de Memorice en el menu general: oculta en movil (el tablero de
    cartas todavia no esta pensado para pantallas tan chicas), visible de
    tablet para arriba. Imprimir no lleva esta clase — queda disponible en
-   cualquier pantalla. */
-.memory-solo-tablet {
+   cualquier pantalla. Selector compuesto (no ".memory-solo-tablet" sola):
+   tiene la MISMA especificidad que ".memory-picker-tile" (una sola
+   clase cada una), y esa regla esta declarada mas abajo en este archivo
+   — por orden de cascada le ganaba a "display:none" sin importar el
+   ancho de pantalla. El selector compuesto tiene mas especificidad y
+   gana siempre, sin depender del orden. */
+.memory-picker-tile.memory-solo-tablet {
   display: none;
 }
 
 @media screen and (min-width: 641px) {
-  .memory-solo-tablet {
+  .memory-picker-tile.memory-solo-tablet {
+    display: flex;
+  }
+}
+
+/* Accesos habilitados momentaneamente SOLO en laptop/desktop, mientras se
+   terminan de desarrollar — pedido explicito: los niños que usan la app
+   en tablet no deben poder verlos todavia. Hacen falta LAS DOS
+   condiciones a la vez (min-width Y hover/pointer), no una sola:
+   - Solo ancho (min-width:1025px) no alcanza: una tablet comun (hasta un
+     iPad chico) en horizontal ya supera ese ancho, asi que igual
+     mostraria el acceso en una tablet real.
+   - Solo tipo de puntero (hover:hover + pointer:fine) tampoco alcanza
+     para PROBAR esto achicando la ventana del navegador con mouse: el
+     mouse sigue siendo mouse sin importar cuanto se achique la ventana,
+     asi que angostarla a "tamaño tablet" no lo ocultaria en esa prueba.
+   Con las dos juntas: una tablet real (touch, cualquier ancho/orientacion)
+   nunca las cumple ambas, y achicar la ventana del navegador con mouse
+   tambien lo oculta (deja de cumplir el ancho). Gabby Dollhouse y Frozen
+   en el selector de Memorice, y la tarjeta de Rompecabezas en el menu
+   general, usan esta clase. Selector compuesto (mismo motivo que
+   ".memory-picker-tile.memory-solo-tablet" arriba): mas especificidad
+   que ".memory-picker-tile" sola, gana sin depender del orden en el
+   archivo. */
+.memory-picker-tile.memory-solo-laptop {
+  display: none;
+}
+
+@media screen and (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+  .memory-picker-tile.memory-solo-laptop {
     display: flex;
   }
 }
@@ -1819,21 +1853,27 @@ html {
    tablet/laptop/desktop, unico rango donde el juego esta disponible por
    ahora): columna flex (selector de tema, o mensaje de victoria + area del
    tablero) donde el area del tablero siempre es la que se estira con
-   flex:1 para ocupar el alto que sobra bajo el header. overflow:hidden
-   queda de resguardo final por si algun calculo se pasara por poco.
-   justify-content:center es para el selector de tema (contenido chico, sin
-   flex:1 propio) — no afecta al tablero porque ese ya llena todo el alto
-   disponible solo. */
+   flex:1 para ocupar el alto que sobra bajo el header. overflow-y:auto es
+   necesario para los selectores (menu general, elegir tema/grupo): con
+   muchas tarjetas en una pantalla baja, el contenido no entraba y no se
+   podia scrollear para ver el resto — overflow:hidden lo cortaba sin dar
+   forma de llegar a el. El tablero de juego nunca dispara este scroll
+   porque su celda se calcula para entrar siempre sin sobrar. "safe center"
+   evita el problema clasico de flex centrado + overflow (el contenido que
+   se sale por arriba quedaba inalcanzable con scroll): con contenido corto
+   sigue centrado igual que antes, con contenido largo se alinea arriba y
+   se puede scrollear entero. */
 .memory-body {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px 22px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 10px;
 }
 
@@ -2088,12 +2128,12 @@ html {
 .memory-grid {
   /* El ancho/alto exactos (en px) los pone MenuActividades.jsx inline, ya
      calculados para que cada celda sea cuadrada y el tablero entero entre
-     sin scroll (ver .memory-board-area). El gap de aca tiene que coincidir
+     sin scroll (ver .memory-board-area). El gap de aqui tiene que coincidir
      con la constante GAP del componente. */
   display: grid;
   grid-template-columns: repeat(var(--memory-cols), 1fr);
   grid-template-rows: repeat(var(--memory-rows), 1fr);
-  gap: 14px;
+  gap: 8px;
 }
 
 .memory-card {
@@ -2183,6 +2223,216 @@ html {
   font-size: 15px;
   font-weight: 600;
   color: #0B6FA0;
+}
+
+/* ========== ROMPECABEZAS ==========
+   Tablero de ranuras vacias + carrousel de piezas para arrastrar (dnd-kit),
+   en vez del intercambio con toques de la primera version. El carrousel
+   va debajo del tablero con la pantalla vertical, y al lado con la
+   pantalla horizontal (@media orientation, no un ancho fijo: importa como
+   esta la tablet en ese momento, no el tamano de la pantalla). */
+.romp-layout {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Centra el conjunto tablero+carrousel entero cuando sobra espacio (el
+     tablero manda por ancho y deja alto de mas, o viceversa de costado) —
+     ninguno de los dos hijos tiene flex:1 (ambos miden exacto via inline
+     style desde MenuActividades.jsx), asi que el sobrante se reparte
+     arriba/abajo (o a los costados) en vez de quedar todo pegado a un
+     extremo. */
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+@media (orientation: landscape) {
+  .romp-layout {
+    flex-direction: row;
+  }
+}
+
+/* Caja del tablero: ancho/alto exactos los pone MenuActividades.jsx
+   inline (celdaRomp), ya calculados para respetar la proporcion real de
+   la foto sin deformarla. */
+.romp-board-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(8, 40, 66, 0.28);
+}
+
+/* La foto completa, bien tenue, se ve por donde todavia no hay pieza
+   puesta (las ranuras vacias no tienen fondo propio) — sirve de guia sin
+   regalar el resultado. Solo se muestra en el nivel 1 (lo decide
+   MenuActividades.jsx, no renderiza el <img> en los demas niveles).
+   object-fit:fill no deforma porque el wrap ya tiene exactamente la
+   proporcion de esta misma imagen. */
+.romp-referencia {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.romp-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--romp-cols), 1fr);
+  grid-template-rows: repeat(var(--romp-rows), 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+.romp-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border: 2px dashed rgba(255, 255, 255, 0.55);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Una pieza arrastrada esta pasando por encima, lista para soltarse aqui
+   (sea que este vacia o ya ocupada por otra pieza — soltar ahi la
+   reemplaza, la que estaba vuelve al carrousel). */
+.romp-slot.sobre {
+  border-color: #FFDD05;
+  background-color: rgba(255, 221, 5, 0.2);
+}
+
+/* Sin borde (ni gap, ver .romp-board): pieza puesta queda pegada a las de
+   al lado para que la foto arme sin costuras entre medio. */
+.romp-slot.ocupada {
+  border: none;
+}
+
+/* Esta pieza puesta es justo la que corresponde ahi (a diferencia de
+   "ocupada" solo, que puede tener cualquier otra) — aro sutil, no tapa
+   la foto. */
+.romp-slot.ocupada.correcta {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* La pieza puesta en una ranura: ahora es un hijo arrastrable (antes era
+   el fondo de la ranura misma) para poder sacarla de ahi y moverla a
+   otra, o devolverla al carrousel. */
+.romp-pieza-tablero {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  background-repeat: no-repeat;
+  touch-action: none;
+}
+
+/* Carrousel de piezas pendientes: scroll horizontal debajo del tablero
+   (vertical), o scroll vertical al lado (horizontal) — ver .romp-layout.
+   El alto (o ancho, de costado) exacto lo pone MenuActividades.jsx inline
+   (celdaRomp.trayAlto/trayAncho = el tamano real de una celda + el
+   padding de aca abajo, 6px x 2 = 12px, PADDING_TRAY_ROMP en el
+   componente) — box-sizing:border-box para que ese padding quede DENTRO
+   de la medida, no sumado aparte. */
+.romp-tray {
+  flex: none;
+  /* Se estira al ancho completo en columna (vertical) o al alto completo
+     en fila (horizontal) — anula el centrado de .romp-layout SOLO en ese
+     eje, para que el carrousel tenga donde scrollear; el otro eje (su
+     "grosor") es el tamano fijo que pone MenuActividades.jsx inline. */
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: rgba(8, 40, 66, 0.08);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+@media (orientation: landscape) {
+  .romp-tray {
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* Sin miniaturas (pedido explicito): el ancho/alto exactos los pone
+   MenuActividades.jsx inline, iguales a como se ve esa misma pieza ya
+   puesta en el tablero. */
+.romp-tray-pieza {
+  flex: none;
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  cursor: grab;
+  background-repeat: no-repeat;
+  box-shadow: 0 3px 10px rgba(8, 40, 66, 0.3);
+  touch-action: none;
+}
+
+.romp-tray-pieza--overlay {
+  cursor: grabbing;
+  box-shadow: 0 8px 22px rgba(8, 40, 66, 0.45);
+}
+
+/* Boton "Ver imagen" del header: mismo pill que Reiniciar pero solo con
+   una miniatura de la foto real (no un icono generico), asi que va
+   circular y sin el padding lateral pensado para texto. */
+.romp-ver-imagen-btn {
+  width: 40px;
+  padding: 2px;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.romp-ver-imagen-miniatura {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Modal de vista previa (boton "Ver imagen" del header): la foto
+   completa, grande, para consultar como va armada sin que eso cuente
+   como parte del tablero. */
+.romp-previa-modal {
+  position: relative;
+  max-width: 92vw;
+  max-height: 85vh;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(8, 60, 100, 0.28);
+  animation: memoryModalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.romp-previa-img {
+  display: block;
+  max-width: 92vw;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+}
+
+.romp-previa-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(8, 40, 66, 0.55);
+}
+
+.romp-previa-cerrar:hover {
+  background: rgba(8, 40, 66, 0.75);
 }
 
 /* ========== CHILD LOCK ========== */

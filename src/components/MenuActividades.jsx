@@ -1,6 +1,17 @@
 import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import {
   BarsOutlined,
   CloseOutlined,
   LeftOutlined,
@@ -16,10 +27,10 @@ import imagenRompecabezas from '../assets/menu-general/rompecabezas.avif';
 // El icono del header abre este drawer con un menu de tarjetas (Imprimir,
 // Memorice, Rompecabezas) — "vista" dice cual de las pantallas (o el menu
 // raiz) esta activa. Elegir Memorice entra al flujo de temas/juego de mas
-// abajo; elegir Imprimir entra al selector de grupos con galeria.
-// Rompecabezas todavia no tiene juego implementado: la tarjeta queda
-// oculta hasta que se habilite (pedido explicito, "los proximos dias").
-const ROMPECABEZAS_HABILITADO = false;
+// abajo; elegir Imprimir entra al selector de grupos con galeria; elegir
+// Rompecabezas entra al flujo de temas/niveles definido en la seccion
+// ROMPECABEZAS, mas abajo.
+const ROMPECABEZAS_HABILITADO = true;
 // ========== TEMAS ==========
 // Cada tema vive en src/assets/memorice/<id>/ (ver el README.txt de esa
 // carpeta): ui/fondo.avif, ui/back.avif y caras/*.avif (una foto por
@@ -50,8 +61,9 @@ const TEMAS_META = [
     id: 'munecas',
     nombre: 'Gabby Dollhouse',
     header: 'linear-gradient(120deg, #B04FCB 0%, #9B3FC0 55%, #E85FB8 100%)',
-    // Oculto por ahora: se habilita en los proximos dias (pedido explicito).
-    oculto: true,
+    // Habilitado momentaneamente solo en laptop/desktop (pedido
+    // explicito) — en movil y tablet no aparece esta tarjeta todavia.
+    soloLaptop: true,
   },
   {
     id: 'toy-story',
@@ -62,8 +74,9 @@ const TEMAS_META = [
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
-    // Oculto por ahora: se habilita en los proximos dias (pedido explicito).
-    oculto: true,
+    // Habilitado momentaneamente solo en laptop/desktop (pedido
+    // explicito) — en movil y tablet no aparece esta tarjeta todavia.
+    soloLaptop: true,
   },
 ];
 
@@ -84,7 +97,7 @@ function etiquetaDesdeArchivo(nombreArchivo) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, oculto }) => {
+const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, oculto, soloLaptop }) => {
   const info = grupo ? gruposReproductor.find((g) => g.id === grupo) : null;
   const nombre = nombreFijo ?? info?.name ?? id;
 
@@ -110,25 +123,28 @@ const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, oculto })
     // chico son 4 cartas = 2 parejas).
     listo: Boolean(fondo && back && caras.length >= 2),
     oculto: Boolean(oculto),
+    soloLaptop: Boolean(soloLaptop),
   };
 });
 
 // ========== NIVELES ==========
 // SIN selector manual: el unico modo de pasar a mas cartas es ganando el
-// tablero actual (pedido explicito). Min 4, max 48 (24 parejas). Las
-// columnas van creciendo con el total para que la grilla no quede
-// desproporcionada (48 cartas en 4 columnas serian 12 filas altísimas).
+// tablero actual (pedido explicito). Min 4, max 48 (24 parejas). La forma
+// (columnas x filas) de la grilla ya no es fija por nivel: se elige sola
+// segun el espacio real disponible (ver paresDivisores/celda mas abajo),
+// asi aprovecha mejor el alto disponible en vez de dejar una columna de
+// mas con espacio vertical sobrando.
 const NIVELES = [
-  { total: 4, cols: 2 },
-  { total: 8, cols: 4 },
-  { total: 12, cols: 4 },
-  { total: 16, cols: 4 },
-  { total: 20, cols: 5 },
-  { total: 24, cols: 6 },
-  { total: 30, cols: 6 },
-  { total: 36, cols: 6 },
-  { total: 42, cols: 7 },
-  { total: 48, cols: 8 },
+  { total: 4 },
+  { total: 8 },
+  { total: 12 },
+  { total: 16 },
+  { total: 20 },
+  { total: 24 },
+  { total: 30 },
+  { total: 36 },
+  { total: 42 },
+  { total: 48 },
 ];
 
 function nivelesDelTema(tema) {
@@ -159,7 +175,7 @@ const ESPERA_ERROR_MS = 900;
 // mida cada celda). GAP tiene que ser el mismo valor que "gap" en
 // .memory-grid (App.css) — CELDA_MAX evita que en un monitor gigante las
 // tarjetas queden enormes.
-const GAP = 14;
+const GAP = 8;
 const CELDA_MAX = 200;
 
 function shuffle(array) {
@@ -227,6 +243,214 @@ const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) =>
   };
 });
 
+// ========== ROMPECABEZAS ==========
+// A diferencia del Memorice, cada NIVEL usa una foto distinta (pedido
+// explicito — "no vamos a reciclar imagenes"), no la misma foto cortada
+// mas fina. Por eso la cantidad de piezas de cada nivel se define aqui
+// mismo junto con el archivo que le corresponde, no se calcula sola.
+// Cada nivel vive en src/assets/rompecabezas/<tema>/nivel-N.avif.
+const TEMAS_ROMPECABEZAS_META = [
+  {
+    id: 'frozen',
+    nombre: 'Frozen',
+    header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
+    niveles: [
+      { piezas: 12, archivo: 'nivel-1' },
+      { piezas: 18, archivo: 'nivel-2' },
+    ],
+  },
+  {
+    id: 'toy-story',
+    nombre: 'Toy Story',
+    header: 'linear-gradient(120deg, #5AB0F5 0%, #1C6FB0 55%, #E00024 100%)',
+    niveles: [
+      { piezas: 12, archivo: 'nivel-1' },
+      { piezas: 18, archivo: 'nivel-2' },
+      { piezas: 24, archivo: 'nivel-3' },
+    ],
+  },
+];
+
+const ENTRADAS_ROMPECABEZAS = import.meta.glob('../assets/rompecabezas/*/*.{png,jpg,jpeg,webp,avif}');
+
+function cargadorRompecabezas(temaId, archivo) {
+  for (const [ruta, cargar] of Object.entries(ENTRADAS_ROMPECABEZAS)) {
+    const m = ruta.match(/rompecabezas\/([^/]+)\/([^/.]+)\.[a-z0-9]+$/i);
+    if (m && m[1] === temaId && m[2] === archivo) return cargar;
+  }
+  return null;
+}
+
+const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles }) => {
+  const nivelesConCarga = niveles
+    .map((n) => ({ ...n, cargar: cargadorRompecabezas(id, n.archivo) }))
+    .filter((n) => n.cargar);
+  return {
+    id,
+    nombre,
+    header,
+    niveles: nivelesConCarga,
+    // Listo con al menos el primer nivel disponible — los siguientes
+    // pueden ir llegando despues sin que el tema deje de jugarse.
+    listo: nivelesConCarga.length > 0,
+  };
+});
+
+function nivelKeyRompecabezas(temaId) {
+  return `musica-kids-rompecabezas-nivel-${temaId}`;
+}
+
+function leerNivelGuardadoRompecabezas(temaId, totalNiveles) {
+  try {
+    const n = parseInt(localStorage.getItem(nivelKeyRompecabezas(temaId)), 10);
+    return n >= 0 && n < totalNiveles ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Carga la imagen y de paso mide sus proporciones reales (ancho/alto): el
+// tablero necesita esto para no deformar la foto al armar la grilla.
+function cargarImagenConAspecto(cargar) {
+  return cargar().then((m) => {
+    const src = m.default;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ src, aspecto: img.naturalWidth / img.naturalHeight || 16 / 9 });
+      img.onerror = () => resolve({ src, aspecto: 16 / 9 });
+      img.src = src;
+    });
+  });
+}
+
+// Todos los pares (columnas, filas) que arman exactamente "total" piezas.
+function paresDivisores(total) {
+  const pares = [];
+  for (let filas = 1; filas <= total; filas++) {
+    if (total % filas === 0) pares.push({ columnas: total / filas, filas });
+  }
+  return pares;
+}
+
+// De todos los pares posibles, el que arma una grilla mas parecida en
+// proporcion a la foto real (para no dejar piezas demasiado angostas o
+// demasiado altas comparadas con como se ve la imagen completa).
+function grillaRompecabezas(total, aspecto) {
+  let mejor = null;
+  let mejorDelta = Infinity;
+  for (const par of paresDivisores(total)) {
+    const delta = Math.abs(par.columnas / par.filas - aspecto);
+    if (delta < mejorDelta) {
+      mejorDelta = delta;
+      mejor = par;
+    }
+  }
+  return mejor;
+}
+
+// Estado inicial de un nivel: "orden" es el orden barajado en el que se
+// listan las piezas del carrousel (fijo mientras dure el nivel, para que
+// no salten de lugar cada vez que se coloca una); "posiciones" dice, por
+// cada ranura del tablero, que pieza tiene puesta ahi (o null si esta
+// vacia) — CUALQUIER pieza puede ir en CUALQUIER ranura, se puede mover
+// libremente. El carrousel en pantalla sale de restar: las piezas de
+// "orden" que no aparecen en "posiciones" en ese momento.
+function estadoInicialRompecabezas(total) {
+  return {
+    orden: shuffle(Array.from({ length: total }, (_, i) => i)),
+    posiciones: new Array(total).fill(null),
+  };
+}
+
+// Tienen que coincidir con App.css: GAP_LAYOUT_ROMP es el "gap" de
+// .romp-layout (separacion entre tablero y carrousel), PADDING_TRAY_ROMP
+// es 2x el padding de .romp-tray. El calculo de tamano de abajo los usa
+// para repartir el espacio entre tablero y carrousel con una formula
+// directa, sin tener que medir dos veces.
+const GAP_LAYOUT_ROMP = 10;
+const PADDING_TRAY_ROMP = 12;
+
+// Una ranura del tablero: siempre es "droppable" (para soltar ahi
+// cualquier pieza, este vacia u ocupada por otra). Si tiene una pieza
+// puesta, esa pieza ADEMAS es arrastrable (se puede sacar de ahi y
+// moverla a otra ranura, o devolverla al carrousel soltandola afuera de
+// la cuadricula) — useDraggable se llama siempre (regla de hooks), pero
+// queda "disabled" cuando la ranura esta vacia, ya que ahi no hay nada
+// que agarrar. El recorte que se muestra sale de la pieza puesta (su
+// posicion real en la foto), no de la ranura — asi una pieza mal puesta
+// se nota, como en un rompecabezas de verdad.
+function RanuraRompecabezas({ id, piezaId, imagen, columnas, filas }) {
+  const { isOver, setNodeRef: setDropRef } = useDroppable({ id });
+  const dragId = piezaId !== null ? piezaId : `vacia-${id}`;
+  const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
+    id: dragId,
+    disabled: piezaId === null,
+  });
+
+  let pieza = null;
+  if (piezaId !== null) {
+    const fila = Math.floor(piezaId / columnas);
+    const col = piezaId % columnas;
+    pieza = (
+      <div
+        ref={setDragRef}
+        className="romp-pieza-tablero"
+        style={{
+          backgroundImage: `url(${imagen})`,
+          backgroundSize: `${columnas * 100}% ${filas * 100}%`,
+          backgroundPosition: `${columnas === 1 ? 0 : (col * 100) / (columnas - 1)}% ${filas === 1 ? 0 : (fila * 100) / (filas - 1)}%`,
+          transform: transform ? CSS.Translate.toString(transform) : undefined,
+          opacity: isDragging ? 0.3 : 1,
+        }}
+        {...listeners}
+        {...attributes}
+        aria-label={`Pieza ${piezaId + 1}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      ref={setDropRef}
+      className={`romp-slot${piezaId !== null ? ' ocupada' : ''}${piezaId === id ? ' correcta' : ''}${isOver ? ' sobre' : ''}`}
+    >
+      {pieza}
+    </div>
+  );
+}
+
+// Una pieza del carrousel, arrastrable con mouse o con el dedo. Se
+// dibuja al mismo tamano exacto (ancho/alto en px) que tiene esa pieza
+// puesta en el tablero — pedido explicito, nada de miniaturas — asi que
+// el tamano llega por prop en vez de venir de una regla CSS fija. Mientras
+// se arrastra queda semi-transparente aqui (el DragOverlay del componente
+// principal es el que se ve "volando" siguiendo el puntero, sin quedar
+// atrapado por el scroll del carrousel).
+function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+  const fila = Math.floor(id / columnas);
+  const col = id % columnas;
+  return (
+    <button
+      type="button"
+      ref={setNodeRef}
+      className="romp-tray-pieza"
+      style={{
+        width: ancho,
+        height: alto,
+        backgroundImage: `url(${imagen})`,
+        backgroundSize: `${columnas * 100}% ${filas * 100}%`,
+        backgroundPosition: `${columnas === 1 ? 0 : (col * 100) / (columnas - 1)}% ${filas === 1 ? 0 : (fila * 100) / (filas - 1)}%`,
+        transform: transform ? CSS.Translate.toString(transform) : undefined,
+        opacity: isDragging ? 0.3 : 1,
+      }}
+      {...listeners}
+      {...attributes}
+      aria-label={`Pieza ${id + 1}`}
+    />
+  );
+}
+
 export default function MenuActividades({ onOpenChange }) {
   // 'menu' = las 2 tarjetas raiz. 'memorice'/'imprimir' = cada seccion.
   const [vista, setVista] = useState('menu');
@@ -263,6 +487,23 @@ export default function MenuActividades({ onOpenChange }) {
   const [dorsosSelector, setDorsosSelector] = useState({});
   const timeoutRef = useRef(null);
 
+  // ===== Rompecabezas: mismo espiritu que el Memorice de arriba, pero
+  // cada nivel trae su propia foto (no se corta mas fina la misma). =====
+  const [temaRompId, setTemaRompId] = useState(null);
+  // null = imagen del nivel todavia no pedida/lista.
+  const [imagenRomp, setImagenRomp] = useState(null);
+  const [nivelIdxRomp, setNivelIdxRomp] = useState(0);
+  const [nivelMaximoRomp, setNivelMaximoRomp] = useState(0);
+  // { orden: [idx,...] (orden fijo del carrousel), posiciones: [idx|null,...] (que pieza tiene cada ranura) }
+  const [tableroRomp, setTableroRomp] = useState({ orden: [], posiciones: [] });
+  // Id de la pieza que se esta arrastrando ahora (para el DragOverlay).
+  const [piezaArrastrandoRomp, setPiezaArrastrandoRomp] = useState(null);
+  const [mostrarNivelesRomp, setMostrarNivelesRomp] = useState(false);
+  // Vista previa de la imagen completa armada (boton "Ver imagen" del
+  // header) — util sobre todo del nivel 2 en adelante, donde ya no hay
+  // guia transparente de fondo.
+  const [mostrarPreviaRomp, setMostrarPreviaRomp] = useState(false);
+
   const tema = temaId ? TEMAS.find((t) => t.id === temaId) : null;
   const cargando = Boolean(temaId) && fotosTema === null;
 
@@ -288,6 +529,7 @@ export default function MenuActividades({ onOpenChange }) {
     setVista('imprimir');
     setGrupoImprimir(null);
   }, []);
+  const irARompecabezas = useCallback(() => setVista('rompecabezas'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -411,6 +653,222 @@ export default function MenuActividades({ onOpenChange }) {
     setBloqueado(false);
   }, [tamano, fotosTema]);
 
+  // ===== Rompecabezas: logica del juego =====
+  const temaRomp = temaRompId ? TEMAS_ROMPECABEZAS.find((t) => t.id === temaRompId) : null;
+  const cargandoRomp = Boolean(temaRompId) && imagenRomp === null;
+  const nivelActualRomp = temaRomp?.niveles[nivelIdxRomp];
+
+  const elegirTemaRomp = useCallback((id) => {
+    setTemaRompId(id);
+    setImagenRomp(null);
+    setTableroRomp({ orden: [], posiciones: [] });
+    setPiezaArrastrandoRomp(null);
+    setMostrarNivelesRomp(false);
+    setMostrarPreviaRomp(false);
+  }, []);
+
+  const volverAlSelectorRomp = useCallback(() => {
+    setTemaRompId(null);
+    setImagenRomp(null);
+    setTableroRomp({ orden: [], posiciones: [] });
+    setPiezaArrastrandoRomp(null);
+    setMostrarNivelesRomp(false);
+    setMostrarPreviaRomp(false);
+  }, []);
+
+  // Elegir un tema (o volver a elegirlo) retoma el nivel guardado de ESE
+  // tema antes de pedir ninguna imagen — asi el efecto de carga de abajo
+  // (que depende del nivel) pide la foto correcta desde el principio, no
+  // la del nivel que se estaba jugando en el tema anterior.
+  useEffect(() => {
+    if (!temaRompId || !temaRomp) return;
+    const inicial = leerNivelGuardadoRompecabezas(temaRompId, temaRomp.niveles.length);
+    setNivelMaximoRomp(inicial);
+    setNivelIdxRomp(inicial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [temaRompId]);
+
+  // Carga la imagen de ESTE nivel (no de todo el tema: cada nivel trae su
+  // propia foto) cada vez que cambia el tema o el nivel elegido.
+  useEffect(() => {
+    if (!nivelActualRomp) return;
+    let vivo = true;
+    setImagenRomp(null);
+    cargarImagenConAspecto(nivelActualRomp.cargar).then((res) => {
+      if (vivo) setImagenRomp(res);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [nivelActualRomp]);
+
+  // Arma (o rearma) el tablero apenas la imagen de este nivel esta lista:
+  // cubre tanto la primera vez que se elige un tema como cada cambio de
+  // nivel despues.
+  useEffect(() => {
+    if (!imagenRomp || !nivelActualRomp) return;
+    setTableroRomp(estadoInicialRompecabezas(nivelActualRomp.piezas));
+  }, [imagenRomp, nivelActualRomp]);
+
+  const totalPiezasRomp = tableroRomp.posiciones.length;
+  // Gana cuando CADA ranura tiene puesta justo la pieza que le corresponde
+  // (no solo "todas ocupadas": podrian estar todas llenas pero mal
+  // repartidas, ya que ahora cualquier pieza puede ir en cualquier lado).
+  const ganoRomp = totalPiezasRomp > 0 && tableroRomp.posiciones.every((p, i) => p === i);
+  // El carrousel en pantalla: las piezas de "orden" que ahora mismo no
+  // estan puestas en ninguna ranura.
+  const pendientesRomp = useMemo(
+    () => tableroRomp.orden.filter((id) => !tableroRomp.posiciones.includes(id)),
+    [tableroRomp]
+  );
+  const siguienteNivelIdxRomp = temaRomp && nivelIdxRomp + 1 < temaRomp.niveles.length
+    ? nivelIdxRomp + 1
+    : undefined;
+  const enFronteraRomp = nivelIdxRomp === nivelMaximoRomp;
+  const nivelesAlcanzadosRomp = temaRomp ? temaRomp.niveles.slice(0, nivelMaximoRomp + 1) : [];
+
+  // El techo nunca baja, misma logica que el Memorice.
+  useEffect(() => {
+    if (nivelIdxRomp > nivelMaximoRomp) setNivelMaximoRomp(nivelIdxRomp);
+  }, [nivelIdxRomp, nivelMaximoRomp]);
+
+  useEffect(() => {
+    if (!temaRompId || totalPiezasRomp === 0) return;
+    try {
+      localStorage.setItem(nivelKeyRompecabezas(temaRompId), String(nivelMaximoRomp));
+    } catch {
+      // Sin localStorage el progreso dura lo que dure la sesion.
+    }
+  }, [temaRompId, nivelMaximoRomp, totalPiezasRomp]);
+
+  // Reinicia el nivel actual (rebaraja nomas, la imagen ya esta lista) o
+  // salta a otro nivel (elegido desde "Reiniciar" o al ganar): cambiar de
+  // nivel dispara el efecto de carga de imagen de arriba, que a su vez
+  // dispara el armado del tablero cuando esa foto este lista.
+  const reiniciarRomp = useCallback((idx) => {
+    const siguiente = idx ?? nivelIdxRomp;
+    setPiezaArrastrandoRomp(null);
+    setMostrarPreviaRomp(false);
+    if (siguiente === nivelIdxRomp) {
+      if (temaRomp) setTableroRomp(estadoInicialRompecabezas(temaRomp.niveles[siguiente].piezas));
+    } else {
+      setNivelIdxRomp(siguiente);
+    }
+  }, [nivelIdxRomp, temaRomp]);
+
+  // Arrastrar y soltar (mouse o dedo), con reubicacion libre: una pieza se
+  // puede soltar en CUALQUIER ranura (no solo la correcta), tanto si sale
+  // del carrousel como si ya estaba puesta en otra ranura (se puede
+  // reordenar el tablero). Si la ranura destino ya tenia otra pieza, esa
+  // pieza queda "expulsada" (deja de estar en "posiciones", asi que
+  // vuelve sola al carrousel). Si se suelta afuera de cualquier ranura,
+  // la pieza vuelve al carrousel (si venia de una ranura, esa queda
+  // vacia). PointerSensor cubre mouse; TouchSensor con un pequeno delay
+  // deja que el carrousel se pueda seguir scrolleando con el dedo sin
+  // arrancar un arrastre por accidente.
+  const sensoresRomp = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
+  );
+
+  const empezarArrastreRomp = useCallback((event) => {
+    setPiezaArrastrandoRomp(event.active.id);
+  }, []);
+
+  const soltarPiezaRomp = useCallback((event) => {
+    setPiezaArrastrandoRomp(null);
+    const { active, over } = event;
+    const piezaId = active.id;
+    if (typeof piezaId !== 'number') return; // ranura vacia (draggable deshabilitado), no deberia llegar aca
+    const destinoSlot = over ? over.id : null;
+
+    setTableroRomp((prev) => {
+      const origenSlot = prev.posiciones.indexOf(piezaId);
+      if (destinoSlot === origenSlot) return prev; // solto donde mismo estaba, o afuera viniendo del carrousel
+      const posiciones = [...prev.posiciones];
+      if (origenSlot !== -1) posiciones[origenSlot] = null;
+      if (destinoSlot !== null) posiciones[destinoSlot] = piezaId;
+      return { ...prev, posiciones };
+    });
+  }, []);
+
+  // Mide el layout COMPLETO (tablero + carrousel juntos, no solo el
+  // tablero) porque el tamano del carrousel depende del tamano de cada
+  // celda y el tamano del tablero depende de cuanto espacio le deja el
+  // carrousel — se resuelve con una formula directa en vez de iterar:
+  // primero se prueba el caso "el tablero entra a todo el ancho (o alto,
+  // si esta de costado) y sobra lugar de sobra para el carrousel"; si no
+  // alcanza, se resuelve el otro caso (el tablero es el que manda). La
+  // orientacion se lee con matchMedia, la misma que decide el layout en
+  // CSS (.romp-layout), para que ambos coincidan siempre.
+  const areaRefRomp = useRef(null);
+  const [celdaRomp, setCeldaRomp] = useState({
+    anchoTablero: 0, altoTablero: 0, columnas: 1, filas: 1,
+    celdaW: 0, celdaH: 0, trayAlto: null, trayAncho: null,
+  });
+
+  useLayoutEffect(() => {
+    const el = areaRefRomp.current;
+    if (!el || !imagenRomp || totalPiezasRomp === 0) return;
+    const recalcular = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (!width || !height) return;
+      const { columnas, filas } = grillaRompecabezas(totalPiezasRomp, imagenRomp.aspecto);
+      const aspecto = imagenRomp.aspecto;
+      const horizontal = window.matchMedia('(orientation: landscape)').matches;
+
+      let boardW;
+      let boardH;
+      if (!horizontal) {
+        // Carrousel abajo: se reparte el ALTO entre tablero y carrousel.
+        const boardHSiAnchoManda = width / aspecto;
+        const trayPrueba = boardHSiAnchoManda / filas + PADDING_TRAY_ROMP;
+        const altoLibre = height - trayPrueba - GAP_LAYOUT_ROMP;
+        if (boardHSiAnchoManda <= altoLibre) {
+          boardW = width;
+          boardH = boardHSiAnchoManda;
+        } else {
+          boardH = Math.max(0, (height - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * filas / (filas + 1));
+          boardW = boardH * aspecto;
+        }
+      } else {
+        // Carrousel al lado: se reparte el ANCHO entre tablero y carrousel.
+        const boardWSiAltoManda = height * aspecto;
+        const trayPrueba = boardWSiAltoManda / columnas + PADDING_TRAY_ROMP;
+        const anchoLibre = width - trayPrueba - GAP_LAYOUT_ROMP;
+        if (boardWSiAltoManda <= anchoLibre) {
+          boardH = height;
+          boardW = boardWSiAltoManda;
+        } else {
+          boardW = Math.max(0, (width - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * columnas / (columnas + 1));
+          boardH = boardW / aspecto;
+        }
+      }
+
+      // Redondear a pixeles enteros y que el tablero sea multiplo EXACTO
+      // de la celda: asi el grid de CSS (1fr por columna/fila) no tiene
+      // ningun resto que repartirle de mas o de menos a la ultima
+      // columna/fila (eso se notaba a traves de la transparencia).
+      const celdaW = Math.max(0, Math.floor(boardW / columnas));
+      const celdaH = Math.max(0, Math.floor(boardH / filas));
+
+      setCeldaRomp({
+        anchoTablero: celdaW * columnas,
+        altoTablero: celdaH * filas,
+        columnas,
+        filas,
+        celdaW,
+        celdaH,
+        trayAlto: !horizontal ? celdaH + PADDING_TRAY_ROMP : null,
+        trayAncho: horizontal ? celdaW + PADDING_TRAY_ROMP : null,
+      });
+    };
+    recalcular();
+    const ro = new ResizeObserver(recalcular);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [imagenRomp, totalPiezasRomp, open, temaRompId]);
+
   // Al cerrar el drawer se vuelve a foja cero: la proxima vez que se abre,
   // arranca en el menu general de nuevo (pedido explicito, extendido del
   // "siempre elegir tema de nuevo" que ya regia solo para Memorice).
@@ -425,11 +883,19 @@ export default function MenuActividades({ onOpenChange }) {
     setVolteadas([]);
     setBloqueado(false);
     setMostrarNiveles(false);
+    setTemaRompId(null);
+    setImagenRomp(null);
+    setTableroRomp({ orden: [], posiciones: [] });
+    setPiezaArrastrandoRomp(null);
+    setMostrarNivelesRomp(false);
+    setMostrarPreviaRomp(false);
+    setNivelIdxRomp(0);
   }, [open]);
 
   // Volver desde donde sea: dentro de Memorice, si hay tema elegido vuelve
   // al selector de temas (como antes); si ya estaba en el selector, sube
   // al menu general. Dentro de Imprimir, misma logica con el grupo elegido.
+  // Dentro de Rompecabezas, misma logica con el tema elegido.
   const manejarVolver = useCallback(() => {
     if (vista === 'memorice') {
       if (temaId) volverAlSelector();
@@ -437,8 +903,11 @@ export default function MenuActividades({ onOpenChange }) {
     } else if (vista === 'imprimir') {
       if (grupoImprimir) setGrupoImprimir(null);
       else volverAlMenu();
+    } else if (vista === 'rompecabezas') {
+      if (temaRompId) volverAlSelectorRomp();
+      else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, volverAlSelector, volverAlMenu]);
+  }, [vista, temaId, grupoImprimir, temaRompId, volverAlSelector, volverAlMenu, volverAlSelectorRomp]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
@@ -477,17 +946,16 @@ export default function MenuActividades({ onOpenChange }) {
     }, esPar ? ESPERA_MATCH_MS : ESPERA_ERROR_MS);
   }, [bloqueado, gano, cartas, volteadas]);
 
-  const nivelInfo = NIVELES.find((n) => n.total === tamano) ?? NIVELES[0];
-  const columnas = nivelInfo.cols;
-  const filas = tamano / columnas;
-
   // Mide el espacio real disponible (el area donde va el tablero, dentro
-  // del drawer) y calcula la celda cuadrada mas grande que entra sin
-  // scroll: el menor entre "lo que da el ancho" y "lo que da el alto".
-  // ResizeObserver hace que esto se recalcule solo con cualquier cambio de
-  // tamano de la ventana, incluida la rotacion de la tablet.
+  // del drawer) y elige, de todas las formas (columnas x filas) que arman
+  // el total de cartas, la que da la celda cuadrada mas grande sin
+  // scroll — asi no queda una columna de mas con espacio vertical
+  // sobrante cuando el alto disponible alcanzaria para una fila extra
+  // (pedido explicito). ResizeObserver hace que esto se recalcule solo
+  // con cualquier cambio de tamano de la ventana, incluida la rotacion.
   const areaRef = useRef(null);
   const [celda, setCelda] = useState(0);
+  const [grilla, setGrilla] = useState({ columnas: 1, filas: tamano });
 
   useLayoutEffect(() => {
     const el = areaRef.current;
@@ -495,22 +963,31 @@ export default function MenuActividades({ onOpenChange }) {
     const recalcular = () => {
       const { width, height } = el.getBoundingClientRect();
       if (!width || !height) return;
-      const porAncho = (width - (columnas - 1) * GAP) / columnas;
-      const porAlto = (height - (filas - 1) * GAP) / filas;
-      setCelda(Math.max(0, Math.floor(Math.min(porAncho, porAlto, CELDA_MAX))));
+      let mejor = null;
+      for (const par of paresDivisores(tamano)) {
+        const porAncho = (width - (par.columnas - 1) * GAP) / par.columnas;
+        const porAlto = (height - (par.filas - 1) * GAP) / par.filas;
+        const tam = Math.min(porAncho, porAlto, CELDA_MAX);
+        if (!mejor || tam > mejor.tam) mejor = { ...par, tam };
+      }
+      setGrilla({ columnas: mejor.columnas, filas: mejor.filas });
+      setCelda(Math.max(0, Math.floor(mejor.tam)));
     };
     recalcular();
     const ro = new ResizeObserver(recalcular);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [columnas, filas, open, temaId]);
+  }, [tamano, open, temaId]);
+
+  const columnas = grilla.columnas;
+  const filas = grilla.filas;
 
   // Que muestra el header segun la vista (titulo, volver, color de fondo):
-  // solo Memorice JUGANDO (con tema elegido) e Imprimir VIENDO una galeria
-  // (con grupo elegido) pintan el header con su propio color. Los 3 "menu"
-  // (raiz, elegir tema, elegir grupo) no necesitan un header aparte —
-  // header transparente y el mismo fondo pastel de la pagina de Casa de
-  // Muñecas en el reproductor, pedido explicito.
+  // solo Memorice/Rompecabezas JUGANDO (con tema elegido) e Imprimir
+  // VIENDO una galeria (con grupo elegido) pintan el header con su propio
+  // color. Los "menu" (raiz, elegir tema, elegir grupo) no necesitan un
+  // header aparte — header transparente y el mismo fondo pastel de la
+  // pagina de Casa de Muñecas en el reproductor, pedido explicito.
   const grupoImprimirInfo = grupoImprimir
     ? GRUPOS_IMPRIMIBLES.find((g) => g.id === grupoImprimir)
     : null;
@@ -525,6 +1002,10 @@ export default function MenuActividades({ onOpenChange }) {
     mostrarVolver = true;
     tituloHeader = grupoImprimirInfo?.nombre ?? 'Imprimir';
     colorHeader = grupoImprimirInfo?.header;
+  } else if (vista === 'rompecabezas') {
+    mostrarVolver = true;
+    tituloHeader = temaRompId ? temaRomp.nombre : 'Rompecabezas';
+    colorHeader = temaRomp?.header;
   }
   const esMenu = !colorHeader;
 
@@ -582,6 +1063,9 @@ export default function MenuActividades({ onOpenChange }) {
                 {vista === 'memorice' && temaId && !cargando && (
                   <span className="memory-nivel-badge">Nivel {nivelActual}</span>
                 )}
+                {vista === 'rompecabezas' && temaRompId && !cargandoRomp && (
+                  <span className="memory-nivel-badge">Nivel {nivelIdxRomp + 1}</span>
+                )}
               </div>
               <div className="memory-header-actions">
                 {vista === 'memorice' && temaId && !cargando && !gano && (
@@ -589,6 +1073,25 @@ export default function MenuActividades({ onOpenChange }) {
                     type="button"
                     className="memory-reiniciar-btn"
                     onClick={() => setMostrarNiveles(true)}
+                  >
+                    <ReloadOutlined /> Reiniciar
+                  </button>
+                )}
+                {vista === 'rompecabezas' && temaRompId && !cargandoRomp && !ganoRomp && (
+                  <button
+                    type="button"
+                    className="memory-reiniciar-btn romp-ver-imagen-btn"
+                    onClick={() => setMostrarPreviaRomp(true)}
+                    aria-label="Ver la imagen completa"
+                  >
+                    <img src={imagenRomp.src} alt="" className="romp-ver-imagen-miniatura" />
+                  </button>
+                )}
+                {vista === 'rompecabezas' && temaRompId && !cargandoRomp && !ganoRomp && (
+                  <button
+                    type="button"
+                    className="memory-reiniciar-btn"
+                    onClick={() => setMostrarNivelesRomp(true)}
                   >
                     <ReloadOutlined /> Reiniciar
                   </button>
@@ -633,15 +1136,14 @@ export default function MenuActividades({ onOpenChange }) {
                     {ROMPECABEZAS_HABILITADO && (
                       <button
                         type="button"
-                        className="memory-picker-tile memory-solo-tablet"
-                        disabled
-                        aria-label="Rompecabezas (muy pronto)"
+                        className="memory-picker-tile memory-solo-laptop"
+                        onClick={irARompecabezas}
+                        aria-label="Rompecabezas"
                       >
                         <span className="memory-picker-img-wrap">
                           <img src={imagenRompecabezas} alt="" className="memory-picker-img" />
                         </span>
                         <span className="memory-picker-nombre">Rompecabezas</span>
-                        <span className="memory-picker-badge">Muy pronto</span>
                       </button>
                     )}
                   </div>
@@ -694,7 +1196,7 @@ export default function MenuActividades({ onOpenChange }) {
                       <button
                         type="button"
                         key={t.id}
-                        className="memory-picker-tile"
+                        className={`memory-picker-tile${t.soloLaptop ? ' memory-solo-laptop' : ''}`}
                         onClick={() => elegirTema(t.id)}
                         disabled={!t.listo}
                         aria-label={t.listo ? `Jugar con ${t.nombre}` : `${t.nombre} (muy pronto)`}
@@ -748,7 +1250,7 @@ export default function MenuActividades({ onOpenChange }) {
                     >
                       <div className="memory-niveles-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="memory-niveles-header">
-                          <h3>Elegí un nivel</h3>
+                          <h3>Elige un nivel</h3>
                           <button
                             type="button"
                             className="memory-cerrar-x memory-niveles-cerrar"
@@ -818,6 +1320,196 @@ export default function MenuActividades({ onOpenChange }) {
                       </div>
                     )}
                   </div>
+                </>
+              ))}
+
+              {vista === 'rompecabezas' && (!temaRompId ? (
+                <div className="memory-picker">
+                  <div className="memory-picker-grid">
+                    {TEMAS_ROMPECABEZAS.map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        className="memory-picker-tile"
+                        onClick={() => elegirTemaRomp(t.id)}
+                        disabled={!t.listo}
+                        aria-label={t.listo ? `Armar ${t.nombre}` : `${t.nombre} (muy pronto)`}
+                      >
+                        <span className="memory-picker-img-wrap">
+                          {dorsosSelector[t.id] ? (
+                            <img src={dorsosSelector[t.id]} alt="" className="memory-picker-img" />
+                          ) : (
+                            <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
+                          )}
+                        </span>
+                        <span className="memory-picker-nombre">{t.nombre}</span>
+                        {!t.listo && <span className="memory-picker-badge">Muy pronto</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {ganoRomp && (
+                    <div className="memory-victoria-overlay">
+                      <div className="memory-victoria">
+                        <span className="memory-victoria-emoji">🧩</span>
+                        <p>
+                          {siguienteNivelIdxRomp === undefined
+                            ? '¡Completaste todos los niveles!'
+                            : enFronteraRomp
+                              ? `¡Nivel ${nivelIdxRomp + 2} desbloqueado!`
+                              : '¡Lo armaste de nuevo!'}
+                        </p>
+                        <button
+                          type="button"
+                          className="memory-victoria-btn"
+                          onClick={() => reiniciarRomp(siguienteNivelIdxRomp ?? nivelIdxRomp)}
+                        >
+                          {siguienteNivelIdxRomp === undefined ? 'Armar de nuevo' : 'Jugar nivel siguiente'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mostrarNivelesRomp && (
+                    <div
+                      className="memory-victoria-overlay"
+                      onClick={() => setMostrarNivelesRomp(false)}
+                    >
+                      <div className="memory-niveles-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="memory-niveles-header">
+                          <h3>Elige un nivel</h3>
+                          <button
+                            type="button"
+                            className="memory-cerrar-x memory-niveles-cerrar"
+                            onClick={() => setMostrarNivelesRomp(false)}
+                            aria-label="Cerrar"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                        <div className="memory-niveles-grid">
+                          {nivelesAlcanzadosRomp.map((_, i) => (
+                            <button
+                              type="button"
+                              key={i}
+                              className={`memory-nivel-btn${i === nivelIdxRomp ? ' activo' : ''}`}
+                              onClick={() => {
+                                reiniciarRomp(i);
+                                setMostrarNivelesRomp(false);
+                              }}
+                            >
+                              {i + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {mostrarPreviaRomp && (
+                    <div
+                      className="memory-victoria-overlay"
+                      onClick={() => setMostrarPreviaRomp(false)}
+                    >
+                      <div className="romp-previa-modal" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="memory-cerrar-x romp-previa-cerrar"
+                          onClick={() => setMostrarPreviaRomp(false)}
+                          aria-label="Cerrar"
+                        >
+                          <CloseOutlined />
+                        </button>
+                        <img src={imagenRomp.src} alt="" className="romp-previa-img" />
+                      </div>
+                    </div>
+                  )}
+
+                  {cargandoRomp || totalPiezasRomp === 0 ? (
+                    <div className="memory-board-area">
+                      <p className="memory-cargando">
+                        {cargandoRomp ? `Preparando ${temaRomp.nombre}...` : 'Preparando las piezas...'}
+                      </p>
+                    </div>
+                  ) : (
+                    <DndContext
+                      sensors={sensoresRomp}
+                      onDragStart={empezarArrastreRomp}
+                      onDragEnd={soltarPiezaRomp}
+                    >
+                      <div className="romp-layout" ref={areaRefRomp}>
+                        <div
+                          className="romp-board-wrap"
+                          style={{
+                            width: celdaRomp.anchoTablero || 0,
+                            height: celdaRomp.altoTablero || 0,
+                            visibility: celdaRomp.anchoTablero ? 'visible' : 'hidden',
+                          }}
+                        >
+                          {/* Guia transparente: se ve la foto completa
+                              bien tenue detras, para saber donde va cada
+                              pieza sin regalar la respuesta. Solo en el
+                              nivel 1 (pedido explicito) — de ahi en
+                              adelante no hay ayuda visual. */}
+                          {nivelIdxRomp === 0 && (
+                            <img className="romp-referencia" src={imagenRomp.src} alt="" aria-hidden="true" />
+                          )}
+                          <div
+                            className="romp-board"
+                            style={{
+                              '--romp-cols': celdaRomp.columnas,
+                              '--romp-rows': celdaRomp.filas,
+                            }}
+                          >
+                            {tableroRomp.posiciones.map((piezaId, indice) => (
+                              <RanuraRompecabezas
+                                key={indice}
+                                id={indice}
+                                piezaId={piezaId}
+                                imagen={imagenRomp.src}
+                                columnas={celdaRomp.columnas}
+                                filas={celdaRomp.filas}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div
+                          className="romp-tray"
+                          style={{ height: celdaRomp.trayAlto ?? undefined, width: celdaRomp.trayAncho ?? undefined }}
+                        >
+                          {pendientesRomp.map((id) => (
+                            <PiezaCarrousel
+                              key={id}
+                              id={id}
+                              imagen={imagenRomp.src}
+                              columnas={celdaRomp.columnas}
+                              filas={celdaRomp.filas}
+                              ancho={celdaRomp.celdaW}
+                              alto={celdaRomp.celdaH}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <DragOverlay>
+                        {piezaArrastrandoRomp !== null ? (
+                          <div
+                            className="romp-tray-pieza romp-tray-pieza--overlay"
+                            style={{
+                              width: celdaRomp.celdaW,
+                              height: celdaRomp.celdaH,
+                              backgroundImage: `url(${imagenRomp.src})`,
+                              backgroundSize: `${celdaRomp.columnas * 100}% ${celdaRomp.filas * 100}%`,
+                              backgroundPosition: `${celdaRomp.columnas === 1 ? 0 : ((piezaArrastrandoRomp % celdaRomp.columnas) * 100) / (celdaRomp.columnas - 1)}% ${celdaRomp.filas === 1 ? 0 : (Math.floor(piezaArrastrandoRomp / celdaRomp.columnas) * 100) / (celdaRomp.filas - 1)}%`,
+                            }}
+                          />
+                        ) : null}
+                      </DragOverlay>
+                    </DndContext>
+                  )}
                 </>
               ))}
             </div>
