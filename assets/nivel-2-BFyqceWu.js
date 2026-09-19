@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/nivel-2-IMNOC4Lj.avif`;export{e as default};

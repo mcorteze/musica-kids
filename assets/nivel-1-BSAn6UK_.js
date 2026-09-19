@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/nivel-1-DqJFoar0.avif`;export{e as default};

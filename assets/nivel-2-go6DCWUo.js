@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/nivel-2-CRJJ6dak.avif`;export{e as default};
