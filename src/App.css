@@ -2133,7 +2133,7 @@ html {
   display: grid;
   grid-template-columns: repeat(var(--memory-cols), 1fr);
   grid-template-rows: repeat(var(--memory-rows), 1fr);
-  gap: 8px;
+  gap: 5px;
 }
 
 .memory-card {
@@ -2353,6 +2353,12 @@ html {
   background: rgba(8, 40, 66, 0.08);
   overflow-x: auto;
   overflow-y: hidden;
+  /* Sin barra de scroll visible (se sigue desplazando con dedo/trackpad). */
+  scrollbar-width: none;
+}
+
+.romp-tray::-webkit-scrollbar {
+  display: none;
 }
 
 @media (orientation: landscape) {
@@ -2433,6 +2439,227 @@ html {
 
 .romp-previa-cerrar:hover {
   background: rgba(8, 40, 66, 0.75);
+}
+
+/* ========== CONTAR ==========
+   Reutiliza la misma foto de personaje repetida "objetivo" veces (ver
+   MenuActividades.jsx) — sin tablero ni ranuras, solo un area de fotos
+   arriba y botones-numero abajo. */
+.contar-juego {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px;
+}
+
+.contar-area {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 14px;
+  overflow: hidden;
+}
+
+/* El ancho/alto exactos (en px) los pone MenuActividades.jsx inline, ya
+   calculados para que la foto sea lo mas grande posible en el espacio
+   real disponible segun cuantas haya en la ronda (pedido explicito: se
+   veian minusculas) — el gap de aqui tiene que coincidir con la
+   constante GAP_CONTAR del componente. */
+.contar-foto {
+  object-fit: cover;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(8, 40, 66, 0.28);
+}
+
+.contar-pregunta {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.contar-opciones {
+  flex: none;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.contar-opcion-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0B4F73;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: inherit;
+  box-shadow: 0 6px 18px rgba(8, 40, 66, 0.24);
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.contar-opcion-btn:disabled {
+  cursor: default;
+}
+
+.contar-opcion-btn.correcto {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: #ffffff;
+  animation: memoryMatchPop 0.5s ease;
+}
+
+.contar-opcion-btn.incorrecto {
+  background: #ffd9d9;
+  animation: contarTemblor 0.4s ease;
+}
+
+@keyframes contarTemblor {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* ========== ORDENA LA SECUENCIA ==========
+   Casilleros numerados arriba + carrousel de cuadros abajo (dnd-kit, mismo
+   modelo de reubicacion libre que el Rompecabezas). El tamaño de cada
+   cuadro y la cantidad de casilleros por fila los calcula MenuActividades.jsx
+   (celdaSec) y los pone inline; los gaps de aqui tienen que coincidir con
+   GAP_SEC / GAP_LAYOUT_SEC / PADDING_TRAY_SEC del componente. */
+.sec-layout {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.sec-board {
+  display: grid;
+  gap: 12px;
+  justify-content: center;
+}
+
+.sec-slot {
+  position: relative;
+  box-sizing: border-box;
+  border: 3px dashed rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Un cuadro arrastrado pasa por encima, listo para soltarse aqui (vacio
+   u ocupado: soltar sobre uno ocupado lo reemplaza y el que estaba vuelve
+   al carrousel). */
+.sec-slot.sobre {
+  border-color: #FFDD05;
+  background-color: rgba(255, 221, 5, 0.25);
+}
+
+.sec-slot.ocupada {
+  border: none;
+}
+
+/* El cuadro puesto es justo el que va en ese casillero: aro verde por
+   encima de la foto (pseudo-elemento: un box-shadow inset quedaria tapado
+   por el cuadro hijo). */
+.sec-slot.ocupada.correcta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 4px solid #2ecc71;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.sec-numero {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0B4F73;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(8, 40, 66, 0.3);
+  pointer-events: none;
+}
+
+.sec-pieza-tablero {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sec-tray {
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px;
+  border-radius: 20px;
+  background: rgba(8, 40, 66, 0.08);
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Se puede desplazar (dedo/trackpad) pero sin barra visible: pedido
+     explicito, se ve fea y no hace falta como ayuda visual. */
+  scrollbar-width: none;
+}
+
+.sec-tray::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sin miniaturas: el ancho/alto exactos los pone MenuActividades.jsx
+   inline, iguales a como se ve ese mismo cuadro ya puesto en el tablero. */
+.sec-pieza-tray {
+  flex: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: grab;
+  touch-action: none;
+  box-shadow: 0 3px 10px rgba(8, 40, 66, 0.3);
+}
+
+.sec-pieza-tray--overlay {
+  cursor: grabbing;
+  box-shadow: 0 8px 22px rgba(8, 40, 66, 0.45);
 }
 
 /* ========== CHILD LOCK ========== */
