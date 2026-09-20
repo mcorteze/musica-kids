@@ -66,9 +66,6 @@ const TEMAS_META = [
     id: 'munecas',
     nombre: 'Gabby Dollhouse',
     header: 'linear-gradient(120deg, #B04FCB 0%, #9B3FC0 55%, #E85FB8 100%)',
-    // Habilitado momentaneamente solo en laptop/desktop (pedido
-    // explicito) — en movil y tablet no aparece esta tarjeta todavia.
-    soloLaptop: true,
   },
   {
     id: 'toy-story',
@@ -251,14 +248,20 @@ const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) =>
 // mas fina. Por eso la cantidad de piezas de cada nivel se define aqui
 // mismo junto con el archivo que le corresponde, no se calcula sola.
 // Cada nivel vive en src/assets/rompecabezas/<tema>/nivel-N.avif.
+// "orientacion" clasifica la foto: 'horizontal' (mas ancha que alta),
+// 'cuadrado' o 'vertical' (mas alta que ancha). Se declara a mano por
+// nivel (ver skills/agregar-rompecabezas.md, que obliga a preguntarla) y
+// hoy la usa la pagina "Todos los rompecabezas" para la forma de las
+// miniaturas; el tablero, en cambio, mide las proporciones REALES de la
+// imagen para calcular la grilla de piezas y donde poner el carrousel.
 const TEMAS_ROMPECABEZAS_META = [
   {
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
     niveles: [
-      { piezas: 12, archivo: 'nivel-1' },
-      { piezas: 18, archivo: 'nivel-2' },
+      { piezas: 12, archivo: 'nivel-1', orientacion: 'horizontal' },
+      { piezas: 18, archivo: 'nivel-2', orientacion: 'horizontal' },
     ],
   },
   {
@@ -266,9 +269,9 @@ const TEMAS_ROMPECABEZAS_META = [
     nombre: 'Toy Story',
     header: 'linear-gradient(120deg, #5AB0F5 0%, #1C6FB0 55%, #E00024 100%)',
     niveles: [
-      { piezas: 12, archivo: 'nivel-1' },
-      { piezas: 18, archivo: 'nivel-2' },
-      { piezas: 24, archivo: 'nivel-3' },
+      { piezas: 12, archivo: 'nivel-1', orientacion: 'horizontal' },
+      { piezas: 18, archivo: 'nivel-2', orientacion: 'horizontal' },
+      { piezas: 24, archivo: 'nivel-3', orientacion: 'horizontal' },
     ],
   },
 ];
@@ -454,8 +457,9 @@ function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
 }
 
 // ========== CONTAR ==========
-// Disponible en todos los responsives (pedido explicito, igual que
-// Imprimir). Reutiliza los MISMOS temas y fotos de personajes ya
+// Disponible de tablet para arriba, oculto en movil (pedido explicito:
+// todas las actividades salvo Imprimir se restringen en movil; su card usa
+// .memory-solo-tablet). Reutiliza los MISMOS temas y fotos de personajes ya
 // convertidas para el Memorice (TEMAS, arriba) — no hace falta ningun
 // asset nuevo, solo la cantidad de fotos que ya tiene cada tema.
 // Cada ronda: se elige una foto al azar del tema y se muestra repetida
@@ -717,6 +721,12 @@ export default function MenuActividades({ onOpenChange }) {
   // header) — util sobre todo del nivel 2 en adelante, donde ya no hay
   // guia transparente de fondo.
   const [mostrarPreviaRomp, setMostrarPreviaRomp] = useState(false);
+  // Pagina "Todos los rompecabezas" (boton del selector de temas, solo
+  // laptop): un tab por tema, con todos sus niveles en miniatura.
+  const [catalogoRomp, setCatalogoRomp] = useState(false);
+  const [tabCatalogoRomp, setTabCatalogoRomp] = useState(null);
+  // { "<temaId>-<idxNivel>": url } — se va llenando a medida que se abren tabs.
+  const [miniaturasRomp, setMiniaturasRomp] = useState({});
 
   // ===== Contar: mismo espiritu que Memorice/Rompecabezas, reutiliza los
   // temas y fotos ya cargados (TEMAS) en vez de traer los suyos propios. =====
@@ -922,6 +932,35 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarPreviaRomp(false);
   }, []);
 
+  // Pagina "Todos los rompecabezas": un tab por tema (solo los que ya
+  // tienen algun nivel), y el tab activo cae en el primero mientras no se
+  // haya elegido otro.
+  const temasCatalogoRomp = TEMAS_ROMPECABEZAS.filter((t) => t.listo);
+  const tabActivaRomp = temasCatalogoRomp.some((t) => t.id === tabCatalogoRomp)
+    ? tabCatalogoRomp
+    : temasCatalogoRomp[0]?.id;
+
+  // Trae las imagenes de los niveles del tab activo (recien cuando se
+  // abre esa pagina, y solo las del tab que se esta viendo). Los loaders de
+  // import.meta.glob ya cachean el modulo, asi que volver a un tab ya
+  // visto no pide nada de nuevo.
+  useEffect(() => {
+    if (!catalogoRomp) return;
+    const tema = TEMAS_ROMPECABEZAS.find((t) => t.id === tabActivaRomp);
+    if (!tema) return;
+    let vivo = true;
+    tema.niveles.forEach((nivel, i) => {
+      nivel.cargar().then((m) => {
+        if (!vivo) return;
+        const key = `${tema.id}-${i}`;
+        setMiniaturasRomp((prev) => (prev[key] === m.default ? prev : { ...prev, [key]: m.default }));
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [catalogoRomp, tabActivaRomp]);
+
   // Elegir un tema (o volver a elegirlo) retoma el nivel guardado de ESE
   // tema antes de pedir ninguna imagen — asi el efecto de carga de abajo
   // (que depende del nivel) pide la foto correcta desde el principio, no
@@ -1037,13 +1076,17 @@ export default function MenuActividades({ onOpenChange }) {
   // carrousel — se resuelve con una formula directa en vez de iterar:
   // primero se prueba el caso "el tablero entra a todo el ancho (o alto,
   // si esta de costado) y sobra lugar de sobra para el carrousel"; si no
-  // alcanza, se resuelve el otro caso (el tablero es el que manda). La
-  // orientacion se lee con matchMedia, la misma que decide el layout en
-  // CSS (.romp-layout), para que ambos coincidan siempre.
+  // alcanza, se resuelve el otro caso (el tablero es el que manda).
+  // Se calculan las DOS disposiciones (carrousel abajo y carrousel al lado)
+  // con las proporciones reales de la imagen y se elige la que da la celda
+  // mas grande: una foto horizontal en una pantalla ancha y baja rinde mas
+  // con el carrousel al lado, una vertical tambien, y una en una pantalla
+  // alta y angosta rinde mas con el carrousel abajo — sin depender de como
+  // este girado el dispositivo.
   const areaRefRomp = useRef(null);
   const [celdaRomp, setCeldaRomp] = useState({
     anchoTablero: 0, altoTablero: 0, columnas: 1, filas: 1,
-    celdaW: 0, celdaH: 0, trayAlto: null, trayAncho: null,
+    celdaW: 0, celdaH: 0, trayAlto: null, trayAncho: null, bandeja: 'abajo',
   });
 
   useLayoutEffect(() => {
@@ -1054,35 +1097,37 @@ export default function MenuActividades({ onOpenChange }) {
       if (!width || !height) return;
       const { columnas, filas } = grillaRompecabezas(totalPiezasRomp, imagenRomp.aspecto);
       const aspecto = imagenRomp.aspecto;
-      const horizontal = window.matchMedia('(orientation: landscape)').matches;
 
-      let boardW;
-      let boardH;
-      if (!horizontal) {
-        // Carrousel abajo: se reparte el ALTO entre tablero y carrousel.
-        const boardHSiAnchoManda = width / aspecto;
-        const trayPrueba = boardHSiAnchoManda / filas + PADDING_TRAY_ROMP;
-        const altoLibre = height - trayPrueba - GAP_LAYOUT_ROMP;
-        if (boardHSiAnchoManda <= altoLibre) {
-          boardW = width;
-          boardH = boardHSiAnchoManda;
-        } else {
-          boardH = Math.max(0, (height - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * filas / (filas + 1));
-          boardW = boardH * aspecto;
-        }
+      // Carrousel ABAJO: se reparte el ALTO entre tablero y carrousel.
+      let abajoW;
+      let abajoH;
+      const boardHSiAnchoManda = width / aspecto;
+      const trayAbajoPrueba = boardHSiAnchoManda / filas + PADDING_TRAY_ROMP;
+      if (boardHSiAnchoManda <= height - trayAbajoPrueba - GAP_LAYOUT_ROMP) {
+        abajoW = width;
+        abajoH = boardHSiAnchoManda;
       } else {
-        // Carrousel al lado: se reparte el ANCHO entre tablero y carrousel.
-        const boardWSiAltoManda = height * aspecto;
-        const trayPrueba = boardWSiAltoManda / columnas + PADDING_TRAY_ROMP;
-        const anchoLibre = width - trayPrueba - GAP_LAYOUT_ROMP;
-        if (boardWSiAltoManda <= anchoLibre) {
-          boardH = height;
-          boardW = boardWSiAltoManda;
-        } else {
-          boardW = Math.max(0, (width - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * columnas / (columnas + 1));
-          boardH = boardW / aspecto;
-        }
+        abajoH = Math.max(0, (height - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * filas / (filas + 1));
+        abajoW = abajoH * aspecto;
       }
+
+      // Carrousel AL LADO: se reparte el ANCHO entre tablero y carrousel.
+      let ladoW;
+      let ladoH;
+      const boardWSiAltoManda = height * aspecto;
+      const trayLadoPrueba = boardWSiAltoManda / columnas + PADDING_TRAY_ROMP;
+      if (boardWSiAltoManda <= width - trayLadoPrueba - GAP_LAYOUT_ROMP) {
+        ladoH = height;
+        ladoW = boardWSiAltoManda;
+      } else {
+        ladoW = Math.max(0, (width - PADDING_TRAY_ROMP - GAP_LAYOUT_ROMP) * columnas / (columnas + 1));
+        ladoH = ladoW / aspecto;
+      }
+
+      // Gana la disposicion con la celda mas grande (empate: abajo).
+      const bandeja = Math.floor(ladoW / columnas) > Math.floor(abajoW / columnas) ? 'lado' : 'abajo';
+      const boardW = bandeja === 'lado' ? ladoW : abajoW;
+      const boardH = bandeja === 'lado' ? ladoH : abajoH;
 
       // Redondear a pixeles enteros y que el tablero sea multiplo EXACTO
       // de la celda: asi el grid de CSS (1fr por columna/fila) no tiene
@@ -1098,8 +1143,9 @@ export default function MenuActividades({ onOpenChange }) {
         filas,
         celdaW,
         celdaH,
-        trayAlto: !horizontal ? celdaH + PADDING_TRAY_ROMP : null,
-        trayAncho: horizontal ? celdaW + PADDING_TRAY_ROMP : null,
+        trayAlto: bandeja === 'abajo' ? celdaH + PADDING_TRAY_ROMP : null,
+        trayAncho: bandeja === 'lado' ? celdaW + PADDING_TRAY_ROMP : null,
+        bandeja,
       });
     };
     recalcular();
@@ -1425,6 +1471,8 @@ export default function MenuActividades({ onOpenChange }) {
     setPiezaArrastrandoRomp(null);
     setMostrarNivelesRomp(false);
     setMostrarPreviaRomp(false);
+    setCatalogoRomp(false);
+    setTabCatalogoRomp(null);
     setNivelIdxRomp(0);
     clearTimeout(timeoutContarRef.current);
     setTemaContarId(null);
@@ -1461,10 +1509,11 @@ export default function MenuActividades({ onOpenChange }) {
       if (temaSecId) volverAlSelectorSec();
       else volverAlMenu();
     } else if (vista === 'rompecabezas') {
-      if (temaRompId) volverAlSelectorRomp();
+      if (catalogoRomp) setCatalogoRomp(false);
+      else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, temaContarId, temaSecId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
@@ -1539,12 +1588,12 @@ export default function MenuActividades({ onOpenChange }) {
   const columnas = grilla.columnas;
   const filas = grilla.filas;
 
-  // Que muestra el header segun la vista (titulo, volver, color de fondo):
-  // solo Memorice/Rompecabezas JUGANDO (con tema elegido) e Imprimir
-  // VIENDO una galeria (con grupo elegido) pintan el header con su propio
-  // color. Los "menu" (raiz, elegir tema, elegir grupo) no necesitan un
-  // header aparte — header transparente y el mismo fondo pastel de la
-  // pagina de Casa de Muñecas en el reproductor, pedido explicito.
+  // Que muestra el header segun la vista (titulo y volver). El header es
+  // transparente en TODAS las paginas (pedido explicito), asi que
+  // "colorHeader" ya no pinta nada: solo distingue las pantallas de "menu"
+  // (raiz, elegir tema, elegir grupo, catalogo — sin color) de las de
+  // juego/galeria (con color), para decidir el fondo del drawer: los menus
+  // llevan el fondo pastel de la pagina de Casa de Muñecas del reproductor.
   const grupoImprimirInfo = grupoImprimir
     ? GRUPOS_IMPRIMIBLES.find((g) => g.id === grupoImprimir)
     : null;
@@ -1561,8 +1610,8 @@ export default function MenuActividades({ onOpenChange }) {
     colorHeader = grupoImprimirInfo?.header;
   } else if (vista === 'rompecabezas') {
     mostrarVolver = true;
-    tituloHeader = temaRompId ? temaRomp.nombre : 'Rompecabezas';
-    colorHeader = temaRomp?.header;
+    tituloHeader = catalogoRomp ? 'Todos los rompecabezas' : temaRompId ? temaRomp.nombre : 'Rompecabezas';
+    colorHeader = catalogoRomp ? undefined : temaRomp?.header;
   } else if (vista === 'contar') {
     mostrarVolver = true;
     tituloHeader = temaContarId ? temaContar.nombre : 'Contar';
@@ -1599,10 +1648,7 @@ export default function MenuActividades({ onOpenChange }) {
             onClick={(e) => e.stopPropagation()}
             style={estiloDrawer}
           >
-            <div
-              className={`memory-drawer-header${esMenu ? ' memory-drawer-header--claro' : ''}`}
-              style={{ background: colorHeader || 'transparent' }}
-            >
+            <div className="memory-drawer-header">
               <div className="memory-drawer-title">
                 {mostrarVolver ? (
                   <div className="memory-titulo-fila">
@@ -1737,7 +1783,7 @@ export default function MenuActividades({ onOpenChange }) {
                     )}
                     <button
                       type="button"
-                      className="memory-picker-tile"
+                      className="memory-picker-tile memory-solo-tablet"
                       onClick={irAContar}
                       aria-label="Contar"
                     >
@@ -1934,7 +1980,49 @@ export default function MenuActividades({ onOpenChange }) {
                 </>
               ))}
 
-              {vista === 'rompecabezas' && (!temaRompId ? (
+              {vista === 'rompecabezas' && catalogoRomp && (
+                <div className="romp-catalogo">
+                  <div className="romp-tabs" role="tablist" aria-label="Temas">
+                    {temasCatalogoRomp.map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        role="tab"
+                        aria-selected={t.id === tabActivaRomp}
+                        className={`romp-tab${t.id === tabActivaRomp ? ' activo' : ''}`}
+                        style={t.id === tabActivaRomp ? { background: t.header } : undefined}
+                        onClick={() => setTabCatalogoRomp(t.id)}
+                      >
+                        {t.nombre}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="romp-tab-panel" role="tabpanel">
+                    {temasCatalogoRomp
+                      .find((t) => t.id === tabActivaRomp)
+                      ?.niveles.map((nivel, i) => {
+                        const src = miniaturasRomp[`${tabActivaRomp}-${i}`];
+                        return (
+                          <section key={nivel.archivo} className="romp-nivel-seccion">
+                            <h3 className="romp-nivel-titulo">
+                              Nivel {i + 1}
+                              <span>{nivel.piezas} piezas · {nivel.orientacion}</span>
+                            </h3>
+                            <div className="romp-miniaturas">
+                              {src ? (
+                                <img src={src} alt="" className={`romp-miniatura romp-miniatura--${nivel.orientacion}`} />
+                              ) : (
+                                <div className={`romp-miniatura romp-miniatura--${nivel.orientacion} romp-miniatura--cargando`} />
+                              )}
+                            </div>
+                          </section>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {vista === 'rompecabezas' && !catalogoRomp && (!temaRompId ? (
                 <div className="memory-picker">
                   <div className="memory-picker-grid">
                     {TEMAS_ROMPECABEZAS.map((t) => (
@@ -1958,6 +2046,13 @@ export default function MenuActividades({ onOpenChange }) {
                       </button>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    className="romp-catalogo-btn"
+                    onClick={() => setCatalogoRomp(true)}
+                  >
+                    <PictureOutlined /> Ver todos los rompecabezas
+                  </button>
                 </div>
               ) : (
                 <>
@@ -2050,7 +2145,10 @@ export default function MenuActividades({ onOpenChange }) {
                       onDragStart={empezarArrastreRomp}
                       onDragEnd={soltarPiezaRomp}
                     >
-                      <div className="romp-layout" ref={areaRefRomp}>
+                      <div
+                        className={`romp-layout${celdaRomp.bandeja === 'lado' ? ' romp-layout--lado' : ''}`}
+                        ref={areaRefRomp}
+                      >
                         <div
                           className="romp-board-wrap"
                           style={{
@@ -2088,7 +2186,7 @@ export default function MenuActividades({ onOpenChange }) {
                         </div>
 
                         <div
-                          className="romp-tray"
+                          className={`romp-tray${celdaRomp.bandeja === 'lado' ? ' romp-tray--lado' : ''}`}
                           style={{ height: celdaRomp.trayAlto ?? undefined, width: celdaRomp.trayAncho ?? undefined }}
                         >
                           {pendientesRomp.map((id) => (
