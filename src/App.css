@@ -1599,11 +1599,23 @@ html {
   }
 }
 
+/* Cada foto es ahora un <Image> de antd (vista previa al tocarla): su
+   contenedor ".ant-image" es inline-block, asi que el root se pasa a
+   bloque de ancho completo para que siga comportandose como antes dentro
+   de la lista/grilla. Selector compuesto (.gallery-img-root .gallery-img)
+   para ganarle sin dudas a los estilos propios de antd sobre el <img>. */
+.gallery-img-root {
+  display: block;
+  width: 100%;
+}
+
+.gallery-img-root .gallery-img,
 .gallery-img {
   width: 100%;
   display: block;
   border-radius: 18px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  cursor: zoom-in;
 }
 
 .gallery-empty {

@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect, cloneElement, Children } from 'react';
 import { createPortal } from 'react-dom';
+import { Image } from 'antd';
 import {
   DndContext,
   DragOverlay,
@@ -16,6 +17,7 @@ import {
   CloseOutlined,
   LeftOutlined,
   PictureOutlined,
+  PrinterOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import themes from '../themes';
@@ -225,6 +227,48 @@ for (const [ruta, cargar] of Object.entries(ENTRADAS_GALERIAS)) {
 }
 for (const carpeta in LOADERS_GALERIA) {
   LOADERS_GALERIA[carpeta].sort(([a], [b]) => a.localeCompare(b));
+}
+
+// z-index de la vista previa (Image de antd) de las fotos de Imprimir: el
+// drawer esta en 9998 (.memory-overlay) y el reproductor flotante en 10000,
+// y la vista previa se monta en <body> con 1080 por defecto — quedaria
+// DETRAS del drawer. Va por encima de todo (incluso del reproductor: es un
+// visor a pantalla completa y su barra de herramientas no debe quedar tapada).
+const Z_PREVIEW_GALERIA = 10002;
+
+// Imprime SOLO una imagen (no la pagina): se arma un iframe oculto que
+// contiene nada mas que esa <img>, centrada y escalada para caber en la
+// hoja, y se llama a print() sobre el iframe — asi el dialogo de impresion
+// del navegador recibe unicamente la foto. Se espera a que la imagen cargue
+// y se decodifique (si no, algunos navegadores imprimen la hoja en blanco).
+// El iframe se retira solo al terminar de imprimir (afterprint) o, como
+// respaldo para navegadores que no lo disparan, a los 5 minutos.
+function imprimirImagen(url) {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+  const quitar = () => iframe.remove();
+  iframe.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><title>Imprimir</title>'
+    + '<style>@page{margin:10mm}html,body{height:100%;margin:0}'
+    + 'body{display:flex;align-items:center;justify-content:center}'
+    + 'img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><img alt=""></body></html>';
+  iframe.onload = () => {
+    const ventana = iframe.contentWindow;
+    const img = ventana.document.querySelector('img');
+    img.onload = () => {
+      (img.decode ? img.decode() : Promise.resolve())
+        .catch(() => {})
+        .then(() => {
+          ventana.onafterprint = quitar;
+          ventana.focus();
+          ventana.print();
+        });
+    };
+    img.onerror = quitar;
+    img.src = new URL(url, window.location.href).href;
+  };
+  document.body.appendChild(iframe);
+  setTimeout(quitar, 300000);
 }
 
 // Tarjetas del selector de "Imprimir": misma portada que el grupo de
@@ -677,6 +721,9 @@ export default function MenuActividades({ onOpenChange }) {
   const [grupoImprimir, setGrupoImprimir] = useState(null);
   const [imagenesGaleria, setImagenesGaleria] = useState(null);
   const [open, setOpen] = useState(false);
+  // true mientras la vista previa de una foto (Imprimir) esta abierta: el
+  // Escape debe cerrar SOLO la vista previa, no todo el drawer.
+  const previewGaleriaAbiertaRef = useRef(false);
 
   // Avisa a App si el drawer esta abierto o no: mientras lo esta, el
   // reproductor debe mostrarse como cluster flotante (MiniPlayerFab) y no
@@ -1457,6 +1504,7 @@ export default function MenuActividades({ onOpenChange }) {
   useEffect(() => {
     if (open) return;
     clearTimeout(timeoutRef.current);
+    previewGaleriaAbiertaRef.current = false;
     setVista('menu');
     setGrupoImprimir(null);
     setTemaId(null);
@@ -1520,10 +1568,17 @@ export default function MenuActividades({ onOpenChange }) {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key !== 'Escape') return;
+      // Con la vista previa de una foto abierta, el Escape lo maneja ella
+      // (se cierra sola) y el drawer se queda como esta.
+      if (previewGaleriaAbiertaRef.current) return;
+      setOpen(false);
     };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    // Fase de captura: corre ANTES que el cierre de la vista previa, asi
+    // todavia ve el ref en true (si corriera despues, la vista previa ya se
+    // habria cerrado y el mismo Escape cerraria tambien el drawer).
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [open]);
 
   const voltearCarta = useCallback((uid) => {
@@ -1838,9 +1893,51 @@ export default function MenuActividades({ onOpenChange }) {
                     ) : imagenesGaleria.length === 0 ? (
                       <p className="gallery-empty">Muy pronto van a haber fotos aca.</p>
                     ) : (
-                      imagenesGaleria.map((src) => (
-                        <img key={src} src={src} alt="" className="gallery-img" loading="lazy" />
-                      ))
+                      // Al tocar una foto se abre la vista previa de antd
+                      // (zoom, girar, y pasar a la siguiente/anterior
+                      // gracias al PreviewGroup). El z-index la sube por
+                      // encima del drawer; el "hover" con texto en ingles
+                      // que trae por defecto se apaga (cover:false).
+                      <Image.PreviewGroup
+                        preview={{
+                          zIndex: Z_PREVIEW_GALERIA,
+                          onOpenChange: (abierta) => {
+                            previewGaleriaAbiertaRef.current = abierta;
+                          },
+                          // Boton de imprimir al final de la barra de la
+                          // vista previa: imprime SOLO la foto que se esta
+                          // viendo en ese momento (info.image.url cambia al
+                          // pasar de una foto a otra), no la pagina. Reusa
+                          // la clase de los botones de antd para verse igual.
+                          actionsRender: (originalNode, info) => cloneElement(
+                            originalNode,
+                            undefined,
+                            ...Children.toArray(originalNode.props.children),
+                            <button
+                              type="button"
+                              key="imprimir"
+                              className="ant-image-preview-actions-action"
+                              onClick={() => imprimirImagen(info.image.url)}
+                              aria-label="Imprimir esta imagen"
+                              title="Imprimir esta imagen"
+                            >
+                              <PrinterOutlined />
+                            </button>
+                          ),
+                        }}
+                      >
+                        {imagenesGaleria.map((src) => (
+                          <Image
+                            key={src}
+                            src={src}
+                            alt=""
+                            rootClassName="gallery-img-root"
+                            className="gallery-img"
+                            loading="lazy"
+                            preview={{ cover: false }}
+                          />
+                        ))}
+                      </Image.PreviewGroup>
                     )}
                   </div>
                 )
