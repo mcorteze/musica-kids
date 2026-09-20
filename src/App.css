@@ -1652,9 +1652,9 @@ html {
      asi que angostarla a "tamaño tablet" no lo ocultaria en esa prueba.
    Con las dos juntas: una tablet real (touch, cualquier ancho/orientacion)
    nunca las cumple ambas, y achicar la ventana del navegador con mouse
-   tambien lo oculta (deja de cumplir el ancho). Gabby Dollhouse y Frozen
-   en el selector de Memorice, y la tarjeta de Rompecabezas en el menu
-   general, usan esta clase. Selector compuesto (mismo motivo que
+   tambien lo oculta (deja de cumplir el ancho). Gabby Dollhouse en el
+   selector de Memorice, y las tarjetas de Rompecabezas y de Ordena la
+   secuencia en el menu general, usan esta clase. Selector compuesto (mismo motivo que
    ".memory-picker-tile.memory-solo-tablet" arriba): mas especificidad
    que ".memory-picker-tile" sola, gana sin depender del orden en el
    archivo. */

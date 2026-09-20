@@ -454,9 +454,8 @@ function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
 }
 
 // ========== CONTAR ==========
-// Habilitado momentaneamente solo en laptop/desktop (pedido explicito,
-// misma clase .memory-solo-laptop que Gabby Dollhouse/Frozen/
-// Rompecabezas). Reutiliza los MISMOS temas y fotos de personajes ya
+// Disponible en todos los responsives (pedido explicito, igual que
+// Imprimir). Reutiliza los MISMOS temas y fotos de personajes ya
 // convertidas para el Memorice (TEMAS, arriba) — no hace falta ningun
 // asset nuevo, solo la cantidad de fotos que ya tiene cada tema.
 // Cada ronda: se elige una foto al azar del tema y se muestra repetida
@@ -533,7 +532,7 @@ function reubicarPieza(tablero, piezaId, destinoSlot) {
 
 // ========== ORDENA LA SECUENCIA ==========
 // Habilitado momentaneamente solo en laptop/desktop (pedido explicito,
-// misma clase .memory-solo-laptop que Rompecabezas/Contar). Cada NIVEL es
+// misma clase .memory-solo-laptop que Rompecabezas). Cada NIVEL es
 // una secuencia de cuadros (3 a 12) que hay que ordenar arrastrandolos de
 // un carrousel a casilleros numerados. Cada secuencia vive en
 // src/assets/secuencias/<tema>/<secuencia>/NN.avif: el orden correcto es el
@@ -1738,7 +1737,7 @@ export default function MenuActividades({ onOpenChange }) {
                     )}
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-laptop"
+                      className="memory-picker-tile"
                       onClick={irAContar}
                       aria-label="Contar"
                     >
