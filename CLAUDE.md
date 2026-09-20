@@ -22,6 +22,7 @@ musica-kids/
 ├── src/assets/*-gallery/ ← Fotos de galerias (ej. paw-patrol-gallery), SI viajan en git
 ├── src/assets/memorice/ ← Sets del juego Memorice (por tema), SI viajan en git
 ├── src/assets/rompecabezas/ ← Una foto por nivel del Rompecabezas (por tema), SI viajan en git
+├── src/assets/diferencias/ ← Pares original/modificada de "Encuentra las diferencias" (<tema>/<nivel>/); coordenadas en src/data/diferencias.js (ahi esta el flujo completo)
 ├── src/data/songs.js   ← Lista de canciones
 ├── src/themes/         ← Paletas de colores
 └── skills/             ← Skills del proyecto

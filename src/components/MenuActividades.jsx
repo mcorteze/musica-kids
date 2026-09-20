@@ -1,6 +1,10 @@
 import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect, cloneElement, Children } from 'react';
 import { createPortal } from 'react-dom';
 import { Image } from 'antd';
+import { cargarImagenConAspecto } from '../utils/cargarImagen';
+import DiferenciasJuego from './DiferenciasJuego';
+import DiferenciasDev from './DiferenciasDev';
+import diferenciasCoordenadas, { RADIO_ACIERTO } from '../data/diferencias';
 import {
   DndContext,
   DragOverlay,
@@ -29,6 +33,10 @@ import imagenContar from '../assets/menu-general/contar.avif';
 // imagen propia para el menu general, como si tienen las otras): el cuadro
 // final del muñeco de nieve. Reemplazar por menu-general/secuencias.avif.
 import imagenSecuencias from '../assets/secuencias/paw-patrol/muneco-de-nieve/04.avif';
+// Portada PROVISIONAL de la card "Encuentra las diferencias" (tampoco hay
+// imagen propia todavia): otro cuadro del mismo set, distinto al de arriba.
+// Reemplazar por menu-general/diferencias.avif.
+import imagenDiferencias from '../assets/secuencias/paw-patrol/muneco-de-nieve/02.avif';
 
 // ========== MENU GENERAL ==========
 // El icono del header abre este drawer con un menu de tarjetas (Imprimir,
@@ -236,6 +244,28 @@ for (const carpeta in LOADERS_GALERIA) {
 // visor a pantalla completa y su barra de herramientas no debe quedar tapada).
 const Z_PREVIEW_GALERIA = 10002;
 
+// ========== MODO DESARROLLADOR (oculto) ==========
+// Las actividades del drawer estan restringidas en movil (y varias solo en
+// laptop) y eso sigue igual para los ninos. Para poder verlas en el celular
+// mientras se desarrollan hay un interruptor OCULTO: tocar TOQUES_MODO_DEV
+// veces seguidas el titulo "Actividades" del menu principal del drawer (solo
+// ahi, en ningun otro lugar del sitio) lo activa; repetirlo lo desactiva.
+// Se guarda en localStorage, asi que vale solo para ESE dispositivo. Activo,
+// el drawer muestra todas las tarjetas sin importar el responsive (ver
+// .memory-dev en App.css). Cada toque debe llegar antes de VENTANA_TOQUES_MS
+// desde el anterior o la cuenta vuelve a empezar.
+const TOQUES_MODO_DEV = 20;
+const VENTANA_TOQUES_MS = 1200;
+const MODO_DEV_KEY = 'musica-kids-modo-desarrollador';
+
+function leerModoDev() {
+  try {
+    return localStorage.getItem(MODO_DEV_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 // Imprime SOLO una imagen (no la pagina): se arma un iframe oculto que
 // contiene nada mas que esa <img>, centrada y escalada para caber en la
 // hoja, y se llama a print() sobre el iframe — asi el dialogo de impresion
@@ -356,20 +386,6 @@ function leerNivelGuardadoRompecabezas(temaId, totalNiveles) {
   } catch {
     return 0;
   }
-}
-
-// Carga la imagen y de paso mide sus proporciones reales (ancho/alto): el
-// tablero necesita esto para no deformar la foto al armar la grilla.
-function cargarImagenConAspecto(cargar) {
-  return cargar().then((m) => {
-    const src = m.default;
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve({ src, aspecto: img.naturalWidth / img.naturalHeight || 16 / 9 });
-      img.onerror = () => resolve({ src, aspecto: 16 / 9 });
-      img.src = src;
-    });
-  });
 }
 
 // Todos los pares (columnas, filas) que arman exactamente "total" piezas.
@@ -713,6 +729,61 @@ function PiezaSecuencia({ id, cuadros, ancho, alto }) {
   );
 }
 
+// ========== ENCUENTRA LAS DIFERENCIAS ==========
+// Habilitado solo en laptop/desktop (misma clase .memory-solo-laptop que
+// Rompecabezas y Ordena la secuencia). Cada NIVEL es un par de imagenes en
+// src/assets/diferencias/<tema>/<nivel>/{original,modificada}.avif (la
+// segunda es siempre la que lleva las diferencias) y las coordenadas de
+// cada diferencia se anotan en src/data/diferencias.js — ese archivo explica
+// el flujo completo, incluido el Modo desarrollador para sacarlas.
+// Los pares salen solos de los archivos que haya; los temas y su orden se
+// toman de TEMAS (mismos ids que el Memorice). "niveles" trae TODOS los
+// pares (el Modo desarrollador los necesita para calibrar) y "jugables" solo
+// los que ya tienen coordenadas anotadas.
+const ENTRADAS_DIFERENCIAS = import.meta.glob('../assets/diferencias/*/*/*.{png,jpg,jpeg,webp,avif}');
+
+const PARES_DIFERENCIAS = {};
+for (const [ruta, cargar] of Object.entries(ENTRADAS_DIFERENCIAS)) {
+  const m = ruta.match(/diferencias\/([^/]+)\/([^/]+)\/(original|modificada)\.[a-z0-9]+$/i);
+  if (!m) continue;
+  ((PARES_DIFERENCIAS[m[1]] ??= {})[m[2]] ??= {})[m[3].toLowerCase()] = cargar;
+}
+
+const TEMAS_DIFERENCIAS = TEMAS
+  .map((t) => {
+    const porNivel = PARES_DIFERENCIAS[t.id] ?? {};
+    const niveles = Object.keys(porNivel)
+      .filter((nid) => porNivel[nid].original && porNivel[nid].modificada)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((nid) => ({
+        id: nid,
+        cargarOriginal: porNivel[nid].original,
+        cargarModificada: porNivel[nid].modificada,
+        diferencias: diferenciasCoordenadas[`${t.id}/${nid}`] ?? [],
+      }));
+    return {
+      id: t.id,
+      nombre: t.nombre,
+      header: t.header,
+      niveles,
+      jugables: niveles.filter((n) => n.diferencias.length > 0),
+    };
+  })
+  .filter((t) => t.niveles.length > 0);
+
+function nivelKeyDiferencias(temaId) {
+  return `musica-kids-diferencias-nivel-${temaId}`;
+}
+
+function leerNivelGuardadoDiferencias(temaId, totalNiveles) {
+  try {
+    const n = parseInt(localStorage.getItem(nivelKeyDiferencias(temaId)), 10);
+    return n >= 0 && n < totalNiveles ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export default function MenuActividades({ onOpenChange }) {
   // 'menu' = las 2 tarjetas raiz. 'memorice'/'imprimir' = cada seccion.
   const [vista, setVista] = useState('menu');
@@ -724,6 +795,13 @@ export default function MenuActividades({ onOpenChange }) {
   // true mientras la vista previa de una foto (Imprimir) esta abierta: el
   // Escape debe cerrar SOLO la vista previa, no todo el drawer.
   const previewGaleriaAbiertaRef = useRef(false);
+
+  // Modo desarrollador oculto (ver arriba): estado guardado, cuenta de
+  // toques al titulo y aviso breve al activarlo/desactivarlo.
+  const [modoDev, setModoDev] = useState(leerModoDev);
+  const [avisoDev, setAvisoDev] = useState(null);
+  const toquesTituloRef = useRef({ n: 0, t: 0 });
+  const avisoDevTimeoutRef = useRef(null);
 
   // Avisa a App si el drawer esta abierto o no: mientras lo esta, el
   // reproductor debe mostrarse como cluster flotante (MiniPlayerFab) y no
@@ -805,6 +883,19 @@ export default function MenuActividades({ onOpenChange }) {
   const [piezaArrastrandoSec, setPiezaArrastrandoSec] = useState(null);
   const [mostrarNivelesSec, setMostrarNivelesSec] = useState(false);
 
+  // ===== Encuentra las diferencias: el juego en si vive en
+  // DiferenciasJuego (se reinicia volviendolo a montar con otra "key");
+  // aqui solo esta lo que necesita el header y los modales del drawer. =====
+  const [temaDifId, setTemaDifId] = useState(null);
+  const [nivelIdxDif, setNivelIdxDif] = useState(0);
+  const [nivelMaximoDif, setNivelMaximoDif] = useState(0);
+  // Cambia cada vez que se (re)empieza un nivel: es la "key" del juego.
+  const [partidaDif, setPartidaDif] = useState(0);
+  const [ganoDif, setGanoDif] = useState(false);
+  const [mostrarNivelesDif, setMostrarNivelesDif] = useState(false);
+  // Pagina del Modo desarrollador (para sacar las coordenadas).
+  const [devDif, setDevDif] = useState(false);
+
   const tema = temaId ? TEMAS.find((t) => t.id === temaId) : null;
   const cargando = Boolean(temaId) && fotosTema === null;
 
@@ -833,6 +924,7 @@ export default function MenuActividades({ onOpenChange }) {
   const irARompecabezas = useCallback(() => setVista('rompecabezas'), []);
   const irAContar = useCallback(() => setVista('contar'), []);
   const irASecuencias = useCallback(() => setVista('secuencias'), []);
+  const irADiferencias = useCallback(() => setVista('diferencias'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -1498,6 +1590,61 @@ export default function MenuActividades({ onOpenChange }) {
     return () => ro.disconnect();
   }, [cuadrosSec, totalSec, open, temaSecId]);
 
+  // ===== Encuentra las diferencias: logica del drawer =====
+  const temaDif = temaDifId ? TEMAS_DIFERENCIAS.find((t) => t.id === temaDifId) : null;
+  const nivelActualDif = temaDif?.jugables[nivelIdxDif];
+
+  // Elegir un tema retoma el nivel guardado de ESE tema. No hay nada que
+  // cargar aqui: las imagenes las pide DiferenciasJuego al montarse.
+  const elegirTemaDif = useCallback((id) => {
+    const t = TEMAS_DIFERENCIAS.find((x) => x.id === id);
+    const inicial = t ? leerNivelGuardadoDiferencias(id, t.jugables.length) : 0;
+    setTemaDifId(id);
+    setNivelIdxDif(inicial);
+    setNivelMaximoDif(inicial);
+    setPartidaDif((p) => p + 1);
+    setGanoDif(false);
+    setMostrarNivelesDif(false);
+  }, []);
+
+  const volverAlSelectorDif = useCallback(() => {
+    setTemaDifId(null);
+    setGanoDif(false);
+    setMostrarNivelesDif(false);
+  }, []);
+
+  // Nivel completo (lo avisa DiferenciasJuego al encontrar la ultima).
+  const marcarGanoDif = useCallback(() => setGanoDif(true), []);
+
+  // Reinicia el nivel actual o salta a otro (elegido desde "Reiniciar" o al
+  // ganar): volver a montar el juego (otra "key") limpia lo encontrado.
+  const reiniciarDif = useCallback((idx) => {
+    setNivelIdxDif((actual) => idx ?? actual);
+    setPartidaDif((p) => p + 1);
+    setGanoDif(false);
+    setMostrarNivelesDif(false);
+  }, []);
+
+  const siguienteNivelIdxDif = temaDif && nivelIdxDif + 1 < temaDif.jugables.length
+    ? nivelIdxDif + 1
+    : undefined;
+  const enFronteraDif = nivelIdxDif === nivelMaximoDif;
+  const nivelesAlcanzadosDif = temaDif ? temaDif.jugables.slice(0, nivelMaximoDif + 1) : [];
+
+  // El techo nunca baja, misma logica que el resto de los juegos.
+  useEffect(() => {
+    if (nivelIdxDif > nivelMaximoDif) setNivelMaximoDif(nivelIdxDif);
+  }, [nivelIdxDif, nivelMaximoDif]);
+
+  useEffect(() => {
+    if (!temaDifId) return;
+    try {
+      localStorage.setItem(nivelKeyDiferencias(temaDifId), String(nivelMaximoDif));
+    } catch {
+      // Sin localStorage el progreso dura lo que dure la sesion.
+    }
+  }, [temaDifId, nivelMaximoDif]);
+
   // Al cerrar el drawer se vuelve a foja cero: la proxima vez que se abre,
   // arranca en el menu general de nuevo (pedido explicito, extendido del
   // "siempre elegir tema de nuevo" que ya regia solo para Memorice).
@@ -1537,6 +1684,11 @@ export default function MenuActividades({ onOpenChange }) {
     setPiezaArrastrandoSec(null);
     setMostrarNivelesSec(false);
     setNivelIdxSec(0);
+    setTemaDifId(null);
+    setGanoDif(false);
+    setMostrarNivelesDif(false);
+    setDevDif(false);
+    setNivelIdxDif(0);
   }, [open]);
 
   // Volver desde donde sea: dentro de Memorice, si hay tema elegido vuelve
@@ -1556,14 +1708,49 @@ export default function MenuActividades({ onOpenChange }) {
     } else if (vista === 'secuencias') {
       if (temaSecId) volverAlSelectorSec();
       else volverAlMenu();
+    } else if (vista === 'diferencias') {
+      if (devDif) setDevDif(false);
+      else if (temaDifId) volverAlSelectorDif();
+      else volverAlMenu();
     } else if (vista === 'rompecabezas') {
       if (catalogoRomp) setCatalogoRomp(false);
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
+  useEffect(() => () => clearTimeout(avisoDevTimeoutRef.current), []);
+
+  // Toque al titulo "Actividades": solo cuenta en el menu principal del
+  // drawer (el h2 solo lleva este onClick alli, y aqui se vuelve a chequear).
+  // Toques seguidos, cada uno a menos de VENTANA_TOQUES_MS del anterior; al
+  // llegar a TOQUES_MODO_DEV se alterna el modo desarrollador.
+  const tocarTitulo = useCallback(() => {
+    if (vista !== 'menu') return;
+    const ahora = Date.now();
+    const cuenta = toquesTituloRef.current;
+    cuenta.n = ahora - cuenta.t <= VENTANA_TOQUES_MS ? cuenta.n + 1 : 1;
+    cuenta.t = ahora;
+    if (cuenta.n < TOQUES_MODO_DEV) return;
+
+    cuenta.n = 0;
+    const nuevo = !modoDev;
+    try {
+      localStorage.setItem(MODO_DEV_KEY, nuevo ? '1' : '0');
+    } catch {
+      // Sin localStorage el modo dura lo que dure la sesion.
+    }
+    setModoDev(nuevo);
+    setAvisoDev(nuevo ? 'Modo desarrollador activado' : 'Modo desarrollador desactivado');
+    clearTimeout(avisoDevTimeoutRef.current);
+    avisoDevTimeoutRef.current = setTimeout(() => setAvisoDev(null), 2600);
+  }, [vista, modoDev]);
+
+  // Salir del menu principal (o cerrar el drawer) reinicia la cuenta.
+  useEffect(() => {
+    toquesTituloRef.current = { n: 0, t: 0 };
+  }, [vista, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1675,6 +1862,10 @@ export default function MenuActividades({ onOpenChange }) {
     mostrarVolver = true;
     tituloHeader = temaSecId ? temaSec.nombre : 'Ordena la secuencia';
     colorHeader = temaSec?.header;
+  } else if (vista === 'diferencias') {
+    mostrarVolver = true;
+    tituloHeader = devDif ? 'Modo desarrollador' : temaDifId ? temaDif.nombre : 'Encuentra las diferencias';
+    colorHeader = devDif ? undefined : temaDif?.header;
   }
   const esMenu = !colorHeader;
 
@@ -1699,7 +1890,7 @@ export default function MenuActividades({ onOpenChange }) {
       {open && createPortal(
         <div className="memory-overlay" onClick={() => setOpen(false)}>
           <div
-            className="memory-drawer"
+            className={`memory-drawer${modoDev ? ' memory-dev' : ''}`}
             onClick={(e) => e.stopPropagation()}
             style={estiloDrawer}
           >
@@ -1718,7 +1909,9 @@ export default function MenuActividades({ onOpenChange }) {
                     <h2>{tituloHeader}</h2>
                   </div>
                 ) : (
-                  <h2>{tituloHeader}</h2>
+                  // Solo el titulo del menu principal cuenta los toques del
+                  // modo desarrollador oculto (tocarTitulo).
+                  <h2 className="memory-titulo-secreto" onClick={tocarTitulo}>{tituloHeader}</h2>
                 )}
               </div>
               {/* Centrado real (no space-between): el bloque de la
@@ -1726,6 +1919,9 @@ export default function MenuActividades({ onOpenChange }) {
                   grid de 3 columnas deja esto siempre al medio del header
                   sin importar eso. */}
               <div className="memory-header-centro">
+                {vista === 'menu' && modoDev && (
+                  <span className="memory-dev-chip">Modo desarrollador</span>
+                )}
                 {vista === 'memorice' && temaId && !cargando && (
                   <span className="memory-nivel-badge">Nivel {nivelActual}</span>
                 )}
@@ -1737,6 +1933,9 @@ export default function MenuActividades({ onOpenChange }) {
                 )}
                 {vista === 'secuencias' && temaSecId && !cargandoSec && (
                   <span className="memory-nivel-badge">Nivel {nivelIdxSec + 1}</span>
+                )}
+                {vista === 'diferencias' && temaDifId && !devDif && (
+                  <span className="memory-nivel-badge">Nivel {nivelIdxDif + 1}</span>
                 )}
               </div>
               <div className="memory-header-actions">
@@ -1782,6 +1981,15 @@ export default function MenuActividades({ onOpenChange }) {
                     type="button"
                     className="memory-reiniciar-btn"
                     onClick={() => setMostrarNivelesSec(true)}
+                  >
+                    <ReloadOutlined /> Reiniciar
+                  </button>
+                )}
+                {vista === 'diferencias' && temaDifId && !devDif && !ganoDif && (
+                  <button
+                    type="button"
+                    className="memory-reiniciar-btn"
+                    onClick={() => setMostrarNivelesDif(true)}
                   >
                     <ReloadOutlined /> Reiniciar
                   </button>
@@ -1857,6 +2065,17 @@ export default function MenuActividades({ onOpenChange }) {
                         <img src={imagenSecuencias} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Ordena la secuencia</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-laptop"
+                      onClick={irADiferencias}
+                      aria-label="Encuentra las diferencias"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <img src={imagenDiferencias} alt="" className="memory-picker-img" />
+                      </span>
+                      <span className="memory-picker-nombre">Encuentra las diferencias</span>
                     </button>
                   </div>
                 </div>
@@ -2600,7 +2819,121 @@ export default function MenuActividades({ onOpenChange }) {
                   )}
                 </>
               ))}
+
+              {vista === 'diferencias' && devDif && (
+                <DiferenciasDev
+                  temas={TEMAS_DIFERENCIAS}
+                  radio={RADIO_ACIERTO}
+                  coordenadas={diferenciasCoordenadas}
+                />
+              )}
+
+              {vista === 'diferencias' && !devDif && (!temaDifId ? (
+                <div className="memory-picker">
+                  {TEMAS_DIFERENCIAS.length === 0 ? (
+                    <p className="gallery-empty">Muy pronto van a haber imágenes aquí.</p>
+                  ) : (
+                    <div className="memory-picker-grid">
+                      {TEMAS_DIFERENCIAS.map((t) => (
+                        <button
+                          type="button"
+                          key={t.id}
+                          className="memory-picker-tile"
+                          onClick={() => elegirTemaDif(t.id)}
+                          disabled={t.jugables.length === 0}
+                          aria-label={t.jugables.length ? `Buscar diferencias con ${t.nombre}` : `${t.nombre} (muy pronto)`}
+                        >
+                          <span className="memory-picker-img-wrap">
+                            {dorsosSelector[t.id] ? (
+                              <img src={dorsosSelector[t.id]} alt="" className="memory-picker-img" />
+                            ) : (
+                              <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
+                            )}
+                          </span>
+                          <span className="memory-picker-nombre">{t.nombre}</span>
+                          {t.jugables.length === 0 && <span className="memory-picker-badge">Muy pronto</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="dif-dev-btn"
+                    onClick={() => setDevDif(true)}
+                  >
+                    <PictureOutlined /> Modo desarrollador
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {ganoDif && (
+                    <div className="memory-victoria-overlay">
+                      <div className="memory-victoria">
+                        <span className="memory-victoria-emoji">🎉</span>
+                        <p>
+                          {siguienteNivelIdxDif === undefined
+                            ? '¡Completaste todos los niveles!'
+                            : enFronteraDif
+                              ? `¡Nivel ${nivelIdxDif + 2} desbloqueado!`
+                              : '¡Encontraste todo de nuevo!'}
+                        </p>
+                        <button
+                          type="button"
+                          className="memory-victoria-btn"
+                          onClick={() => reiniciarDif(siguienteNivelIdxDif ?? nivelIdxDif)}
+                        >
+                          {siguienteNivelIdxDif === undefined ? 'Jugar de nuevo' : 'Jugar el siguiente nivel'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mostrarNivelesDif && (
+                    <div
+                      className="memory-victoria-overlay"
+                      onClick={() => setMostrarNivelesDif(false)}
+                    >
+                      <div className="memory-niveles-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="memory-niveles-header">
+                          <h3>Elige un nivel</h3>
+                          <button
+                            type="button"
+                            className="memory-cerrar-x memory-niveles-cerrar"
+                            onClick={() => setMostrarNivelesDif(false)}
+                            aria-label="Cerrar"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                        <div className="memory-niveles-grid">
+                          {nivelesAlcanzadosDif.map((_, i) => (
+                            <button
+                              type="button"
+                              key={i}
+                              className={`memory-nivel-btn${i === nivelIdxDif ? ' activo' : ''}`}
+                              onClick={() => reiniciarDif(i)}
+                            >
+                              {i + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {nivelActualDif && (
+                    <DiferenciasJuego
+                      key={`${temaDifId}-${nivelIdxDif}-${partidaDif}`}
+                      nivel={nivelActualDif}
+                      radio={RADIO_ACIERTO}
+                      onCompletado={marcarGanoDif}
+                    />
+                  )}
+                </>
+              ))}
             </div>
+
+            {avisoDev && <div className="memory-toast" role="status">{avisoDev}</div>}
           </div>
         </div>,
         document.body
