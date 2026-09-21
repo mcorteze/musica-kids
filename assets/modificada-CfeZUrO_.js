@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/modificada-D8l_LlTt.avif`;export{e as default};

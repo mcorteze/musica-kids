@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/toy_story_007-CivGbdiX.avif`;export{e as default};

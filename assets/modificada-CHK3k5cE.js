@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/modificada-C-v32Dbh.avif`;export{e as default};

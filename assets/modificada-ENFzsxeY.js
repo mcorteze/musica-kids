@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/modificada-BhBfQTP6.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/original-n3GS3B_D.avif`;export{e as default};

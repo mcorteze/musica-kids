@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/modificada-CWCeLGlv.avif`;export{e as default};

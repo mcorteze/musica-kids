@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/original-DC2h-Dq4.avif`;export{e as default};

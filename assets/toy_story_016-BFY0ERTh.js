@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/toy_story_016-B9J1nwzY.avif`;export{e as default};
