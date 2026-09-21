@@ -29,14 +29,8 @@ import imagenMemorice from '../assets/menu-general/memorice.avif';
 import imagenImprimir from '../assets/menu-general/imprimir.avif';
 import imagenRompecabezas from '../assets/menu-general/rompecabezas.avif';
 import imagenContar from '../assets/menu-general/contar.avif';
-// Portada PROVISIONAL de la card "Ordena la secuencia" (todavia no hay una
-// imagen propia para el menu general, como si tienen las otras): el cuadro
-// final del muñeco de nieve. Reemplazar por menu-general/secuencias.avif.
-import imagenSecuencias from '../assets/secuencias/paw-patrol/muneco-de-nieve/04.avif';
-// Portada PROVISIONAL de la card "Encuentra las diferencias" (tampoco hay
-// imagen propia todavia): otro cuadro del mismo set, distinto al de arriba.
-// Reemplazar por menu-general/diferencias.avif.
-import imagenDiferencias from '../assets/secuencias/paw-patrol/muneco-de-nieve/02.avif';
+import imagenDiferencias from '../assets/menu-general/diferencias.avif';
+import imagenSecuencias from '../assets/menu-general/secuencias.avif';
 
 // ========== MENU GENERAL ==========
 // El icono del header abre este drawer con un menu de tarjetas (Imprimir,
@@ -317,25 +311,66 @@ const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) =>
 });
 
 // ========== ROMPECABEZAS ==========
-// A diferencia del Memorice, cada NIVEL usa una foto distinta (pedido
-// explicito — "no vamos a reciclar imagenes"), no la misma foto cortada
-// mas fina. Por eso la cantidad de piezas de cada nivel se define aqui
-// mismo junto con el archivo que le corresponde, no se calcula sola.
-// Cada nivel vive en src/assets/rompecabezas/<tema>/nivel-N.avif.
+// Un NIVEL define la dificultad (la cantidad de piezas) y agrupa VARIOS
+// rompecabezas, cada uno con una foto distinta (pedido explicito — "no
+// vamos a reciclar imagenes"), no la misma foto cortada mas fina. Al
+// empezar un nivel el juego elige uno de sus rompecabezas AL AZAR, sin
+// repetir el que se acaba de jugar (elegirAlAzarPendiente). Para
+// DESBLOQUEAR el nivel siguiente hay que armar TODOS los rompecabezas del
+// nivel: mientras falten, el sorteo solo toma los que aun no se armaron
+// (los ya armados se guardan por tema en localStorage, ver
+// leerCompletadosRompecabezas). Por eso la cantidad de piezas se define
+// aqui, por nivel, no se calcula sola.
+// Cada rompecabezas tiene un CODIGO permanente "<tema>_NNN" (ej.
+// toy_story_001: el id del tema con guion bajo + un numero de 3 cifras,
+// correlativo por tema, NO por nivel) que sirve para referenciarlo al
+// hablar de el. Ese mismo codigo es el "id" del rompecabezas y el nombre de
+// su imagen: src/assets/rompecabezas/<tema>/<codigo>.avif. Nunca se
+// reutiliza ni se renumera, aunque cambie el nivel o el orden en que esta
+// declarado — ver skills/agregar-rompecabezas.md.
 // "orientacion" clasifica la foto: 'horizontal' (mas ancha que alta),
 // 'cuadrado' o 'vertical' (mas alta que ancha). Se declara a mano por
-// nivel (ver skills/agregar-rompecabezas.md, que obliga a preguntarla) y
-// hoy la usa la pagina "Todos los rompecabezas" para la forma de las
-// miniaturas; el tablero, en cambio, mide las proporciones REALES de la
-// imagen para calcular la grilla de piezas y donde poner el carrousel.
+// rompecabezas (ver skills/agregar-rompecabezas.md, que obliga a
+// preguntarla) y hoy la usa la pagina "Todos los rompecabezas" solo para el
+// tamaño MAXIMO de las miniaturas. Es una etiqueta aproximada: las fotos de
+// una misma orientacion no miden lo mismo (una horizontal puede ser 16:9,
+// 4:3 o 21:9 y una "cuadrada" casi nunca lo es exacta), asi que NADA asume
+// una proporcion fija — ni el tablero, que mide las proporciones REALES de
+// la imagen para calcular la grilla de piezas y donde poner el carrousel,
+// ni las miniaturas.
 const TEMAS_ROMPECABEZAS_META = [
   {
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
     niveles: [
-      { piezas: 12, archivo: 'nivel-1', orientacion: 'horizontal' },
-      { piezas: 18, archivo: 'nivel-2', orientacion: 'horizontal' },
+      { piezas: 12, rompecabezas: [{ id: 'frozen_001', orientacion: 'horizontal' }] },
+      {
+        piezas: 18,
+        rompecabezas: [
+          { id: 'frozen_002', orientacion: 'horizontal' },
+          { id: 'frozen_003', orientacion: 'vertical' },
+          { id: 'frozen_004', orientacion: 'vertical' },
+          { id: 'frozen_005', orientacion: 'vertical' },
+          { id: 'frozen_006', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 24,
+        rompecabezas: [
+          { id: 'frozen_007', orientacion: 'vertical' },
+          { id: 'frozen_008', orientacion: 'vertical' },
+          { id: 'frozen_009', orientacion: 'vertical' },
+          { id: 'frozen_012', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 30,
+        rompecabezas: [
+          { id: 'frozen_010', orientacion: 'horizontal' },
+          { id: 'frozen_011', orientacion: 'horizontal' },
+        ],
+      },
     ],
   },
   {
@@ -343,27 +378,84 @@ const TEMAS_ROMPECABEZAS_META = [
     nombre: 'Toy Story',
     header: 'linear-gradient(120deg, #5AB0F5 0%, #1C6FB0 55%, #E00024 100%)',
     niveles: [
-      { piezas: 12, archivo: 'nivel-1', orientacion: 'horizontal' },
-      { piezas: 18, archivo: 'nivel-2', orientacion: 'horizontal' },
-      { piezas: 24, archivo: 'nivel-3', orientacion: 'horizontal' },
+      {
+        piezas: 12,
+        rompecabezas: [
+          { id: 'toy_story_001', orientacion: 'horizontal' },
+          { id: 'toy_story_016', orientacion: 'horizontal' },
+          { id: 'toy_story_005', orientacion: 'vertical' },
+          { id: 'toy_story_007', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 18,
+        rompecabezas: [
+          { id: 'toy_story_002', orientacion: 'horizontal' },
+          { id: 'toy_story_008', orientacion: 'horizontal' },
+          { id: 'toy_story_009', orientacion: 'horizontal' },
+          { id: 'toy_story_006', orientacion: 'vertical' },
+          { id: 'toy_story_012', orientacion: 'vertical' },
+          { id: 'toy_story_013', orientacion: 'cuadrado' },
+          { id: 'toy_story_014', orientacion: 'cuadrado' },
+          { id: 'toy_story_015', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 24,
+        rompecabezas: [
+          { id: 'toy_story_003', orientacion: 'horizontal' },
+          { id: 'toy_story_017', orientacion: 'horizontal' },
+          { id: 'toy_story_018', orientacion: 'horizontal' },
+        ],
+      },
+      {
+        piezas: 30,
+        rompecabezas: [
+          { id: 'toy_story_020', orientacion: 'horizontal' },
+          { id: 'toy_story_021', orientacion: 'horizontal' },
+          { id: 'toy_story_022', orientacion: 'cuadrado' },
+          { id: 'toy_story_023', orientacion: 'cuadrado' },
+        ],
+      },
     ],
   },
 ];
 
 const ENTRADAS_ROMPECABEZAS = import.meta.glob('../assets/rompecabezas/*/*.{png,jpg,jpeg,webp,avif}');
 
-function cargadorRompecabezas(temaId, archivo) {
+function cargadorRompecabezas(temaId, codigo) {
   for (const [ruta, cargar] of Object.entries(ENTRADAS_ROMPECABEZAS)) {
     const m = ruta.match(/rompecabezas\/([^/]+)\/([^/.]+)\.[a-z0-9]+$/i);
-    if (m && m[1] === temaId && m[2] === archivo) return cargar;
+    if (m && m[1] === temaId && m[2] === codigo) return cargar;
   }
   return null;
 }
 
+// Elige al azar uno de los items de un nivel (rompecabezas o pares de
+// diferencias, cada uno con su "id"). Para pasar de nivel hay que resolver
+// TODOS los de ese nivel, asi que mientras falten se sortea solo entre los
+// que aun no se han resuelto ("completados": ids ya resueltos); cuando ya
+// estan todos (nivel repasado) se sortea entre todos. En ambos casos no
+// repite "excluirId" (el que se acaba de jugar) salvo que sea el unico
+// candidato.
+function elegirAlAzarPendiente(items, excluirId, completados) {
+  const pendientes = items.filter((r) => !completados.includes(r.id));
+  const pool = pendientes.length > 0 ? pendientes : items;
+  const candidatos = pool.length > 1 ? pool.filter((r) => r.id !== excluirId) : pool;
+  return candidatos[Math.floor(Math.random() * candidatos.length)].id;
+}
+
 const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles }) => {
+  // Solo quedan los rompecabezas cuya imagen existe, y solo los niveles que
+  // conservan al menos uno.
   const nivelesConCarga = niveles
-    .map((n) => ({ ...n, cargar: cargadorRompecabezas(id, n.archivo) }))
-    .filter((n) => n.cargar);
+    .map((n) => ({
+      ...n,
+      rompecabezas: n.rompecabezas
+        .map((r) => ({ ...r, cargar: cargadorRompecabezas(id, r.id) }))
+        .filter((r) => r.cargar),
+    }))
+    .filter((n) => n.rompecabezas.length > 0);
   return {
     id,
     nombre,
@@ -385,6 +477,30 @@ function leerNivelGuardadoRompecabezas(temaId, totalNiveles) {
     return n >= 0 && n < totalNiveles ? n : 0;
   } catch {
     return 0;
+  }
+}
+
+// Codigos de los rompecabezas del tema que ya se armaron al menos una vez
+// (persistidos por tema). Junto con el nivel maximo desbloqueado deciden si
+// un nivel esta completo.
+function completadosKeyRompecabezas(temaId) {
+  return `musica-kids-rompecabezas-completados-${temaId}`;
+}
+
+function leerCompletadosRompecabezas(temaId) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(completadosKeyRompecabezas(temaId)));
+    return Array.isArray(lista) ? lista.filter((c) => typeof c === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function guardarCompletadosRompecabezas(temaId, lista) {
+  try {
+    localStorage.setItem(completadosKeyRompecabezas(temaId), JSON.stringify(lista));
+  } catch {
+    // Sin localStorage el progreso dura lo que dure la sesion.
   }
 }
 
@@ -525,13 +641,17 @@ function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
 // Cada ronda: se elige una foto al azar del tema y se muestra repetida
 // "objetivo" veces; hay que tocar el numero correcto entre 4 opciones
 // (el objetivo + 3 distractores cercanos). Un nivel = 5 rondas seguidas
-// bien contestadas; SIN selector manual, se avanza solo ganando (mismo
-// criterio que el Memorice y el Rompecabezas).
+// bien contestadas; se avanza solo ganando (mismo criterio que el Memorice
+// y el Rompecabezas). Al ganar el ULTIMO nivel el juego termina: se muestra
+// un recuadro de "completaste el juego" y no se vuelve a repetir en bucle.
 const RONDAS_CONTAR = 5;
 const NIVELES_CONTAR = [
   { max: 3 },
   { max: 5 },
   { max: 10 },
+  { max: 12 },
+  { max: 15 },
+  { max: 20 },
 ];
 
 // Las fotos a contar deben verse grandes (pedido explicito, para una
@@ -540,6 +660,32 @@ const NIVELES_CONTAR = [
 // gigante, con pocas fotos en la ronda, queden desproporcionadas.
 const GAP_CONTAR = 14;
 const CELDA_MAX_CONTAR = 220;
+
+// Reparte "total" fotos en el espacio real disponible: prueba cada cantidad
+// de columnas (con las filas justas, la ultima fila puede quedar
+// incompleta y se centra) y se queda con la que da la foto mas grande. Asi
+// 7 fotos no quedan en una sola fila cuando 4 + 3 en dos filas las deja
+// mas grandes (con solo los divisores exactos, 7 no tenia mas opcion que
+// una fila). Si varias opciones dan el mismo tamaño (tope de
+// CELDA_MAX_CONTAR, tipico en pantallas grandes) gana la que deja menos
+// huecos y, a igualdad, la de forma mas parecida a la del espacio.
+function mejorGrillaContar(total, width, height) {
+  let mejor = null;
+  for (let columnas = 1; columnas <= total; columnas++) {
+    const filas = Math.ceil(total / columnas);
+    const porAncho = (width - (columnas - 1) * GAP_CONTAR) / columnas;
+    const porAlto = (height - (filas - 1) * GAP_CONTAR) / filas;
+    const celda = Math.floor(Math.min(porAncho, porAlto, CELDA_MAX_CONTAR));
+    const huecos = columnas * filas - total;
+    const desvio = Math.abs(Math.log(columnas / filas / (width / height)));
+    const gana = !mejor
+      || celda > mejor.celda
+      || (celda === mejor.celda && (huecos < mejor.huecos
+        || (huecos === mejor.huecos && desvio < mejor.desvio)));
+    if (gana) mejor = { columnas, celda, huecos, desvio };
+  }
+  return { columnas: mejor.columnas, celda: Math.max(0, mejor.celda) };
+}
 
 function nivelKeyContar(temaId) {
   return `musica-kids-contar-nivel-${temaId}`;
@@ -731,15 +877,21 @@ function PiezaSecuencia({ id, cuadros, ancho, alto }) {
 
 // ========== ENCUENTRA LAS DIFERENCIAS ==========
 // Habilitado solo en laptop/desktop (misma clase .memory-solo-laptop que
-// Rompecabezas y Ordena la secuencia). Cada NIVEL es un par de imagenes en
-// src/assets/diferencias/<tema>/<nivel>/{original,modificada}.avif (la
-// segunda es siempre la que lleva las diferencias) y las coordenadas de
-// cada diferencia se anotan en src/data/diferencias.js — ese archivo explica
-// el flujo completo, incluido el Modo desarrollador para sacarlas.
+// Rompecabezas y Ordena la secuencia). Cada JUEGO es un PAR de imagenes en
+// src/assets/diferencias/<tema>/<par>/{original,modificada}.avif (la
+// "imagen a" es la original, correcta; la "imagen b" es la modificada, la
+// que lleva las diferencias) y las coordenadas de cada diferencia se anotan
+// en src/data/diferencias.js — ese archivo explica el flujo completo,
+// incluido el Modo desarrollador para sacarlas.
 // Los pares salen solos de los archivos que haya; los temas y su orden se
-// toman de TEMAS (mismos ids que el Memorice). "niveles" trae TODOS los
-// pares (el Modo desarrollador los necesita para calibrar) y "jugables" solo
-// los que ya tienen coordenadas anotadas.
+// toman de TEMAS (mismos ids que el Memorice). Los NIVELES los arma solo el
+// codigo agrupando los pares JUGABLES (con coordenadas anotadas) por la
+// CANTIDAD de diferencias a encontrar, de menos a mas: un nivel = todos los
+// pares que tienen la misma cantidad. Igual que Rompecabezas, al empezar un
+// nivel se sortea un par al azar y para desbloquear el nivel siguiente hay
+// que resolver TODOS los pares del nivel (elegirAlAzarPendiente).
+// "pares" trae TODOS los pares (el Modo desarrollador los necesita para
+// calibrar, tengan o no coordenadas); "niveles" solo los jugables.
 const ENTRADAS_DIFERENCIAS = import.meta.glob('../assets/diferencias/*/*/*.{png,jpg,jpeg,webp,avif}');
 
 const PARES_DIFERENCIAS = {};
@@ -751,25 +903,36 @@ for (const [ruta, cargar] of Object.entries(ENTRADAS_DIFERENCIAS)) {
 
 const TEMAS_DIFERENCIAS = TEMAS
   .map((t) => {
-    const porNivel = PARES_DIFERENCIAS[t.id] ?? {};
-    const niveles = Object.keys(porNivel)
-      .filter((nid) => porNivel[nid].original && porNivel[nid].modificada)
+    const porPar = PARES_DIFERENCIAS[t.id] ?? {};
+    const pares = Object.keys(porPar)
+      .filter((pid) => porPar[pid].original && porPar[pid].modificada)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-      .map((nid) => ({
-        id: nid,
-        cargarOriginal: porNivel[nid].original,
-        cargarModificada: porNivel[nid].modificada,
-        diferencias: diferenciasCoordenadas[`${t.id}/${nid}`] ?? [],
+      .map((pid) => ({
+        id: pid,
+        cargarOriginal: porPar[pid].original,
+        cargarModificada: porPar[pid].modificada,
+        diferencias: diferenciasCoordenadas[`${t.id}/${pid}`] ?? [],
       }));
+    const niveles = [];
+    for (const par of pares.filter((p) => p.diferencias.length > 0)) {
+      const cantidad = par.diferencias.length;
+      let nivel = niveles.find((n) => n.cantidad === cantidad);
+      if (!nivel) {
+        nivel = { cantidad, pares: [] };
+        niveles.push(nivel);
+      }
+      nivel.pares.push(par);
+    }
+    niveles.sort((a, b) => a.cantidad - b.cantidad);
     return {
       id: t.id,
       nombre: t.nombre,
       header: t.header,
+      pares,
       niveles,
-      jugables: niveles.filter((n) => n.diferencias.length > 0),
     };
   })
-  .filter((t) => t.niveles.length > 0);
+  .filter((t) => t.pares.length > 0);
 
 function nivelKeyDiferencias(temaId) {
   return `musica-kids-diferencias-nivel-${temaId}`;
@@ -781,6 +944,30 @@ function leerNivelGuardadoDiferencias(temaId, totalNiveles) {
     return n >= 0 && n < totalNiveles ? n : 0;
   } catch {
     return 0;
+  }
+}
+
+// Ids de los pares del tema que ya se resolvieron al menos una vez
+// (persistidos por tema): con el nivel maximo desbloqueado deciden si un
+// nivel esta completo.
+function completadosKeyDiferencias(temaId) {
+  return `musica-kids-diferencias-completados-${temaId}`;
+}
+
+function leerCompletadosDiferencias(temaId) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(completadosKeyDiferencias(temaId)));
+    return Array.isArray(lista) ? lista.filter((c) => typeof c === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function guardarCompletadosDiferencias(temaId, lista) {
+  try {
+    localStorage.setItem(completadosKeyDiferencias(temaId), JSON.stringify(lista));
+  } catch {
+    // Sin localStorage el progreso dura lo que dure la sesion.
   }
 }
 
@@ -831,11 +1018,16 @@ export default function MenuActividades({ onOpenChange }) {
   const timeoutRef = useRef(null);
 
   // ===== Rompecabezas: mismo espiritu que el Memorice de arriba, pero
-  // cada nivel trae su propia foto (no se corta mas fina la misma). =====
+  // cada nivel agrupa varios rompecabezas con fotos propias (no se corta
+  // mas fina la misma) y se juega uno elegido al azar. =====
   const [temaRompId, setTemaRompId] = useState(null);
-  // null = imagen del nivel todavia no pedida/lista.
+  // null = imagen del rompecabezas todavia no pedida/lista.
   const [imagenRomp, setImagenRomp] = useState(null);
   const [nivelIdxRomp, setNivelIdxRomp] = useState(0);
+  // Codigo del rompecabezas que se esta jugando dentro del nivel (el sorteo).
+  const [rompIdRomp, setRompIdRomp] = useState(null);
+  // Codigos de los rompecabezas ya armados del tema en juego.
+  const [completadosRomp, setCompletadosRomp] = useState([]);
   const [nivelMaximoRomp, setNivelMaximoRomp] = useState(0);
   // { orden: [idx,...] (orden fijo del carrousel), posiciones: [idx|null,...] (que pieza tiene cada ranura) }
   const [tableroRomp, setTableroRomp] = useState({ orden: [], posiciones: [] });
@@ -889,6 +1081,9 @@ export default function MenuActividades({ onOpenChange }) {
   const [temaDifId, setTemaDifId] = useState(null);
   const [nivelIdxDif, setNivelIdxDif] = useState(0);
   const [nivelMaximoDif, setNivelMaximoDif] = useState(0);
+  // Par sorteado dentro del nivel y ids de los pares ya resueltos del tema.
+  const [parIdDif, setParIdDif] = useState(null);
+  const [completadosDif, setCompletadosDif] = useState([]);
   // Cambia cada vez que se (re)empieza un nivel: es la "key" del juego.
   const [partidaDif, setPartidaDif] = useState(0);
   const [ganoDif, setGanoDif] = useState(false);
@@ -1052,9 +1247,14 @@ export default function MenuActividades({ onOpenChange }) {
   const temaRomp = temaRompId ? TEMAS_ROMPECABEZAS.find((t) => t.id === temaRompId) : null;
   const cargandoRomp = Boolean(temaRompId) && imagenRomp === null;
   const nivelActualRomp = temaRomp?.niveles[nivelIdxRomp];
+  // El rompecabezas sorteado, solo si pertenece al nivel actual: entre que
+  // cambia el tema/nivel y se sortea de nuevo puede quedar un codigo viejo,
+  // y asi se ignora en vez de cargar la foto equivocada.
+  const rompActualRomp = nivelActualRomp?.rompecabezas.find((r) => r.id === rompIdRomp) ?? null;
 
   const elegirTemaRomp = useCallback((id) => {
     setTemaRompId(id);
+    setRompIdRomp(null);
     setImagenRomp(null);
     setTableroRomp({ orden: [], posiciones: [] });
     setPiezaArrastrandoRomp(null);
@@ -1064,6 +1264,7 @@ export default function MenuActividades({ onOpenChange }) {
 
   const volverAlSelectorRomp = useCallback(() => {
     setTemaRompId(null);
+    setRompIdRomp(null);
     setImagenRomp(null);
     setTableroRomp({ orden: [], posiciones: [] });
     setPiezaArrastrandoRomp(null);
@@ -1088,11 +1289,12 @@ export default function MenuActividades({ onOpenChange }) {
     const tema = TEMAS_ROMPECABEZAS.find((t) => t.id === tabActivaRomp);
     if (!tema) return;
     let vivo = true;
-    tema.niveles.forEach((nivel, i) => {
-      nivel.cargar().then((m) => {
-        if (!vivo) return;
-        const key = `${tema.id}-${i}`;
-        setMiniaturasRomp((prev) => (prev[key] === m.default ? prev : { ...prev, [key]: m.default }));
+    tema.niveles.forEach((nivel) => {
+      nivel.rompecabezas.forEach((romp) => {
+        romp.cargar().then((m) => {
+          if (!vivo) return;
+          setMiniaturasRomp((prev) => (prev[romp.id] === m.default ? prev : { ...prev, [romp.id]: m.default }));
+        });
       });
     });
     return () => {
@@ -1101,34 +1303,37 @@ export default function MenuActividades({ onOpenChange }) {
   }, [catalogoRomp, tabActivaRomp]);
 
   // Elegir un tema (o volver a elegirlo) retoma el nivel guardado de ESE
-  // tema antes de pedir ninguna imagen — asi el efecto de carga de abajo
-  // (que depende del nivel) pide la foto correcta desde el principio, no
+  // tema y sortea su rompecabezas antes de pedir ninguna imagen — asi el
+  // efecto de carga de abajo pide la foto correcta desde el principio, no
   // la del nivel que se estaba jugando en el tema anterior.
   useEffect(() => {
     if (!temaRompId || !temaRomp) return;
     const inicial = leerNivelGuardadoRompecabezas(temaRompId, temaRomp.niveles.length);
+    const completados = leerCompletadosRompecabezas(temaRompId);
     setNivelMaximoRomp(inicial);
     setNivelIdxRomp(inicial);
+    setCompletadosRomp(completados);
+    setRompIdRomp(elegirAlAzarPendiente(temaRomp.niveles[inicial].rompecabezas, null, completados));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [temaRompId]);
 
-  // Carga la imagen de ESTE nivel (no de todo el tema: cada nivel trae su
-  // propia foto) cada vez que cambia el tema o el nivel elegido.
+  // Carga la imagen del rompecabezas sorteado (no de todo el nivel: cada
+  // rompecabezas trae su propia foto) cada vez que cambia.
   useEffect(() => {
-    if (!nivelActualRomp) return;
+    if (!rompActualRomp) return;
     let vivo = true;
     setImagenRomp(null);
-    cargarImagenConAspecto(nivelActualRomp.cargar).then((res) => {
+    cargarImagenConAspecto(rompActualRomp.cargar).then((res) => {
       if (vivo) setImagenRomp(res);
     });
     return () => {
       vivo = false;
     };
-  }, [nivelActualRomp]);
+  }, [rompActualRomp]);
 
-  // Arma (o rearma) el tablero apenas la imagen de este nivel esta lista:
+  // Arma (o rearma) el tablero apenas la imagen del rompecabezas esta lista:
   // cubre tanto la primera vez que se elige un tema como cada cambio de
-  // nivel despues.
+  // nivel o de rompecabezas despues.
   useEffect(() => {
     if (!imagenRomp || !nivelActualRomp) return;
     setTableroRomp(estadoInicialRompecabezas(nivelActualRomp.piezas));
@@ -1151,6 +1356,31 @@ export default function MenuActividades({ onOpenChange }) {
   const enFronteraRomp = nivelIdxRomp === nivelMaximoRomp;
   const nivelesAlcanzadosRomp = temaRomp ? temaRomp.niveles.slice(0, nivelMaximoRomp + 1) : [];
 
+  // Rompecabezas armados, contando el que se acaba de terminar (el efecto
+  // que lo guarda corre un render despues, y el mensaje de victoria no debe
+  // salir con la cuenta atrasada).
+  const idsCompletosRomp = useMemo(
+    () => (ganoRomp && rompActualRomp && !completadosRomp.includes(rompActualRomp.id)
+      ? [...completadosRomp, rompActualRomp.id]
+      : completadosRomp),
+    [ganoRomp, rompActualRomp, completadosRomp]
+  );
+  // Cuantos rompecabezas del nivel actual faltan por armar. Mientras falte
+  // alguno en el nivel de la frontera, el siguiente nivel sigue bloqueado.
+  const faltanRomp = nivelActualRomp
+    ? nivelActualRomp.rompecabezas.filter((r) => !idsCompletosRomp.includes(r.id)).length
+    : 0;
+  const seguirEnNivelRomp = enFronteraRomp && faltanRomp > 0;
+
+  // Guarda cada rompecabezas apenas se arma.
+  useEffect(() => {
+    if (!ganoRomp || !temaRompId || !rompActualRomp) return;
+    if (completadosRomp.includes(rompActualRomp.id)) return;
+    const siguiente = [...completadosRomp, rompActualRomp.id];
+    setCompletadosRomp(siguiente);
+    guardarCompletadosRompecabezas(temaRompId, siguiente);
+  }, [ganoRomp, temaRompId, rompActualRomp, completadosRomp]);
+
   // El techo nunca baja, misma logica que el Memorice.
   useEffect(() => {
     if (nivelIdxRomp > nivelMaximoRomp) setNivelMaximoRomp(nivelIdxRomp);
@@ -1165,20 +1395,28 @@ export default function MenuActividades({ onOpenChange }) {
     }
   }, [temaRompId, nivelMaximoRomp, totalPiezasRomp]);
 
-  // Reinicia el nivel actual (rebaraja nomas, la imagen ya esta lista) o
-  // salta a otro nivel (elegido desde "Reiniciar" o al ganar): cambiar de
-  // nivel dispara el efecto de carga de imagen de arriba, que a su vez
-  // dispara el armado del tablero cuando esa foto este lista.
+  // Empieza de nuevo el nivel actual o salta a otro (elegido desde
+  // "Reiniciar" o al ganar): en los dos casos se sortea un rompecabezas del
+  // nivel destino, sin repetir el que se estaba jugando. Cambiar de
+  // rompecabezas dispara el efecto de carga de imagen de arriba, que a su
+  // vez dispara el armado del tablero cuando esa foto este lista. Solo si
+  // el sorteo cae en el mismo (un nivel con un unico rompecabezas) no hay
+  // carga: ahi se rebaraja el tablero directamente, la imagen ya esta lista.
   const reiniciarRomp = useCallback((idx) => {
+    if (!temaRomp) return;
     const siguiente = idx ?? nivelIdxRomp;
+    const nivel = temaRomp.niveles[siguiente];
+    if (!nivel) return;
     setPiezaArrastrandoRomp(null);
     setMostrarPreviaRomp(false);
-    if (siguiente === nivelIdxRomp) {
-      if (temaRomp) setTableroRomp(estadoInicialRompecabezas(temaRomp.niveles[siguiente].piezas));
-    } else {
-      setNivelIdxRomp(siguiente);
+    const nuevoId = elegirAlAzarPendiente(nivel.rompecabezas, rompIdRomp, idsCompletosRomp);
+    if (siguiente === nivelIdxRomp && nuevoId === rompIdRomp) {
+      setTableroRomp(estadoInicialRompecabezas(nivel.piezas));
+      return;
     }
-  }, [nivelIdxRomp, temaRomp]);
+    setRompIdRomp(nuevoId);
+    if (siguiente !== nivelIdxRomp) setNivelIdxRomp(siguiente);
+  }, [nivelIdxRomp, temaRomp, rompIdRomp, idsCompletosRomp]);
 
   // Arrastrar y soltar (mouse o dedo), con reubicacion libre: una pieza se
   // puede soltar en CUALQUIER ranura (no solo la correcta), tanto si sale
@@ -1407,12 +1645,12 @@ export default function MenuActividades({ onOpenChange }) {
 
   // Las fotos a contar tienen que verse grandes de verdad (pedido
   // explicito, es para una nina de 5 años) — nada de un tamano fijo
-  // chico que se vea igual con 2 fotos que con 10. Mismo algoritmo que
-  // ya usa el Memorice (paresDivisores + la forma que arma la celda mas
-  // grande posible en el espacio real disponible), aplicado ahora a la
-  // cantidad de fotos de ESTA ronda.
+  // chico que se vea igual con 2 fotos que con 10. La forma (columnas x
+  // filas) que arma la celda mas grande posible en el espacio real
+  // disponible la elige mejorGrillaContar, segun la cantidad de fotos de
+  // ESTA ronda.
   const areaRefContar = useRef(null);
-  const [celdaContar, setCeldaContar] = useState(0);
+  const [grillaContar, setGrillaContar] = useState({ columnas: 1, celda: 0 });
 
   useLayoutEffect(() => {
     const el = areaRefContar.current;
@@ -1420,14 +1658,7 @@ export default function MenuActividades({ onOpenChange }) {
     const recalcular = () => {
       const { width, height } = el.getBoundingClientRect();
       if (!width || !height) return;
-      let mejor = null;
-      for (const par of paresDivisores(rondaContar.items.length)) {
-        const porAncho = (width - (par.columnas - 1) * GAP_CONTAR) / par.columnas;
-        const porAlto = (height - (par.filas - 1) * GAP_CONTAR) / par.filas;
-        const tam = Math.min(porAncho, porAlto, CELDA_MAX_CONTAR);
-        if (!mejor || tam > mejor) mejor = tam;
-      }
-      setCeldaContar(Math.max(0, Math.floor(mejor)));
+      setGrillaContar(mejorGrillaContar(rondaContar.items.length, width, height));
     };
     recalcular();
     const ro = new ResizeObserver(recalcular);
@@ -1592,16 +1823,24 @@ export default function MenuActividades({ onOpenChange }) {
 
   // ===== Encuentra las diferencias: logica del drawer =====
   const temaDif = temaDifId ? TEMAS_DIFERENCIAS.find((t) => t.id === temaDifId) : null;
-  const nivelActualDif = temaDif?.jugables[nivelIdxDif];
+  const nivelActualDif = temaDif?.niveles[nivelIdxDif];
+  // El par sorteado, solo si pertenece al nivel actual (mismo criterio que
+  // Rompecabezas: un codigo viejo no debe cargar el par equivocado).
+  const parActualDif = nivelActualDif?.pares.find((p) => p.id === parIdDif) ?? null;
 
-  // Elegir un tema retoma el nivel guardado de ESE tema. No hay nada que
-  // cargar aqui: las imagenes las pide DiferenciasJuego al montarse.
+  // Elegir un tema retoma el nivel guardado de ESE tema y sortea su par. No
+  // hay nada que cargar aqui: las imagenes las pide DiferenciasJuego al
+  // montarse.
   const elegirTemaDif = useCallback((id) => {
     const t = TEMAS_DIFERENCIAS.find((x) => x.id === id);
-    const inicial = t ? leerNivelGuardadoDiferencias(id, t.jugables.length) : 0;
+    if (!t || t.niveles.length === 0) return;
+    const inicial = leerNivelGuardadoDiferencias(id, t.niveles.length);
+    const completados = leerCompletadosDiferencias(id);
     setTemaDifId(id);
     setNivelIdxDif(inicial);
     setNivelMaximoDif(inicial);
+    setCompletadosDif(completados);
+    setParIdDif(elegirAlAzarPendiente(t.niveles[inicial].pares, null, completados));
     setPartidaDif((p) => p + 1);
     setGanoDif(false);
     setMostrarNivelesDif(false);
@@ -1609,27 +1848,65 @@ export default function MenuActividades({ onOpenChange }) {
 
   const volverAlSelectorDif = useCallback(() => {
     setTemaDifId(null);
+    setParIdDif(null);
     setGanoDif(false);
     setMostrarNivelesDif(false);
   }, []);
 
-  // Nivel completo (lo avisa DiferenciasJuego al encontrar la ultima).
+  // Par completo (lo avisa DiferenciasJuego al encontrar la ultima).
   const marcarGanoDif = useCallback(() => setGanoDif(true), []);
 
-  // Reinicia el nivel actual o salta a otro (elegido desde "Reiniciar" o al
-  // ganar): volver a montar el juego (otra "key") limpia lo encontrado.
+  const siguienteNivelIdxDif = temaDif && nivelIdxDif + 1 < temaDif.niveles.length
+    ? nivelIdxDif + 1
+    : undefined;
+  // El "numero" de un nivel de diferencias es su cantidad de diferencias (el
+  // primer nivel de un tema que solo tiene juegos de 3 es el "Nivel 3").
+  const numeroSiguienteNivelDif = siguienteNivelIdxDif !== undefined
+    ? temaDif.niveles[siguienteNivelIdxDif].cantidad
+    : null;
+  const enFronteraDif = nivelIdxDif === nivelMaximoDif;
+  const nivelesAlcanzadosDif = temaDif ? temaDif.niveles.slice(0, nivelMaximoDif + 1) : [];
+
+  // Pares resueltos, contando el que se acaba de terminar (el efecto que lo
+  // guarda corre un render despues, y el mensaje de victoria no debe salir
+  // con la cuenta atrasada).
+  const idsCompletosDif = useMemo(
+    () => (ganoDif && parActualDif && !completadosDif.includes(parActualDif.id)
+      ? [...completadosDif, parActualDif.id]
+      : completadosDif),
+    [ganoDif, parActualDif, completadosDif]
+  );
+  // Cuantos pares del nivel actual faltan por resolver. Mientras falte
+  // alguno en el nivel de la frontera, el siguiente nivel sigue bloqueado.
+  const faltanDif = nivelActualDif
+    ? nivelActualDif.pares.filter((p) => !idsCompletosDif.includes(p.id)).length
+    : 0;
+  const seguirEnNivelDif = enFronteraDif && faltanDif > 0;
+
+  // Guarda cada par apenas se resuelve.
+  useEffect(() => {
+    if (!ganoDif || !temaDifId || !parActualDif) return;
+    if (completadosDif.includes(parActualDif.id)) return;
+    const siguiente = [...completadosDif, parActualDif.id];
+    setCompletadosDif(siguiente);
+    guardarCompletadosDiferencias(temaDifId, siguiente);
+  }, [ganoDif, temaDifId, parActualDif, completadosDif]);
+
+  // Empieza de nuevo el nivel actual o salta a otro (elegido desde
+  // "Reiniciar" o al ganar): en los dos casos se sortea un par del nivel
+  // destino, sin repetir el que se estaba jugando. Volver a montar el juego
+  // (otra "key") limpia lo encontrado.
   const reiniciarDif = useCallback((idx) => {
-    setNivelIdxDif((actual) => idx ?? actual);
+    if (!temaDif) return;
+    const siguiente = idx ?? nivelIdxDif;
+    const nivel = temaDif.niveles[siguiente];
+    if (!nivel) return;
+    setNivelIdxDif(siguiente);
+    setParIdDif(elegirAlAzarPendiente(nivel.pares, parIdDif, idsCompletosDif));
     setPartidaDif((p) => p + 1);
     setGanoDif(false);
     setMostrarNivelesDif(false);
-  }, []);
-
-  const siguienteNivelIdxDif = temaDif && nivelIdxDif + 1 < temaDif.jugables.length
-    ? nivelIdxDif + 1
-    : undefined;
-  const enFronteraDif = nivelIdxDif === nivelMaximoDif;
-  const nivelesAlcanzadosDif = temaDif ? temaDif.jugables.slice(0, nivelMaximoDif + 1) : [];
+  }, [temaDif, nivelIdxDif, parIdDif, idsCompletosDif]);
 
   // El techo nunca baja, misma logica que el resto de los juegos.
   useEffect(() => {
@@ -1685,6 +1962,7 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarNivelesSec(false);
     setNivelIdxSec(0);
     setTemaDifId(null);
+    setParIdDif(null);
     setGanoDif(false);
     setMostrarNivelesDif(false);
     setDevDif(false);
@@ -1935,7 +2213,7 @@ export default function MenuActividades({ onOpenChange }) {
                   <span className="memory-nivel-badge">Nivel {nivelIdxSec + 1}</span>
                 )}
                 {vista === 'diferencias' && temaDifId && !devDif && (
-                  <span className="memory-nivel-badge">Nivel {nivelIdxDif + 1}</span>
+                  <span className="memory-nivel-badge">Nivel {temaDif?.niveles[nivelIdxDif]?.cantidad}</span>
                 )}
               </div>
               <div className="memory-header-actions">
@@ -2316,24 +2594,34 @@ export default function MenuActividades({ onOpenChange }) {
                   <div className="romp-tab-panel" role="tabpanel">
                     {temasCatalogoRomp
                       .find((t) => t.id === tabActivaRomp)
-                      ?.niveles.map((nivel, i) => {
-                        const src = miniaturasRomp[`${tabActivaRomp}-${i}`];
-                        return (
-                          <section key={nivel.archivo} className="romp-nivel-seccion">
-                            <h3 className="romp-nivel-titulo">
-                              Nivel {i + 1}
-                              <span>{nivel.piezas} piezas · {nivel.orientacion}</span>
-                            </h3>
-                            <div className="romp-miniaturas">
-                              {src ? (
-                                <img src={src} alt="" className={`romp-miniatura romp-miniatura--${nivel.orientacion}`} />
-                              ) : (
-                                <div className={`romp-miniatura romp-miniatura--${nivel.orientacion} romp-miniatura--cargando`} />
-                              )}
-                            </div>
-                          </section>
-                        );
-                      })}
+                      ?.niveles.map((nivel, i) => (
+                        <section key={i} className="romp-nivel-seccion">
+                          <h3 className="romp-nivel-titulo">
+                            Nivel {i + 1}
+                            <span>{nivel.piezas} piezas · {nivel.rompecabezas.length} rompecabezas</span>
+                          </h3>
+                          <div className="romp-miniaturas">
+                            {nivel.rompecabezas.map((romp) => {
+                              const src = miniaturasRomp[romp.id];
+                              return (
+                                <figure key={romp.id} className="romp-miniatura-item">
+                                  {src ? (
+                                    <img src={src} alt="" className={`romp-miniatura romp-miniatura--${romp.orientacion}`} />
+                                  ) : (
+                                    <div className={`romp-miniatura romp-miniatura--${romp.orientacion} romp-miniatura--cargando`} />
+                                  )}
+                                  <figcaption>
+                                    <span className="romp-nivel-codigo" title="Código del rompecabezas (un click lo selecciona)">
+                                      {romp.id}
+                                    </span>
+                                    <span className="romp-miniatura-orientacion">{romp.orientacion}</span>
+                                  </figcaption>
+                                </figure>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      ))}
                   </div>
                 </div>
               )}
@@ -2377,18 +2665,22 @@ export default function MenuActividades({ onOpenChange }) {
                       <div className="memory-victoria">
                         <span className="memory-victoria-emoji">🧩</span>
                         <p>
-                          {siguienteNivelIdxRomp === undefined
-                            ? '¡Completaste todos los niveles!'
-                            : enFronteraRomp
-                              ? `¡Nivel ${nivelIdxRomp + 2} desbloqueado!`
-                              : '¡Lo armaste de nuevo!'}
+                          {seguirEnNivelRomp
+                            ? `¡Lo armaste! ${faltanRomp === 1 ? 'Te falta 1 rompecabezas' : `Te faltan ${faltanRomp} rompecabezas`} para el nivel siguiente.`
+                            : siguienteNivelIdxRomp === undefined
+                              ? '¡Completaste todos los niveles!'
+                              : enFronteraRomp
+                                ? `¡Nivel ${nivelIdxRomp + 2} desbloqueado!`
+                                : '¡Lo armaste de nuevo!'}
                         </p>
                         <button
                           type="button"
                           className="memory-victoria-btn"
-                          onClick={() => reiniciarRomp(siguienteNivelIdxRomp ?? nivelIdxRomp)}
+                          onClick={() => reiniciarRomp(seguirEnNivelRomp ? nivelIdxRomp : (siguienteNivelIdxRomp ?? nivelIdxRomp))}
                         >
-                          {siguienteNivelIdxRomp === undefined ? 'Armar de nuevo' : 'Jugar nivel siguiente'}
+                          {seguirEnNivelRomp
+                            ? 'Otro rompecabezas'
+                            : siguienteNivelIdxRomp === undefined ? 'Armar de nuevo' : 'Jugar nivel siguiente'}
                         </button>
                       </div>
                     </div>
@@ -2568,21 +2860,44 @@ export default function MenuActividades({ onOpenChange }) {
                   {ganoNivelContar && (
                     <div className="memory-victoria-overlay">
                       <div className="memory-victoria">
-                        <span className="memory-victoria-emoji">🔢</span>
-                        <p>
-                          {siguienteNivelIdxContar === undefined
-                            ? '¡Completaste todos los niveles!'
-                            : enFronteraContar
-                              ? `¡Nivel ${nivelIdxContar + 2} desbloqueado!`
-                              : '¡Ganaste de nuevo!'}
-                        </p>
-                        <button
-                          type="button"
-                          className="memory-victoria-btn"
-                          onClick={() => reiniciarContar(siguienteNivelIdxContar ?? nivelIdxContar)}
-                        >
-                          {siguienteNivelIdxContar === undefined ? 'Jugar de nuevo' : 'Jugar nivel siguiente'}
-                        </button>
+                        {siguienteNivelIdxContar === undefined ? (
+                          <>
+                            {/* Fin del juego: sin "jugar de nuevo" en bucle. */}
+                            <span className="memory-victoria-emoji">🏆</span>
+                            <p>¡Completaste el juego de contar!</p>
+                            <p>Ya sabes contar hasta {NIVELES_CONTAR[nivelIdxContar].max}.</p>
+                            <button
+                              type="button"
+                              className="memory-victoria-btn"
+                              onClick={volverAlSelectorContar}
+                            >
+                              Elegir otro tema
+                            </button>
+                            <button
+                              type="button"
+                              className="memory-victoria-btn"
+                              onClick={() => setMostrarNivelesContar(true)}
+                            >
+                              Repasar un nivel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="memory-victoria-emoji">🔢</span>
+                            <p>
+                              {enFronteraContar
+                                ? `¡Nivel ${nivelIdxContar + 2} desbloqueado!`
+                                : '¡Ganaste de nuevo!'}
+                            </p>
+                            <button
+                              type="button"
+                              className="memory-victoria-btn"
+                              onClick={() => reiniciarContar(siguienteNivelIdxContar)}
+                            >
+                              Jugar nivel siguiente
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2631,20 +2946,31 @@ export default function MenuActividades({ onOpenChange }) {
                     ) : (
                       <>
                         <div className="contar-area" ref={areaRefContar}>
-                          {rondaContar.items.map((item) => (
-                            <img
-                              key={item.id}
-                              src={rondaContar.cara.src}
-                              alt=""
-                              className="contar-foto"
-                              style={{
-                                width: celdaContar || undefined,
-                                height: celdaContar || undefined,
-                                visibility: celdaContar ? 'visible' : 'hidden',
-                                transform: `rotate(${item.rot}deg)`,
-                              }}
-                            />
-                          ))}
+                          {/* Ancho exacto de "columnas" fotos: fuerza el reparto
+                              elegido (p. ej. 4 + 3) y centra la ultima fila. */}
+                          <div
+                            className="contar-grilla"
+                            style={{
+                              width: grillaContar.celda
+                                ? grillaContar.columnas * grillaContar.celda + (grillaContar.columnas - 1) * GAP_CONTAR
+                                : undefined,
+                            }}
+                          >
+                            {rondaContar.items.map((item) => (
+                              <img
+                                key={item.id}
+                                src={rondaContar.cara.src}
+                                alt=""
+                                className="contar-foto"
+                                style={{
+                                  width: grillaContar.celda || undefined,
+                                  height: grillaContar.celda || undefined,
+                                  visibility: grillaContar.celda ? 'visible' : 'hidden',
+                                  transform: `rotate(${item.rot}deg)`,
+                                }}
+                              />
+                            ))}
+                          </div>
                         </div>
                         <p className="contar-pregunta">¿Cuántos hay?</p>
                         <div className="contar-opciones">
@@ -2840,8 +3166,8 @@ export default function MenuActividades({ onOpenChange }) {
                           key={t.id}
                           className="memory-picker-tile"
                           onClick={() => elegirTemaDif(t.id)}
-                          disabled={t.jugables.length === 0}
-                          aria-label={t.jugables.length ? `Buscar diferencias con ${t.nombre}` : `${t.nombre} (muy pronto)`}
+                          disabled={t.niveles.length === 0}
+                          aria-label={t.niveles.length ? `Buscar diferencias con ${t.nombre}` : `${t.nombre} (muy pronto)`}
                         >
                           <span className="memory-picker-img-wrap">
                             {dorsosSelector[t.id] ? (
@@ -2851,7 +3177,7 @@ export default function MenuActividades({ onOpenChange }) {
                             )}
                           </span>
                           <span className="memory-picker-nombre">{t.nombre}</span>
-                          {t.jugables.length === 0 && <span className="memory-picker-badge">Muy pronto</span>}
+                          {t.niveles.length === 0 && <span className="memory-picker-badge">Muy pronto</span>}
                         </button>
                       ))}
                     </div>
@@ -2871,18 +3197,22 @@ export default function MenuActividades({ onOpenChange }) {
                       <div className="memory-victoria">
                         <span className="memory-victoria-emoji">🎉</span>
                         <p>
-                          {siguienteNivelIdxDif === undefined
-                            ? '¡Completaste todos los niveles!'
-                            : enFronteraDif
-                              ? `¡Nivel ${nivelIdxDif + 2} desbloqueado!`
-                              : '¡Encontraste todo de nuevo!'}
+                          {seguirEnNivelDif
+                            ? `¡Encontraste todo! ${faltanDif === 1 ? 'Te falta 1 juego' : `Te faltan ${faltanDif} juegos`} para el nivel siguiente.`
+                            : siguienteNivelIdxDif === undefined
+                              ? '¡Completaste todos los niveles!'
+                              : enFronteraDif
+                                ? `¡Nivel ${numeroSiguienteNivelDif} desbloqueado!`
+                                : '¡Encontraste todo de nuevo!'}
                         </p>
                         <button
                           type="button"
                           className="memory-victoria-btn"
-                          onClick={() => reiniciarDif(siguienteNivelIdxDif ?? nivelIdxDif)}
+                          onClick={() => reiniciarDif(seguirEnNivelDif ? nivelIdxDif : (siguienteNivelIdxDif ?? nivelIdxDif))}
                         >
-                          {siguienteNivelIdxDif === undefined ? 'Jugar de nuevo' : 'Jugar el siguiente nivel'}
+                          {seguirEnNivelDif
+                            ? 'Otro juego'
+                            : siguienteNivelIdxDif === undefined ? 'Jugar de nuevo' : 'Jugar el siguiente nivel'}
                         </button>
                       </div>
                     </div>
@@ -2906,14 +3236,14 @@ export default function MenuActividades({ onOpenChange }) {
                           </button>
                         </div>
                         <div className="memory-niveles-grid">
-                          {nivelesAlcanzadosDif.map((_, i) => (
+                          {nivelesAlcanzadosDif.map((n, i) => (
                             <button
                               type="button"
                               key={i}
                               className={`memory-nivel-btn${i === nivelIdxDif ? ' activo' : ''}`}
                               onClick={() => reiniciarDif(i)}
                             >
-                              {i + 1}
+                              {n.cantidad}
                             </button>
                           ))}
                         </div>
@@ -2921,10 +3251,10 @@ export default function MenuActividades({ onOpenChange }) {
                     </div>
                   )}
 
-                  {nivelActualDif && (
+                  {parActualDif && (
                     <DiferenciasJuego
-                      key={`${temaDifId}-${nivelIdxDif}-${partidaDif}`}
-                      nivel={nivelActualDif}
+                      key={`${temaDifId}-${nivelIdxDif}-${parIdDif}-${partidaDif}`}
+                      par={parActualDif}
                       radio={RADIO_ACIERTO}
                       onCompletado={marcarGanoDif}
                     />

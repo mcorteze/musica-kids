@@ -2531,6 +2531,19 @@ html {
   overflow: hidden;
 }
 
+/* Envuelve las fotos con el ancho exacto de N columnas (lo pone
+   MenuActividades.jsx inline): asi el reparto es el elegido (p. ej. 4 + 3)
+   y la ultima fila, si queda incompleta, se centra. El gap tiene que
+   coincidir con GAP_CONTAR del componente. */
+.contar-grilla {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
 /* El ancho/alto exactos (en px) los pone MenuActividades.jsx inline, ya
    calculados para que la foto sea lo mas grande posible en el espacio
    real disponible segun cuantas haya en la ronda (pedido explicito: se
@@ -2833,48 +2846,104 @@ html {
   opacity: 0.7;
 }
 
+/* Cada miniatura lleva debajo su codigo permanente (ej. toy_story_001) y su
+   orientacion. */
+.romp-miniatura-item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.romp-miniatura-item figcaption {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.romp-miniatura-orientacion {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0B4F73;
+  opacity: 0.7;
+}
+
+/* Codigo permanente del rompecabezas para poder referenciarlo al hablar de
+   el: en monoespaciado, bien legible, y un solo click lo selecciona entero
+   (user-select: all) para copiarlo. */
+.romp-nivel-codigo {
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: rgba(8, 40, 66, 0.1);
+  color: #0B4F73;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  user-select: all;
+  cursor: text;
+}
+
+/* align-items:flex-start: sin esto, si hubiera mas de una miniatura por
+   fila el flex las estiraria a la misma altura y las deformaria. */
 .romp-miniaturas {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 14px;
 }
 
+/* La miniatura sigue la proporcion REAL de su imagen (width/height auto,
+   limitadas solo por un tamaño maximo): las fotos no miden todas lo mismo
+   aunque sean "horizontales" (16:9, 4:3, 21:9...) y las "cuadradas" casi
+   nunca lo son exactamente, asi que una caja de proporcion fija dejaria
+   franjas vacias. */
 .romp-miniatura {
-  width: 240px;
-  aspect-ratio: 16 / 10;
-  object-fit: contain;
+  display: block;
+  width: auto;
+  height: auto;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 4px 14px rgba(8, 40, 66, 0.2);
 }
 
-/* Caja de la miniatura segun la orientacion declarada del nivel
-   (orientacion en TEMAS_ROMPECABEZAS_META): una vertical en la caja
-   horizontal quedaria diminuta y con franjas a los lados. Sin modificador
-   (orientacion no declarada) queda la caja horizontal de arriba. */
+/* La orientacion declarada del nivel (orientacion en TEMAS_ROMPECABEZAS_META)
+   solo fija el tamaño MAXIMO en que cabe la miniatura: mas ancho para las
+   horizontales, mas alto para las verticales. Sin modificador (orientacion
+   no declarada) se usa el limite general. */
+.romp-miniatura {
+  max-width: 240px;
+  max-height: 240px;
+}
+
 .romp-miniatura--horizontal {
-  width: 240px;
-  aspect-ratio: 16 / 10;
+  max-width: 260px;
+  max-height: 190px;
 }
 
 .romp-miniatura--cuadrado {
-  width: 190px;
-  aspect-ratio: 1 / 1;
+  max-width: 200px;
+  max-height: 200px;
 }
 
 .romp-miniatura--vertical {
-  width: 150px;
-  aspect-ratio: 10 / 16;
+  max-width: 160px;
+  max-height: 250px;
 }
 
-/* Reserva el mismo espacio mientras llega la imagen. */
+/* Reserva un espacio parecido mientras llega la imagen (el marcador es un
+   <div> sin tamaño propio, asi que lleva uno fijo; solo dura hasta que la
+   imagen carga). */
 .romp-miniatura--cargando {
+  width: 220px;
+  height: 140px;
   background: rgba(255, 255, 255, 0.45);
 }
 
 /* ========== ENCUENTRA LAS DIFERENCIAS ==========
    Dos imagenes lado a lado (DiferenciasJuego.jsx): se hace click en la
-   segunda y aparecen circulos verdes de acierto en las dos. El tamaño de
+   segunda y aparecen circulos verdes de acierto solo en ella. El tamaño de
    cada imagen lo calcula el componente; los gaps de aqui tienen que
    coincidir con GAP_IMAGENES / ALTO_PUNTOS / GAP_VERTICAL de ese archivo.
    Sin padding en .dif-juego: el componente mide su caja completa. */
@@ -3251,18 +3320,44 @@ html {
   pointer-events: none;
 }
 
-.dif-dev-marcas {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.8);
-  color: #0B4F73;
+/* Cuerpo del modo desarrollador: las imagenes a la izquierda y, a la
+   derecha, el panel de marcas, que se queda pegado arriba (sticky) al hacer
+   scroll para tener siempre a la vista la lista y los botones de copiar. En
+   pantallas mas angostas el panel pasa debajo de las imagenes. */
+.dif-dev-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
 }
 
-.dif-dev-marcas-cabecera {
+.dif-dev-principal {
+  min-width: 0;
+}
+
+.dif-dev-marcas {
+  position: sticky;
+  top: 0;
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0B4F73;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 1180px) {
+  .dif-dev-cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dif-dev-marcas {
+    position: static;
+    max-height: none;
+  }
 }
 
 .dif-dev-marcas h3 {
@@ -3273,7 +3368,14 @@ html {
 
 .dif-dev-acciones {
   display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+.dif-dev-nota {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 .dif-dev-boton {
@@ -3301,17 +3403,17 @@ html {
 }
 
 .dif-dev-vacio {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 14px;
 }
 
 .dif-dev-lista {
-  margin: 10px 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 6px 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3344,8 +3446,9 @@ html {
   border-radius: 10px;
   background: #0b2a40;
   color: #d6f0ff;
-  font-size: 13px;
+  font-size: 12px;
   overflow-x: auto;
+  user-select: all;
 }
 
 /* ========== CHILD LOCK ========== */

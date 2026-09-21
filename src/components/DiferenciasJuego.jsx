@@ -11,19 +11,20 @@ const GAP_VERTICAL = 12;
 const IMAGEN_MAX_W = 900;
 
 // Tiempo que se ve el ✕ rojo de un click errado, y espera antes de dar el
-// nivel por completado (para alcanzar a ver el ultimo circulo verde).
+// juego por completado (para alcanzar a ver el ultimo circulo verde).
 const FALLO_MS = 700;
 const COMPLETADO_MS = 800;
 
 // Encuentra las diferencias: dos imagenes lado a lado; se hace click en la
 // SEGUNDA (la que tiene las diferencias) y, si el click cae dentro del radio
 // de una diferencia anotada en src/data/diferencias.js, aparece un circulo
-// verde de acierto en esa imagen y tambien en la primera. Un click errado
-// muestra un ✕ rojo un instante, sin penalizar. Al encontrar todas llama a
-// onCompletado. El padre lo vuelve a montar (key) para reiniciar el nivel.
-export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
+// verde de acierto SOLO en esa imagen (la primera se queda limpia, es la
+// referencia). Un click errado muestra un ✕ rojo un instante, sin
+// penalizar. Al encontrar todas llama a
+// onCompletado. El padre lo vuelve a montar (key) para reiniciar el juego.
+export default function DiferenciasJuego({ par, radio, onCompletado }) {
   const [imagenes, setImagenes] = useState(null);
-  const [encontradas, setEncontradas] = useState(() => nivel.diferencias.map(() => false));
+  const [encontradas, setEncontradas] = useState(() => par.diferencias.map(() => false));
   const [fallo, setFallo] = useState(null);
   const [tam, setTam] = useState({ w: 0, h: 0 });
   const areaRef = useRef(null);
@@ -32,15 +33,15 @@ export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
   useEffect(() => {
     let vivo = true;
     Promise.all([
-      cargarImagenConAspecto(nivel.cargarOriginal),
-      cargarImagenConAspecto(nivel.cargarModificada),
+      cargarImagenConAspecto(par.cargarOriginal),
+      cargarImagenConAspecto(par.cargarModificada),
     ]).then(([a, b]) => {
       if (vivo) setImagenes({ a, b });
     });
     return () => {
       vivo = false;
     };
-  }, [nivel]);
+  }, [par]);
 
   // Mide el espacio disponible y calcula el ancho de cada imagen: la mas
   // grande que entra con las dos lado a lado y la fila de progreso arriba,
@@ -63,7 +64,7 @@ export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
     return () => ro.disconnect();
   }, [imagenes]);
 
-  const total = nivel.diferencias.length;
+  const total = par.diferencias.length;
   const cantidad = encontradas.filter(Boolean).length;
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
 
     let mejor = -1;
     let mejorDist = Infinity;
-    nivel.diferencias.forEach((d, i) => {
+    par.diferencias.forEach((d, i) => {
       const dx = ((x - d.x) * rect.width) / 100;
       const dy = ((y - d.y) * rect.height) / 100;
       const dist = Math.hypot(dx, dy);
@@ -108,10 +109,10 @@ export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
     setEncontradas((prev) => prev.map((v, i) => (i === mejor ? true : v)));
   };
 
-  // Circulos verdes de las diferencias ya encontradas (se dibujan en las
-  // dos imagenes). Ancho en % del ancho de la imagen + aspect-ratio 1 = un
+  // Circulos verdes de las diferencias ya encontradas (solo se dibujan en la
+  // segunda imagen). Ancho en % del ancho de la imagen + aspect-ratio 1 = un
   // circulo perfecto sin importar la proporcion de la imagen.
-  const aciertos = nivel.diferencias.map((d, i) => (
+  const aciertos = par.diferencias.map((d, i) => (
     encontradas[i] ? (
       <span
         key={i}
@@ -139,7 +140,6 @@ export default function DiferenciasJuego({ nivel, radio, onCompletado }) {
         <div className="dif-par" style={{ visibility: tam.w ? 'visible' : 'hidden' }}>
           <div className="dif-imagen" style={{ width: tam.w, height: tam.h }}>
             <img src={imagenes.a.src} alt="" draggable={false} />
-            {aciertos}
           </div>
           <div
             className="dif-imagen dif-imagen--clic"
