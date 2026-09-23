@@ -1633,11 +1633,12 @@ html {
    se oculta en movil con .memory-solo-tablet mas abajo, no el boton
    de entrada entero. */
 
-/* Tarjetas de Memorice y de Contar en el menu general: ocultas en movil
-   (regla del proyecto: todas las actividades salvo Imprimir se restringen
-   en movil), visibles de tablet para arriba. Imprimir no lleva esta clase —
-   queda disponible en cualquier pantalla. Rompecabezas y Ordena la secuencia
-   usan .memory-solo-laptop, que tambien las oculta en movil. Selector compuesto (no ".memory-solo-tablet" sola):
+/* Tarjetas de Memorice, Contar y Rompecabezas en el menu general: ocultas
+   en movil (regla del proyecto: todas las actividades salvo Imprimir se
+   restringen en movil), visibles de tablet para arriba. Imprimir no lleva
+   esta clase — queda disponible en cualquier pantalla. Ordena la secuencia
+   usa .memory-solo-laptop, que oculta ademas en tablet (solo laptop/desktop).
+   Selector compuesto (no ".memory-solo-tablet" sola):
    tiene la MISMA especificidad que ".memory-picker-tile" (una sola
    clase cada una), y esa regla esta declarada mas abajo en este archivo
    — por orden de cascada le ganaba a "display:none" sin importar el
@@ -1666,10 +1667,12 @@ html {
      asi que angostarla a "tamaño tablet" no lo ocultaria en esa prueba.
    Con las dos juntas: una tablet real (touch, cualquier ancho/orientacion)
    nunca las cumple ambas, y achicar la ventana del navegador con mouse
-   tambien lo oculta (deja de cumplir el ancho). Las tarjetas de
-   Rompecabezas y de Ordena la secuencia en el menu general usan esta
-   clase, y cualquier tema del selector de Memorice marcado con
-   "soloLaptop" en TEMAS_META (hoy ninguno). Selector compuesto (mismo motivo que
+   tambien lo oculta (deja de cumplir el ancho). La tarjeta de Ordena la
+   secuencia en el menu general usa esta clase, y dentro de cada selector
+   de temas (Memorice en TEMAS_META, Rompecabezas en
+   TEMAS_ROMPECABEZAS_META) cualquier tema marcado con "soloLaptop" — hoy
+   solo Frozen en Rompecabezas; Toy Story quedo habilitado en todos los
+   responsives (pedido explicito). Selector compuesto (mismo motivo que
    ".memory-picker-tile.memory-solo-tablet" arriba): mas especificidad
    que ".memory-picker-tile" sola, gana sin depender del orden en el
    archivo. */

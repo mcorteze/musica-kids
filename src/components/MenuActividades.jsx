@@ -343,6 +343,10 @@ const TEMAS_ROMPECABEZAS_META = [
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
+    // Mismo campo "soloLaptop" de TEMAS_META (Memorice): solo Toy Story
+    // quedo habilitado en todos los responsives (pedido explicito), Frozen
+    // se queda con la restriccion que tenia toda la seccion.
+    soloLaptop: true,
     niveles: [
       { piezas: 12, rompecabezas: [{ id: 'frozen_001', orientacion: 'horizontal' }] },
       {
@@ -445,7 +449,7 @@ function elegirAlAzarPendiente(items, excluirId, completados) {
   return candidatos[Math.floor(Math.random() * candidatos.length)].id;
 }
 
-const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles }) => {
+const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, soloLaptop }) => {
   // Solo quedan los rompecabezas cuya imagen existe, y solo los niveles que
   // conservan al menos uno.
   const nivelesConCarga = niveles
@@ -464,6 +468,7 @@ const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, ni
     // Listo con al menos el primer nivel disponible — los siguientes
     // pueden ir llegando despues sin que el tema deje de jugarse.
     listo: nivelesConCarga.length > 0,
+    soloLaptop: Boolean(soloLaptop),
   };
 });
 
@@ -742,7 +747,8 @@ function reubicarPieza(tablero, piezaId, destinoSlot) {
 
 // ========== ORDENA LA SECUENCIA ==========
 // Habilitado momentaneamente solo en laptop/desktop (pedido explicito,
-// misma clase .memory-solo-laptop que Rompecabezas). Cada NIVEL es
+// misma clase .memory-solo-laptop que usa Frozen dentro de Rompecabezas).
+// Cada NIVEL es
 // una secuencia de cuadros (3 a 12) que hay que ordenar arrastrandolos de
 // un carrousel a casilleros numerados. Cada secuencia vive en
 // src/assets/secuencias/<tema>/<secuencia>/NN.avif: el orden correcto es el
@@ -877,7 +883,7 @@ function PiezaSecuencia({ id, cuadros, ancho, alto }) {
 
 // ========== ENCUENTRA LAS DIFERENCIAS ==========
 // Habilitado solo en laptop/desktop (misma clase .memory-solo-laptop que
-// Rompecabezas y Ordena la secuencia). Cada JUEGO es un PAR de imagenes en
+// Ordena la secuencia y que usa Frozen dentro de Rompecabezas). Cada JUEGO es un PAR de imagenes en
 // src/assets/diferencias/<tema>/<par>/{original,modificada}.avif (la
 // "imagen a" es la original, correcta; la "imagen b" es la modificada, la
 // que lleva las diferencias) y las coordenadas de cada diferencia se anotan
@@ -2312,7 +2318,7 @@ export default function MenuActividades({ onOpenChange }) {
                     {ROMPECABEZAS_HABILITADO && (
                       <button
                         type="button"
-                        className="memory-picker-tile memory-solo-laptop"
+                        className="memory-picker-tile memory-solo-tablet"
                         onClick={irARompecabezas}
                         aria-label="Rompecabezas"
                       >
@@ -2633,7 +2639,7 @@ export default function MenuActividades({ onOpenChange }) {
                       <button
                         type="button"
                         key={t.id}
-                        className="memory-picker-tile"
+                        className={`memory-picker-tile${t.soloLaptop ? ' memory-solo-laptop' : ''}`}
                         onClick={() => elegirTemaRomp(t.id)}
                         disabled={!t.listo}
                         aria-label={t.listo ? `Armar ${t.nombre}` : `${t.nombre} (muy pronto)`}
