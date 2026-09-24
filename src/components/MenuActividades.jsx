@@ -343,10 +343,6 @@ const TEMAS_ROMPECABEZAS_META = [
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
-    // Mismo campo "soloLaptop" de TEMAS_META (Memorice): solo Toy Story
-    // quedo habilitado en todos los responsives (pedido explicito), Frozen
-    // se queda con la restriccion que tenia toda la seccion.
-    soloLaptop: true,
     niveles: [
       { piezas: 12, rompecabezas: [{ id: 'frozen_001', orientacion: 'horizontal' }] },
       {
