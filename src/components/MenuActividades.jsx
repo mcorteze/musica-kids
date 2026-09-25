@@ -419,6 +419,63 @@ const TEMAS_ROMPECABEZAS_META = [
       },
     ],
   },
+  {
+    id: 'paw-patrol',
+    nombre: 'Paw Patrol',
+    header: 'linear-gradient(120deg, #0BA3E0 0%, #0E8FD1 55%, #E31A22 100%)',
+    niveles: [
+      {
+        piezas: 12,
+        rompecabezas: [
+          { id: 'paw_patrol_001', orientacion: 'vertical' },
+          { id: 'paw_patrol_002', orientacion: 'horizontal' },
+          { id: 'paw_patrol_003', orientacion: 'cuadrado' },
+          { id: 'paw_patrol_004', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 18,
+        rompecabezas: [
+          { id: 'paw_patrol_005', orientacion: 'vertical' },
+          { id: 'paw_patrol_006', orientacion: 'horizontal' },
+          { id: 'paw_patrol_007', orientacion: 'horizontal' },
+          { id: 'paw_patrol_008', orientacion: 'vertical' },
+          { id: 'paw_patrol_009', orientacion: 'vertical' },
+          { id: 'paw_patrol_010', orientacion: 'vertical' },
+          { id: 'paw_patrol_011', orientacion: 'horizontal' },
+          { id: 'paw_patrol_012', orientacion: 'cuadrado' },
+          { id: 'paw_patrol_013', orientacion: 'vertical' },
+          { id: 'paw_patrol_014', orientacion: 'vertical' },
+          { id: 'paw_patrol_015', orientacion: 'vertical' },
+          { id: 'paw_patrol_016', orientacion: 'vertical' },
+          { id: 'paw_patrol_017', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 24,
+        rompecabezas: [
+          { id: 'paw_patrol_018', orientacion: 'horizontal' },
+          { id: 'paw_patrol_019', orientacion: 'horizontal' },
+          { id: 'paw_patrol_020', orientacion: 'horizontal' },
+          { id: 'paw_patrol_021', orientacion: 'vertical' },
+          { id: 'paw_patrol_022', orientacion: 'cuadrado' },
+          { id: 'paw_patrol_023', orientacion: 'horizontal' },
+          { id: 'paw_patrol_024', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 30,
+        rompecabezas: [
+          { id: 'paw_patrol_025', orientacion: 'horizontal' },
+          { id: 'paw_patrol_026', orientacion: 'vertical' },
+          { id: 'paw_patrol_027', orientacion: 'horizontal' },
+          { id: 'paw_patrol_028', orientacion: 'vertical' },
+          { id: 'paw_patrol_029', orientacion: 'horizontal' },
+          { id: 'paw_patrol_030', orientacion: 'horizontal' },
+        ],
+      },
+    ],
+  },
 ];
 
 const ENTRADAS_ROMPECABEZAS = import.meta.glob('../assets/rompecabezas/*/*.{png,jpg,jpeg,webp,avif}');
@@ -1293,9 +1350,11 @@ export default function MenuActividades({ onOpenChange }) {
     let vivo = true;
     tema.niveles.forEach((nivel) => {
       nivel.rompecabezas.forEach((romp) => {
-        romp.cargar().then((m) => {
+        // Con la proporcion real de la foto: la misma que usa el juego para
+        // elegir la grilla, asi el corte que se dibuja encima es el real.
+        cargarImagenConAspecto(romp.cargar).then((res) => {
           if (!vivo) return;
-          setMiniaturasRomp((prev) => (prev[romp.id] === m.default ? prev : { ...prev, [romp.id]: m.default }));
+          setMiniaturasRomp((prev) => (prev[romp.id]?.src === res.src ? prev : { ...prev, [romp.id]: res }));
         });
       });
     });
@@ -2604,11 +2663,28 @@ export default function MenuActividades({ onOpenChange }) {
                           </h3>
                           <div className="romp-miniaturas">
                             {nivel.rompecabezas.map((romp) => {
-                              const src = miniaturasRomp[romp.id];
+                              const imagen = miniaturasRomp[romp.id];
+                              // Misma grilla que arma el juego para esta foto y
+                              // esta cantidad de piezas (grillaRompecabezas).
+                              const grilla = imagen ? grillaRompecabezas(nivel.piezas, imagen.aspecto) : null;
                               return (
                                 <figure key={romp.id} className="romp-miniatura-item">
-                                  {src ? (
-                                    <img src={src} alt="" className={`romp-miniatura romp-miniatura--${romp.orientacion}`} />
+                                  {imagen ? (
+                                    <div className="romp-miniatura-marco">
+                                      <img src={imagen.src} alt="" className={`romp-miniatura romp-miniatura--${romp.orientacion}`} />
+                                      <div
+                                        className="romp-miniatura-cortes"
+                                        style={{
+                                          gridTemplateColumns: `repeat(${grilla.columnas}, 1fr)`,
+                                          gridTemplateRows: `repeat(${grilla.filas}, 1fr)`,
+                                        }}
+                                        aria-hidden="true"
+                                      >
+                                        {Array.from({ length: nivel.piezas }, (_, p) => (
+                                          <span key={p} className="romp-miniatura-pieza" />
+                                        ))}
+                                      </div>
+                                    </div>
                                   ) : (
                                     <div className={`romp-miniatura romp-miniatura--${romp.orientacion} romp-miniatura--cargando`} />
                                   )}
@@ -2617,6 +2693,12 @@ export default function MenuActividades({ onOpenChange }) {
                                       {romp.id}
                                     </span>
                                     <span className="romp-miniatura-orientacion">{romp.orientacion}</span>
+                                    {grilla && (
+                                      <span className="romp-miniatura-orientacion">
+                                        {grilla.columnas} × {grilla.filas}
+                                        {imagen.ancho > 0 && ` · pieza de ${Math.round(imagen.ancho / grilla.columnas)}×${Math.round(imagen.alto / grilla.filas)} px`}
+                                      </span>
+                                    )}
                                   </figcaption>
                                 </figure>
                               );

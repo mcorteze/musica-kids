@@ -1671,8 +1671,8 @@ html {
    secuencia en el menu general usa esta clase, y dentro de cada selector
    de temas (Memorice en TEMAS_META, Rompecabezas en
    TEMAS_ROMPECABEZAS_META) cualquier tema marcado con "soloLaptop" — hoy
-   solo Frozen en Rompecabezas; Toy Story quedo habilitado en todos los
-   responsives (pedido explicito). Selector compuesto (mismo motivo que
+   ninguno: Frozen, Toy Story y Paw Patrol quedaron habilitados en todos
+   los responsives (pedido explicito). Selector compuesto (mismo motivo que
    ".memory-picker-tile.memory-solo-tablet" arriba): mas especificidad
    que ".memory-picker-tile" sola, gana sin depender del orden en el
    archivo. */
@@ -2916,32 +2916,65 @@ html {
    horizontales, mas alto para las verticales. Sin modificador (orientacion
    no declarada) se usa el limite general. */
 .romp-miniatura {
-  max-width: 240px;
-  max-height: 240px;
+  max-width: 460px;
+  max-height: 460px;
 }
 
 .romp-miniatura--horizontal {
-  max-width: 260px;
-  max-height: 190px;
+  max-width: 520px;
+  max-height: 380px;
 }
 
 .romp-miniatura--cuadrado {
-  max-width: 200px;
-  max-height: 200px;
+  max-width: 400px;
+  max-height: 400px;
 }
 
 .romp-miniatura--vertical {
-  max-width: 160px;
-  max-height: 250px;
+  max-width: 320px;
+  max-height: 500px;
 }
 
 /* Reserva un espacio parecido mientras llega la imagen (el marcador es un
    <div> sin tamaño propio, asi que lleva uno fijo; solo dura hasta que la
    imagen carga). */
 .romp-miniatura--cargando {
-  width: 220px;
-  height: 140px;
+  width: 440px;
+  height: 280px;
   background: rgba(255, 255, 255, 0.45);
+}
+
+/* Marco de la miniatura ya cargada: toma el tamaño exacto de la imagen para
+   que la grilla de cortes quede calzada encima. La sombra y el redondeo
+   pasan al marco (la imagen queda recortada por overflow). */
+.romp-miniatura-marco {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(8, 40, 66, 0.2);
+}
+
+.romp-miniatura-marco .romp-miniatura {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Division en piezas: la misma grilla columnas x filas que arma el juego
+   (grillaRompecabezas), cada celda es una pieza. Linea blanca con sombra
+   oscura para que se lea sobre fotos claras y oscuras. */
+.romp-miniatura-cortes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  pointer-events: none;
+}
+
+.romp-miniatura-pieza {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 2px rgba(8, 40, 66, 0.35);
 }
 
 /* ========== ENCUENTRA LAS DIFERENCIAS ==========
