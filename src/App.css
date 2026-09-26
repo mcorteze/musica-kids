@@ -3091,12 +3091,24 @@ html {
   to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
-/* ---------- Modo desarrollador (solo para preparar niveles) ---------- */
+/* ---------- Modo desarrollador (solo para preparar niveles) ----------
+   Encuentra las diferencias se abre de tablet para arriba, pero este boton
+   es herramienta de trabajo: solo laptop, mismas dos condiciones que
+   .romp-catalogo-btn (ancho Y puntero fino). */
 .dif-dev-btn {
   appearance: none;
   border: none;
   cursor: pointer;
-  display: inline-flex;
+  display: none;
+}
+
+@media screen and (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+  .dif-dev-btn {
+    display: inline-flex;
+  }
+}
+
+.dif-dev-btn {
   align-items: center;
   gap: 8px;
   height: 44px;

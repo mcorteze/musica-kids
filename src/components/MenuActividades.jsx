@@ -935,8 +935,9 @@ function PiezaSecuencia({ id, cuadros, ancho, alto }) {
 }
 
 // ========== ENCUENTRA LAS DIFERENCIAS ==========
-// Habilitado solo en laptop/desktop (misma clase .memory-solo-laptop que
-// Ordena la secuencia y que usa Frozen dentro de Rompecabezas). Cada JUEGO es un PAR de imagenes en
+// Habilitado de tablet para arriba (.memory-solo-tablet, igual que
+// Rompecabezas), con todos sus temas; el boton "Modo desarrollador" de su
+// selector queda solo en laptop. Cada JUEGO es un PAR de imagenes en
 // src/assets/diferencias/<tema>/<par>/{original,modificada}.avif (la
 // "imagen a" es la original, correcta; la "imagen b" es la modificada, la
 // que lleva las diferencias) y las coordenadas de cada diferencia se anotan
@@ -2407,7 +2408,7 @@ export default function MenuActividades({ onOpenChange }) {
                     </button>
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-laptop"
+                      className="memory-picker-tile memory-solo-tablet"
                       onClick={irADiferencias}
                       aria-label="Encuentra las diferencias"
                     >
