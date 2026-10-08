@@ -15,6 +15,7 @@ import useLovedSongs from './hooks/useLovedSongs';
 import useUnicornSongs from './hooks/useUnicornSongs';
 import useStarredSongs from './hooks/useStarredSongs';
 import useWakeLock from './hooks/useWakeLock';
+import useMediaSession from './hooks/useMediaSession';
 import themes from './themes';
 import songs from './data/songs';
 import groups, { ALL_GROUPS } from './data/groups';
@@ -176,9 +177,9 @@ export default function App() {
   const handleConfirmDriving = useCallback(() => setDrivingStage('active'), []);
   const handleExitDriving = useCallback(() => setDrivingStage('off'), []);
 
-  // Desde el modo conduccion no hay lista para elegir una cancion puntual:
-  // se elige un grupo (carrusel de caratulas) y arranca directo en la
-  // primera cancion de ese grupo.
+  // En el modo conduccion, elegir un grupo (carrusel de caratulas) arranca
+  // directo en la primera cancion de ese grupo; una cancion puntual se
+  // elige despues en la lista de abajo.
   const handleDrivingPickGroup = useCallback((groupId) => {
     setActiveGroup(groupId);
     const firstSong = getGroupSongs(groupId)[0];
@@ -210,7 +211,42 @@ export default function App() {
     handleSeek,
     handleVolumeChange,
     toggleMute,
-  } = useAudioPlayer({ song: currentSong, isPlaying, onNext: handleSongEnded, repeat });
+  } = useAudioPlayer({
+    song: currentSong,
+    isPlaying,
+    onNext: handleSongEnded,
+    repeat,
+    onPlayStateChange: setIsPlaying,
+  });
+
+  // "Anterior" como en cualquier reproductor: si la cancion ya avanzo unos
+  // segundos, vuelve a su inicio; si esta recien empezando (o se acaba de
+  // reiniciar, es decir, segundo toque seguido), salta a la anterior.
+  const handlePrevOrRestart = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio && audio.currentTime > 3) {
+      handleSeek(0);
+      return;
+    }
+    handlePrev();
+  }, [audioRef, handleSeek, handlePrev]);
+
+  const handleMediaPlay = useCallback(() => {
+    if (currentSong) setIsPlaying(true);
+  }, [currentSong]);
+  const handleMediaPause = useCallback(() => setIsPlaying(false), []);
+
+  useMediaSession({
+    audioRef,
+    song: currentSong,
+    isPlaying,
+    duration,
+    onPlay: handleMediaPlay,
+    onPause: handleMediaPause,
+    onNext: handleNext,
+    onPrev: handlePrevOrRestart,
+    onSeek: handleSeek,
+  });
 
   const { isLiked, toggleLike } = useLikedSongs();
   const { isLoved, toggleLove } = useLovedSongs();
@@ -334,7 +370,7 @@ export default function App() {
               isPlaying={isPlaying}
               onPlayPause={handlePlayPause}
               onNext={handleNext}
-              onPrev={handlePrev}
+              onPrev={handlePrevOrRestart}
             />
           )
         ) : (
@@ -343,7 +379,7 @@ export default function App() {
             isPlaying={isPlaying}
             onPlayPause={handlePlayPause}
             onNext={handleNext}
-            onPrev={handlePrev}
+            onPrev={handlePrevOrRestart}
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
@@ -361,7 +397,7 @@ export default function App() {
             isPlaying={isPlaying}
             onPlayPause={handlePlayPause}
             onNext={handleNext}
-            onPrev={handlePrev}
+            onPrev={handlePrevOrRestart}
             shuffle={shuffle}
             onShuffleToggle={handleShuffleToggle}
             repeat={repeat}
@@ -369,6 +405,8 @@ export default function App() {
             currentTime={currentTime}
             duration={duration}
             onSeek={handleSeek}
+            songs={sortedSongs}
+            onSelectSong={handleSelectSong}
             groups={groups}
             activeGroup={activeGroup}
             onPickGroup={handleDrivingPickGroup}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   CaretRightOutlined,
@@ -8,7 +8,6 @@ import {
   SwapOutlined,
   RedoOutlined,
   CloseOutlined,
-  CustomerServiceOutlined,
   AppstoreOutlined,
   CheckCircleFilled,
   CarOutlined,
@@ -36,6 +35,8 @@ export default function DrivingMode({
   currentTime,
   duration,
   onSeek,
+  songs,
+  onSelectSong,
   groups,
   activeGroup,
   onPickGroup,
@@ -44,6 +45,41 @@ export default function DrivingMode({
   onExit,
 }) {
   const pickerRef = useRef(null);
+  const listRef = useRef(null);
+  const listPlacedRef = useRef(false);
+
+  // La lista muestra 4 filas y la cancion que suena va en la segunda: una
+  // anterior arriba y dos siguientes abajo (lo que viene importa mas que lo
+  // que ya paso); la de arriba y la ultima se ven difuminadas. Mismo calculo
+  // a mano que el picker, por la misma razon (scrollIntoView corria tambien
+  // .driving-screen). La primera vez se ubica de golpe; despues, al cambiar
+  // de cancion, se desliza.
+  const centerCurrentSong = useCallback((behavior) => {
+    const el = listRef.current;
+    if (!el) return;
+    const item = el.querySelector('.driving-song-item.current') ?? el.querySelector('.driving-song-item');
+    if (!item) return;
+    const top = item.offsetTop - item.offsetHeight;
+    el.scrollTo({ top, behavior });
+  }, []);
+
+  useEffect(() => {
+    if (stage !== 'active') return;
+    centerCurrentSong(listPlacedRef.current ? 'smooth' : 'auto');
+    listPlacedRef.current = true;
+  }, [stage, song?.id, songs, centerCurrentSong]);
+
+  // El alto de cada fila sigue al tamano de letra, que depende del ancho de
+  // pantalla: al girar el telefono o redimensionar cambia, y la cancion
+  // actual tiene que seguir al centro.
+  useEffect(() => {
+    if (stage !== 'active') return;
+    const el = listRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => centerCurrentSong('auto'));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [stage, centerCurrentSong]);
 
   // Al entrar, dejar el grupo activo a la vista sin que haya que buscarlo.
   // Calculado a mano (no scrollIntoView): .driving-screen tiene overflow
@@ -90,19 +126,41 @@ export default function DrivingMode({
       )}
 
       <div className="driving-content">
-        <div className="driving-info">
-          {song ? (
-            <>
-              <span className="driving-kicker">Reproduciendo</span>
-              <h1 className="driving-title" title={song.title}>{song.title}</h1>
-              <p className="driving-artist">{song.artist}</p>
-            </>
-          ) : (
-            <>
-              <div className="driving-empty-icon"><CustomerServiceOutlined /></div>
-              <p className="driving-title">Elige un grupo para comenzar</p>
-            </>
-          )}
+        <div className="driving-group-picker" ref={pickerRef}>
+          {groups.map((g) => {
+            const isActive = g.id === activeGroup;
+            return (
+              <button
+                type="button"
+                key={g.id}
+                onClick={() => onPickGroup(g.id)}
+                className={`driving-group-card ${isActive ? 'active' : ''}`}
+                aria-label={g.name}
+                aria-pressed={isActive}
+              >
+                <span className="driving-group-card-media">
+                  {g.cover ? (
+                    <>
+                      {g.fit === 'contain' && (
+                        <img className="driving-group-card-blur" src={g.cover} alt="" aria-hidden="true" />
+                      )}
+                      <img
+                        className={`driving-group-card-img ${g.fit === 'contain' ? 'contain' : ''}`}
+                        src={g.cover}
+                        alt=""
+                      />
+                    </>
+                  ) : (
+                    <span className="driving-group-card-all">
+                      <AppstoreOutlined />
+                    </span>
+                  )}
+                  {isActive && <CheckCircleFilled className="driving-group-card-check" />}
+                </span>
+                <span className="driving-group-card-name">{g.name}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="driving-middle">
@@ -173,42 +231,26 @@ export default function DrivingMode({
           </div>
         </div>
 
-        <div className="driving-group-picker" ref={pickerRef}>
-          {groups.map((g) => {
-            const isActive = g.id === activeGroup;
+        <ul className="driving-song-list" ref={listRef} aria-label="Canciones">
+          {songs.map((s) => {
+            const isCurrent = s.id === song?.id;
+            const label = s.artist ? `${s.artist} - ${s.title}` : s.title;
             return (
-              <button
-                type="button"
-                key={g.id}
-                onClick={() => onPickGroup(g.id)}
-                className={`driving-group-card ${isActive ? 'active' : ''}`}
-                aria-label={g.name}
-                aria-pressed={isActive}
-              >
-                <span className="driving-group-card-media">
-                  {g.cover ? (
-                    <>
-                      {g.fit === 'contain' && (
-                        <img className="driving-group-card-blur" src={g.cover} alt="" aria-hidden="true" />
-                      )}
-                      <img
-                        className={`driving-group-card-img ${g.fit === 'contain' ? 'contain' : ''}`}
-                        src={g.cover}
-                        alt=""
-                      />
-                    </>
-                  ) : (
-                    <span className="driving-group-card-all">
-                      <AppstoreOutlined />
-                    </span>
-                  )}
-                  {isActive && <CheckCircleFilled className="driving-group-card-check" />}
-                </span>
-                <span className="driving-group-card-name">{g.name}</span>
-              </button>
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectSong(s)}
+                  className={`driving-song-item ${isCurrent ? 'current' : ''}`}
+                  aria-current={isCurrent ? 'true' : undefined}
+                  title={label}
+                >
+                  {s.artist && <span className="driving-song-artist">{s.artist} - </span>}
+                  {s.title}
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
 
         <button type="button" className="driving-exit-btn" onClick={onExit}>
           <CloseOutlined /> Salir de modo conducción
