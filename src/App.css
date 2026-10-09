@@ -3937,8 +3937,8 @@ html {
   scroll-snap-align: start;
   font-family: inherit;
   font-size: inherit;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   line-height: var(--driving-song-row);
   text-align: center;
   color: rgba(255, 255, 255, 0.72);
@@ -3962,6 +3962,7 @@ html {
 /* El artista un paso atras: el ojo encuentra primero el nombre de la
    cancion, que es lo que distingue una fila de otra en un mismo grupo. */
 .driving-song-artist {
+  font-weight: 400;
   opacity: 0.6;
 }
 

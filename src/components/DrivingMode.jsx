@@ -234,7 +234,7 @@ export default function DrivingMode({
         <ul className="driving-song-list" ref={listRef} aria-label="Canciones">
           {songs.map((s) => {
             const isCurrent = s.id === song?.id;
-            const label = s.artist ? `${s.artist} - ${s.title}` : s.title;
+            const label = s.artist ? `${s.title} - ${s.artist}` : s.title;
             return (
               <li key={s.id}>
                 <button
@@ -244,8 +244,8 @@ export default function DrivingMode({
                   aria-current={isCurrent ? 'true' : undefined}
                   title={label}
                 >
-                  {s.artist && <span className="driving-song-artist">{s.artist} - </span>}
                   {s.title}
+                  {s.artist && <span className="driving-song-artist"> - {s.artist}</span>}
                 </button>
               </li>
             );
