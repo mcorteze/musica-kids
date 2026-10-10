@@ -2092,6 +2092,28 @@ export default function MenuActividades({ onOpenChange }) {
     toquesTituloRef.current = { n: 0, t: 0 };
   }, [vista, open]);
 
+  // Modal descartable abierto encima del juego (elegir nivel, ver la imagen
+  // del rompecabezas). Mientras lo esta, el modal manda: el header del
+  // drawer (Volver, Cerrar, Reiniciar) queda difuminado e inerte, porque
+  // con dos "cerrar" a la vista el niño tocaba el de atras y se le cerraba
+  // la partida entera. El modal de victoria NO entra aca: no tiene boton
+  // propio de salida, asi que el Volver de arriba sigue siendo la salida.
+  const subModalAbierto =
+    (vista === 'memorice' && mostrarNiveles)
+    || (vista === 'rompecabezas' && (mostrarNivelesRomp || mostrarPreviaRomp))
+    || (vista === 'contar' && mostrarNivelesContar)
+    || (vista === 'secuencias' && mostrarNivelesSec)
+    || (vista === 'diferencias' && mostrarNivelesDif);
+
+  const cerrarSubModales = useCallback(() => {
+    setMostrarNiveles(false);
+    setMostrarNivelesRomp(false);
+    setMostrarPreviaRomp(false);
+    setMostrarNivelesContar(false);
+    setMostrarNivelesSec(false);
+    setMostrarNivelesDif(false);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e) => {
@@ -2099,6 +2121,12 @@ export default function MenuActividades({ onOpenChange }) {
       // Con la vista previa de una foto abierta, el Escape lo maneja ella
       // (se cierra sola) y el drawer se queda como esta.
       if (previewGaleriaAbiertaRef.current) return;
+      // Igual con un modal del juego: Escape cierra solo ese modal, nunca
+      // la partida que esta debajo.
+      if (subModalAbierto) {
+        cerrarSubModales();
+        return;
+      }
       setOpen(false);
     };
     // Fase de captura: corre ANTES que el cierre de la vista previa, asi
@@ -2106,7 +2134,7 @@ export default function MenuActividades({ onOpenChange }) {
     // habria cerrado y el mismo Escape cerraria tambien el drawer).
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [open]);
+  }, [open, subModalAbierto, cerrarSubModales]);
 
   const voltearCarta = useCallback((uid) => {
     if (bloqueado || gano) return;
@@ -2234,7 +2262,11 @@ export default function MenuActividades({ onOpenChange }) {
             onClick={(e) => e.stopPropagation()}
             style={estiloDrawer}
           >
-            <div className="memory-drawer-header">
+            <div
+              className={`memory-drawer-header${subModalAbierto ? ' memory-drawer-header--bloqueado' : ''}`}
+              inert={subModalAbierto}
+              aria-hidden={subModalAbierto || undefined}
+            >
               <div className="memory-drawer-title">
                 {mostrarVolver ? (
                   <div className="memory-titulo-fila">

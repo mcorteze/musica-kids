@@ -101,6 +101,18 @@ const groups = [
     theme: 'disney',
   },
   {
+    id: 'frozen',
+    name: 'Frozen',
+    cover: 'theme-covers/frozen.jpg',
+    theme: 'frozen',
+  },
+  {
+    id: 'moana',
+    name: 'Moana',
+    cover: 'theme-covers/moana.jpg',
+    theme: 'moana',
+  },
+  {
     id: 'perro-chocolo',
     name: 'Mi Perro Chocolo',
     cover: 'theme-covers/perro-chocolo.jpg',

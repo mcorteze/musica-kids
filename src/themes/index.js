@@ -555,6 +555,86 @@ const themes = {
     },
   },
 
+  // ========== FROZEN ==========
+  // Investigacion: caratula real (theme-covers/frozen.jpg) — cielo celeste
+  // helado con copos, titulo en azul hielo, nieve blanca abajo, Elsa en
+  // celeste/lila. Ambiente: invierno luminoso, cristal, magia de hielo.
+  frozen: {
+    name: 'Frozen',
+    icon: '❄️',
+    cover: 'theme-covers/frozen.jpg',
+    token: {
+      colorPrimary: '#2D7FC1',
+      colorBgContainer: '#F0F8FF',
+      colorBgLayout: '#DDEFFC',
+      colorText: '#123456',
+      colorTextSecondary: '#4F7396',
+      colorBorder: '#BCDDF5',
+      borderRadius: 24,
+      fontFamily: "'Fredoka', 'Nunito', sans-serif",
+    },
+    gradient: 'linear-gradient(165deg, #9FD6F7 0%, #C9E9FB 30%, #E6F4FD 60%, #E4DDF7 85%, #D5CCF2 100%)',
+    playerBg: 'linear-gradient(165deg, #2E6FA8 0%, #1F4F82 30%, #183C66 55%, #112B4C 78%, #081628 100%)',
+    playerOverlayRgb: '31, 79, 130',
+    cardBg: 'rgba(240, 248, 255, 0.92)',
+    accentColor: '#8FD3FF',
+    accentRgb: '143, 211, 255',
+    accentInk: '#0B2440',
+    scrollbarRgb: '45, 127, 193',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #2D7FC1, #6FB8E8)',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #2D7FC1, #1D5C94)',
+      borderColor: '#256EA8',
+      boxShadow: '0 4px 12px rgba(45, 127, 193, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#BCDDF5',
+      borderWidth: 2,
+    },
+  },
+
+  // ========== MOANA ==========
+  // Investigacion: caratula real (theme-covers/moana.jpg) — ola turquesa,
+  // arena clara, vegetacion de isla, rojo coral del vestido de Moana y los
+  // tatuajes de Maui. Ambiente: oceano tropical, sol, aventura en canoa.
+  moana: {
+    name: 'Moana',
+    icon: '🌊',
+    cover: 'theme-covers/moana.jpg',
+    token: {
+      colorPrimary: '#0E8C93',
+      colorBgContainer: '#F2FBF9',
+      colorBgLayout: '#D8F2EE',
+      colorText: '#0F3536',
+      colorTextSecondary: '#4D7A78',
+      colorBorder: '#B6E2DC',
+      borderRadius: 22,
+      fontFamily: "'Fredoka', 'Nunito', sans-serif",
+    },
+    gradient: 'linear-gradient(165deg, #7FD6E8 0%, #A8E6E6 30%, #D6F2E4 58%, #F6E7C1 82%, #F2D59E 100%)',
+    playerBg: 'linear-gradient(165deg, #0F7A80 0%, #0B5A61 30%, #08434A 55%, #062F36 78%, #031A1E 100%)',
+    playerOverlayRgb: '11, 90, 97',
+    cardBg: 'rgba(242, 251, 249, 0.92)',
+    accentColor: '#F2694B',
+    accentRgb: '242, 105, 75',
+    accentInk: '#14141C',
+    scrollbarRgb: '14, 140, 147',
+    headerStyle: {
+      background: 'linear-gradient(90deg, #0E8C93, #2FB5B0)',
+    },
+    buttonPrimary: {
+      background: 'linear-gradient(135deg, #0E8C93, #096A70)',
+      borderColor: '#0C7B81',
+      boxShadow: '0 4px 12px rgba(14, 140, 147, 0.4)',
+    },
+    cardStyle: {
+      borderColor: '#B6E2DC',
+      borderWidth: 2,
+    },
+  },
+
   // ========== MI PERRO CHOCOLO ==========
   // Investigacion: caratula real (theme-covers/perro-chocolo.jpg) — wordmark
   // rojo intenso "Mi Perro Chocolo", anillo amarillo con lunares tipo hueso,

@@ -1792,6 +1792,23 @@ html {
   z-index: 1;
 }
 
+/* Con un modal del juego abierto (elegir nivel, ver imagen) el header queda
+   bajo el mismo velo difuminado que el tablero: asi el unico "cerrar" que
+   se ve nitido es el del modal. Ademas lleva inert desde el JSX, que es lo
+   que realmente impide tocar Volver/Cerrar; el velo es la señal visual. */
+.memory-drawer-header--bloqueado > * {
+  filter: blur(3px);
+}
+
+.memory-drawer-header--bloqueado::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(224, 246, 255, 0.85);
+  animation: fadeIn 0.25s ease;
+}
+
 .memory-drawer-title h2 {
   margin: 0;
   font-size: 20px;
@@ -4244,6 +4261,96 @@ html {
   transform: scale(0.97);
 }
 
+/* ---------- Modo conduccion acostado (telefono o tablet en horizontal) ----------
+   La columna unica (carrusel -> controles -> lista -> salir) no entra en una
+   pantalla baja: la lista quedaba fuera de vista o habia que scrollear todo.
+   En horizontal se reparte como el reproductor de escritorio: carrusel arriba
+   con "Salir" a su derecha; abajo, controles a la izquierda y canciones a la
+   derecha. Los tamanos escalan con el alto (vh), que es lo que escasea. */
+@media screen and (orientation: landscape) and (min-aspect-ratio: 5/4) {
+  .driving-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    /* Carrusel y "Salir" comparten la fila de arriba a todo el ancho (el
+       carrusel le deja lugar con margin-right); abajo, dos columnas. */
+    grid-template-areas:
+      "top top"
+      "middle list";
+    align-items: center;
+    column-gap: clamp(16px, 4vw, 48px);
+    row-gap: clamp(8px, 3vh, 24px);
+    padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  }
+
+  /* Los margin auto del centrado vertical en columna no aplican en grid. */
+  .driving-content > :first-child,
+  .driving-content > :last-child {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .driving-group-picker {
+    grid-area: top;
+    width: auto;
+    max-width: none;
+    margin: 0 250px 0 0;
+  }
+
+  .driving-exit-btn {
+    grid-area: top;
+    justify-self: end;
+    align-self: start;
+    margin-top: 4px;
+  }
+
+  .driving-middle {
+    grid-area: middle;
+    justify-self: center;
+    margin-top: 0;
+    gap: clamp(8px, 2.5vh, 20px);
+  }
+
+  .driving-song-list {
+    grid-area: list;
+    justify-self: center;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    font-size: clamp(18px, 6vh, 36px);
+  }
+
+  .driving-group-card {
+    width: clamp(64px, 19vh, 140px);
+  }
+
+  .driving-group-card-media {
+    border-radius: clamp(14px, 3vh, 22px);
+  }
+
+  .driving-group-card-name {
+    font-size: clamp(11px, 2.8vh, 14px);
+  }
+
+  .driving-nav-btn {
+    width: clamp(52px, 14vh, 92px);
+    height: clamp(52px, 14vh, 92px);
+    font-size: clamp(22px, 5.5vh, 28px);
+  }
+
+  .driving-play-btn {
+    width: clamp(68px, 20vh, 128px);
+    height: clamp(68px, 20vh, 128px);
+    font-size: clamp(30px, 8vh, 42px);
+  }
+
+  .driving-toggle-btn {
+    width: clamp(44px, 12vh, 76px);
+    height: clamp(44px, 12vh, 76px);
+    font-size: clamp(19px, 5vh, 26px);
+  }
+}
+
 /* ========== MOBILE (max-width: 640px) ========== */
 @media screen and (max-width: 640px) {
   /* La estrella es solo para tablet/laptop/desktop: en movil el header del
@@ -4439,8 +4546,15 @@ html {
 
 /* ========== HORIZONTAL ANCHO (notebook, desktop y tablet apaisada) ==========
    Desde 1000px se activan las dos columnas: asi entra tambien el iPad clasico
-   en horizontal (1024x768, aspect-ratio exactamente 4/3). */
-@media screen and (min-width: 1000px) and (min-aspect-ratio: 4/3) {
+   en horizontal (1024x768, aspect-ratio exactamente 4/3).
+   Segunda condicion: CUALQUIER pantalla acostada desde 768px de ancho. Sin
+   ella, las tablets Android tipicas en horizontal (~962x600 CSS, menos las
+   barras del navegador) no llegaban a 1000px ni bajaban de 500px de alto
+   (bloque VIEWPORT BAJO), caian en el layout vertical y la lista de
+   canciones quedaba en una franja de ~30px. Los telefonos acostados siguen
+   resolviendose en VIEWPORT BAJO, que va despues y gana en el solape. */
+@media screen and (min-width: 1000px) and (min-aspect-ratio: 4/3),
+  screen and (orientation: landscape) and (min-width: 768px) {
   .app-content {
     align-items: stretch;
     overflow-y: hidden;
@@ -4627,6 +4741,25 @@ html {
 
   .song-row-artist {
     font-size: 15px;
+  }
+}
+
+/* ========== HORIZONTAL MEDIO-BAJO (tablet acostada con barras del navegador) ==========
+   Entre 501 y 580px de alto ya hay dos columnas (bloque anterior), pero la
+   caratula de 140px minimo + titulo + botones no entraba en la tarjeta y
+   quedaba recortada arriba. Caratula proporcional al alto y barra mas baja. */
+@media screen and (orientation: landscape) and (min-width: 768px) and (min-height: 501px) and (max-height: 580px) {
+  .album-cover {
+    width: clamp(72px, 16vh, 140px);
+    height: clamp(72px, 16vh, 140px);
+  }
+
+  .album-header-content {
+    padding: 16px 20px;
+  }
+
+  .player-bar {
+    height: 88px;
   }
 }
 

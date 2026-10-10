@@ -597,7 +597,7 @@ const songs = [
     artist: 'Beto Castillo',
     file: 'music/disney-moana-de-nada.mp3',
     cover: 'covers/disney-moana-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['moana'],
   },
   {
     id: 75,
@@ -605,7 +605,7 @@ const songs = [
     artist: 'Sara Paula Gómez Arias',
     file: 'music/disney-moana-tu-lugar.mp3',
     cover: 'covers/disney-moana-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['moana'],
   },
   {
     id: 76,
@@ -613,7 +613,7 @@ const songs = [
     artist: 'Sara Paula Gómez Arias',
     file: 'music/disney-moana-cuan-lejos-voy.mp3',
     cover: 'covers/disney-moana-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['moana'],
   },
   {
     id: 77,
@@ -621,7 +621,7 @@ const songs = [
     artist: 'Sara Paula Gómez Arias',
     file: 'music/disney-moana-yo-soy-moana.mp3',
     cover: 'covers/disney-moana-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['moana'],
   },
   {
     id: 78,
@@ -629,7 +629,7 @@ const songs = [
     artist: 'Dan Osorio',
     file: 'music/disney-moana-brillo.mp3',
     cover: 'covers/disney-moana-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['moana'],
   },
   {
     id: 79,
@@ -637,7 +637,7 @@ const songs = [
     artist: 'Carmen Sarahí',
     file: 'music/disney-frozen-libre-soy.mp3',
     cover: 'covers/disney-frozen-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['frozen'],
   },
   {
     id: 80,
@@ -645,7 +645,7 @@ const songs = [
     artist: 'Romina Marroquín Payró y Carmen Sarahí',
     file: 'music/disney-frozen-finalmente-y-como-nunca.mp3',
     cover: 'covers/disney-frozen-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['frozen'],
   },
   {
     id: 81,
@@ -653,7 +653,7 @@ const songs = [
     artist: 'Romina Marroquín Payró y Carmen Sarahí',
     file: 'music/disney-frozen-finalmente-y-como-nunca-reprise.mp3',
     cover: 'covers/disney-frozen-soundtrack.jpg',
-    groups: ['disney'],
+    groups: ['frozen'],
   },
   {
     id: 82,
