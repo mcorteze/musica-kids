@@ -38,6 +38,15 @@ html {
   zoom: 1;
 }
 
+/* Apaga el "tirar para recargar" del navegador en tablet/movil: un arrastre
+   hacia abajo desde arriba (o el sobrante del scroll de una lista que ya
+   llego a su tope) recargaba la pagina y se perdia la partida en curso.
+   No afecta el scroll normal, solo el estiramiento mas alla del borde. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 /* ========== LAYOUT ========== */
 .app-shell {
   height: 100dvh;
