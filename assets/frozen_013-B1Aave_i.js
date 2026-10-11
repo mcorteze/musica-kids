@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/frozen_013-BBsfdFSB.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/paw_patrol_031-D7q8NvkH.avif`;export{e as default};

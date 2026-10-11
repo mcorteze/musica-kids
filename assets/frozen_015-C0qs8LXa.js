@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/frozen_015-BLIPnCSp.avif`;export{e as default};
