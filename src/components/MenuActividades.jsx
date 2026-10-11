@@ -1653,7 +1653,11 @@ export default function MenuActividades({ onOpenChange }) {
   const faltanRomp = nivelActualRomp
     ? nivelActualRomp.rompecabezas.filter((r) => !idsCompletosRomp.includes(r.id)).length
     : 0;
-  const seguirEnNivelRomp = enFronteraRomp && faltanRomp > 0;
+  // Mientras falte alguno del nivel se sigue en el, sea o no el nivel mas
+  // alto desbloqueado: un nivel ya superado puede volver a tener pendientes
+  // (rompecabezas nuevos, o el registro de armados que se vacia cada 24 h)
+  // y antes, al armar uno, se saltaba al siguiente aunque faltaran.
+  const seguirEnNivelRomp = faltanRomp > 0;
 
   // Guarda cada rompecabezas apenas se arma.
   useEffect(() => {
@@ -2191,7 +2195,9 @@ export default function MenuActividades({ onOpenChange }) {
   const faltanDif = nivelActualDif
     ? nivelActualDif.pares.filter((p) => !idsCompletosDif.includes(p.id)).length
     : 0;
-  const seguirEnNivelDif = enFronteraDif && faltanDif > 0;
+  // Igual que en Rompecabezas: mientras falte alguno del nivel se sigue
+  // en el, aunque no sea el nivel mas alto desbloqueado.
+  const seguirEnNivelDif = faltanDif > 0;
 
   // Guarda cada par apenas se resuelve.
   useEffect(() => {
@@ -3062,7 +3068,7 @@ export default function MenuActividades({ onOpenChange }) {
                         <span className="memory-victoria-emoji">🧩</span>
                         <p>
                           {seguirEnNivelRomp
-                            ? `¡Lo armaste! ${faltanRomp === 1 ? 'Te falta 1 rompecabezas' : `Te faltan ${faltanRomp} rompecabezas`} para el nivel siguiente.`
+                            ? `¡Lo armaste! ${faltanRomp === 1 ? 'Te falta 1 rompecabezas' : `Te faltan ${faltanRomp} rompecabezas`} ${enFronteraRomp ? 'para el nivel siguiente' : 'de este nivel'}.`
                             : siguienteNivelIdxRomp === undefined
                               ? '¡Completaste todos los niveles!'
                               : enFronteraRomp
@@ -3662,7 +3668,7 @@ export default function MenuActividades({ onOpenChange }) {
                         <span className="memory-victoria-emoji">🎉</span>
                         <p>
                           {seguirEnNivelDif
-                            ? `¡Encontraste todo! ${faltanDif === 1 ? 'Te falta 1 juego' : `Te faltan ${faltanDif} juegos`} para el nivel siguiente.`
+                            ? `¡Encontraste todo! ${faltanDif === 1 ? 'Te falta 1 juego' : `Te faltan ${faltanDif} juegos`} ${enFronteraDif ? 'para el nivel siguiente' : 'de este nivel'}.`
                             : siguienteNivelIdxDif === undefined
                               ? '¡Completaste todos los niveles!'
                               : enFronteraDif

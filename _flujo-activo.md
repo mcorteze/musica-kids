@@ -21,6 +21,11 @@ Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
 - 2026-10-11 Desechados por el usuario (archivos borrados, códigos no se
   reutilizan): toy_story_031, paw_patrol_034, 037, 038, 042, 044.
 
+- 2026-10-11 Fix: al ganar en un nivel ya superado con pendientes, saltaba al
+  siguiente (Rompecabezas y Diferencias). Ahora se sigue en el nivel mientras
+  falte alguno. Fix: grilla del modal Reiniciar se superponía en móvil
+  (aspect-ratio → padding-bottom; la grilla scrollea).
+
 ## Pendiente
 - [ ] Revisar en pantalla: catálogo (tabs, panel lateral, Propuesta) y grilla
       del modal Reiniciar (móvil/tablet/laptop/desktop).
