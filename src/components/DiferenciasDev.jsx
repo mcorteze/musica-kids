@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CloseOutlined } from '@ant-design/icons';
 import { cargarImagenConAspecto } from '../utils/cargarImagen';
+import EstadoDevTabs from './EstadoDevTabs';
+import { elegirEstadoDev } from '../utils/estadoDev';
 
 const LINEAS = Array.from({ length: 21 }, (_, i) => i * 5); // 0, 5, 10 ... 100
 const ETIQUETAS = Array.from({ length: 11 }, (_, i) => i * 10); // 0, 10 ... 100
@@ -53,7 +55,21 @@ function textoParaPegar(clave, marcas) {
 // tengan marcas, en un solo texto). Las marcas persisten por par. En verde
 // punteado se ven las diferencias que ya estan anotadas, con su radio de
 // acierto, para comprobar que caen bien.
-export default function DiferenciasDev({ temas, radio, coordenadas }) {
+// Arriba de todo se elige el estado: "Por afinar" = pares SIN coordenadas
+// anotadas (todavia no se juegan) y "Listos" = los que ya estan en el juego.
+// Los tabs de tema y la lista de pares muestran solo los de ese estado.
+export default function DiferenciasDev({ temas: todosLosTemas, radio, coordenadas }) {
+  const [estadoElegido, setEstadoElegido] = useState(null);
+  const listo = (temaId, parId) => (coordenadas[`${temaId}/${parId}`] ?? []).length > 0;
+  const temasPorEstado = (est) => todosLosTemas
+    .map((t) => ({ ...t, pares: t.pares.filter((p) => listo(t.id, p.id) === (est === 'listos')) }))
+    .filter((t) => t.pares.length > 0);
+  const temasAfinar = temasPorEstado('afinar');
+  const temasListos = temasPorEstado('listos');
+  const estado = elegirEstadoDev(estadoElegido, temasAfinar.length > 0);
+  const temas = estado === 'afinar' ? temasAfinar : temasListos;
+  const contar = (lista) => lista.reduce((s, t) => s + t.pares.length, 0);
+
   const [tabId, setTabId] = useState(null);
   const [parId, setParId] = useState(null);
   const [imagenes, setImagenes] = useState(null);
@@ -70,7 +86,7 @@ export default function DiferenciasDev({ temas, radio, coordenadas }) {
   const marcas = clave ? (marcasPorPar[clave] ?? []) : [];
 
   // Solo cuentan las marcas de pares que siguen existiendo.
-  const clavesValidas = new Set(temas.flatMap((t) => t.pares.map((p) => `${t.id}/${p.id}`)));
+  const clavesValidas = new Set(todosLosTemas.flatMap((t) => t.pares.map((p) => `${t.id}/${p.id}`)));
   const clavesConMarcas = Object.keys(marcasPorPar)
     .filter((k) => clavesValidas.has(k) && marcasPorPar[k].length > 0)
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -146,12 +162,36 @@ export default function DiferenciasDev({ temas, radio, coordenadas }) {
     'todos'
   );
 
-  if (temas.length === 0) {
+  const elegirEstado = (est) => {
+    setEstadoElegido(est);
+    limpiarTrabajo();
+  };
+
+  const selectorEstado = (
+    <EstadoDevTabs
+      estado={estado}
+      cantidades={{ afinar: contar(temasAfinar), listos: contar(temasListos) }}
+      onChange={elegirEstado}
+    />
+  );
+
+  if (todosLosTemas.length === 0) {
     return (
       <div className="dif-dev">
         <p className="gallery-empty">
           Todavía no hay pares de imágenes. Deja <b>original.avif</b> y <b>modificada.avif</b> en
           {' '}<b>src/assets/diferencias/&lt;tema&gt;/&lt;par&gt;/</b> y vuelve a abrir esta página.
+        </p>
+      </div>
+    );
+  }
+
+  if (temas.length === 0) {
+    return (
+      <div className="dif-dev">
+        {selectorEstado}
+        <p className="gallery-empty">
+          {estado === 'afinar' ? 'No hay pares por afinar.' : 'Todavía no hay pares listos.'}
         </p>
       </div>
     );
@@ -188,6 +228,7 @@ export default function DiferenciasDev({ temas, radio, coordenadas }) {
 
   return (
     <div className="dif-dev">
+      {selectorEstado}
       <div className="romp-tabs" role="tablist" aria-label="Temas">
         {temas.map((t) => (
           <button

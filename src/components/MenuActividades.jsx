@@ -4,6 +4,15 @@ import { Image } from 'antd';
 import { cargarImagenConAspecto } from '../utils/cargarImagen';
 import DiferenciasJuego from './DiferenciasJuego';
 import DiferenciasDev from './DiferenciasDev';
+import EstadoDevTabs from './EstadoDevTabs';
+import RompecabezasPropuesta from './RompecabezasPropuesta';
+import {
+  contarPropuesta,
+  guardarPropuestaRompecabezas,
+  leerPropuestaRompecabezas,
+  textoPropuesta,
+} from '../utils/propuestaRompecabezas';
+import { elegirEstadoDev } from '../utils/estadoDev';
 import diferenciasCoordenadas, { RADIO_ACIERTO } from '../data/diferencias';
 import {
   DndContext,
@@ -343,8 +352,17 @@ const TEMAS_ROMPECABEZAS_META = [
     id: 'frozen',
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
+    porAfinar: [],
     niveles: [
-      { piezas: 12, rompecabezas: [{ id: 'frozen_001', orientacion: 'horizontal' }] },
+      {
+        piezas: 12,
+        rompecabezas: [
+          { id: 'frozen_001', orientacion: 'horizontal' },
+          { id: 'frozen_014', orientacion: 'horizontal' },
+          { id: 'frozen_027', orientacion: 'vertical' },
+          { id: 'frozen_041', orientacion: 'vertical' },
+        ],
+      },
       {
         piezas: 18,
         rompecabezas: [
@@ -353,6 +371,17 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'frozen_004', orientacion: 'vertical' },
           { id: 'frozen_005', orientacion: 'vertical' },
           { id: 'frozen_006', orientacion: 'cuadrado' },
+          { id: 'frozen_017', orientacion: 'horizontal' },
+          { id: 'frozen_023', orientacion: 'cuadrado' },
+          { id: 'frozen_024', orientacion: 'vertical' },
+          { id: 'frozen_025', orientacion: 'vertical' },
+          { id: 'frozen_029', orientacion: 'vertical' },
+          { id: 'frozen_031', orientacion: 'cuadrado' },
+          { id: 'frozen_035', orientacion: 'vertical' },
+          { id: 'frozen_037', orientacion: 'cuadrado' },
+          { id: 'frozen_038', orientacion: 'vertical' },
+          { id: 'frozen_040', orientacion: 'vertical' },
+          { id: 'frozen_044', orientacion: 'cuadrado' },
         ],
       },
       {
@@ -362,6 +391,11 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'frozen_008', orientacion: 'vertical' },
           { id: 'frozen_009', orientacion: 'vertical' },
           { id: 'frozen_012', orientacion: 'vertical' },
+          { id: 'frozen_015', orientacion: 'cuadrado' },
+          { id: 'frozen_016', orientacion: 'cuadrado' },
+          { id: 'frozen_021', orientacion: 'cuadrado' },
+          { id: 'frozen_042', orientacion: 'vertical' },
+          { id: 'frozen_045', orientacion: 'cuadrado' },
         ],
       },
       {
@@ -369,6 +403,30 @@ const TEMAS_ROMPECABEZAS_META = [
         rompecabezas: [
           { id: 'frozen_010', orientacion: 'horizontal' },
           { id: 'frozen_011', orientacion: 'horizontal' },
+          { id: 'frozen_018', orientacion: 'cuadrado' },
+          { id: 'frozen_019', orientacion: 'cuadrado' },
+          { id: 'frozen_026', orientacion: 'vertical' },
+          { id: 'frozen_033', orientacion: 'vertical' },
+          { id: 'frozen_034', orientacion: 'horizontal' },
+          { id: 'frozen_036', orientacion: 'vertical' },
+          { id: 'frozen_039', orientacion: 'cuadrado' },
+          { id: 'frozen_043', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 36,
+        rompecabezas: [
+          { id: 'frozen_013', orientacion: 'cuadrado' },
+          { id: 'frozen_020', orientacion: 'horizontal' },
+          { id: 'frozen_028', orientacion: 'cuadrado' },
+          { id: 'frozen_030', orientacion: 'cuadrado' },
+          { id: 'frozen_032', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 42,
+        rompecabezas: [
+          { id: 'frozen_022', orientacion: 'cuadrado' },
         ],
       },
     ],
@@ -377,6 +435,7 @@ const TEMAS_ROMPECABEZAS_META = [
     id: 'toy-story',
     nombre: 'Toy Story',
     header: 'linear-gradient(120deg, #5AB0F5 0%, #1C6FB0 55%, #E00024 100%)',
+    porAfinar: [],
     niveles: [
       {
         piezas: 12,
@@ -398,6 +457,9 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'toy_story_013', orientacion: 'cuadrado' },
           { id: 'toy_story_014', orientacion: 'cuadrado' },
           { id: 'toy_story_015', orientacion: 'cuadrado' },
+          { id: 'toy_story_024', orientacion: 'cuadrado' },
+          { id: 'toy_story_028', orientacion: 'cuadrado' },
+          { id: 'toy_story_041', orientacion: 'cuadrado' },
         ],
       },
       {
@@ -406,6 +468,10 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'toy_story_003', orientacion: 'horizontal' },
           { id: 'toy_story_017', orientacion: 'horizontal' },
           { id: 'toy_story_018', orientacion: 'horizontal' },
+          { id: 'toy_story_027', orientacion: 'cuadrado' },
+          { id: 'toy_story_032', orientacion: 'cuadrado' },
+          { id: 'toy_story_037', orientacion: 'cuadrado' },
+          { id: 'toy_story_039', orientacion: 'cuadrado' },
         ],
       },
       {
@@ -415,14 +481,31 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'toy_story_021', orientacion: 'horizontal' },
           { id: 'toy_story_022', orientacion: 'cuadrado' },
           { id: 'toy_story_023', orientacion: 'cuadrado' },
+          { id: 'toy_story_025', orientacion: 'cuadrado' },
+          { id: 'toy_story_026', orientacion: 'cuadrado' },
+          { id: 'toy_story_033', orientacion: 'cuadrado' },
+          { id: 'toy_story_034', orientacion: 'cuadrado' },
+          { id: 'toy_story_038', orientacion: 'vertical' },
+          { id: 'toy_story_040', orientacion: 'cuadrado' },
         ],
       },
+      {
+        piezas: 36,
+        rompecabezas: [
+          { id: 'toy_story_029', orientacion: 'cuadrado' },
+          { id: 'toy_story_030', orientacion: 'cuadrado' },
+          { id: 'toy_story_035', orientacion: 'cuadrado' },
+          { id: 'toy_story_036', orientacion: 'cuadrado' },
+        ],
+      },
+      { piezas: 42, rompecabezas: [] },
     ],
   },
   {
     id: 'paw-patrol',
     nombre: 'Paw Patrol',
     header: 'linear-gradient(120deg, #0BA3E0 0%, #0E8FD1 55%, #E31A22 100%)',
+    porAfinar: [],
     niveles: [
       {
         piezas: 12,
@@ -431,6 +514,11 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'paw_patrol_002', orientacion: 'horizontal' },
           { id: 'paw_patrol_003', orientacion: 'cuadrado' },
           { id: 'paw_patrol_004', orientacion: 'vertical' },
+          { id: 'paw_patrol_031', orientacion: 'vertical' },
+          { id: 'paw_patrol_036', orientacion: 'vertical' },
+          { id: 'paw_patrol_039', orientacion: 'vertical' },
+          { id: 'paw_patrol_041', orientacion: 'vertical' },
+          { id: 'paw_patrol_043', orientacion: 'vertical' },
         ],
       },
       {
@@ -449,6 +537,10 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'paw_patrol_015', orientacion: 'vertical' },
           { id: 'paw_patrol_016', orientacion: 'vertical' },
           { id: 'paw_patrol_017', orientacion: 'vertical' },
+          { id: 'paw_patrol_035', orientacion: 'vertical' },
+          { id: 'paw_patrol_040', orientacion: 'vertical' },
+          { id: 'paw_patrol_045', orientacion: 'vertical' },
+          { id: 'paw_patrol_046', orientacion: 'vertical' },
         ],
       },
       {
@@ -461,6 +553,7 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'paw_patrol_022', orientacion: 'cuadrado' },
           { id: 'paw_patrol_023', orientacion: 'horizontal' },
           { id: 'paw_patrol_024', orientacion: 'cuadrado' },
+          { id: 'paw_patrol_032', orientacion: 'cuadrado' },
         ],
       },
       {
@@ -474,6 +567,13 @@ const TEMAS_ROMPECABEZAS_META = [
           { id: 'paw_patrol_030', orientacion: 'horizontal' },
         ],
       },
+      {
+        piezas: 36,
+        rompecabezas: [
+          { id: 'paw_patrol_033', orientacion: 'horizontal' },
+        ],
+      },
+      { piezas: 42, rompecabezas: [] },
     ],
   },
 ];
@@ -502,28 +602,54 @@ function elegirAlAzarPendiente(items, excluirId, completados) {
   return candidatos[Math.floor(Math.random() * candidatos.length)].id;
 }
 
-const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, soloLaptop }) => {
+// Los rompecabezas recien agregados van en "porAfinar" (del tema, sin
+// nivel): NO se juegan todavia y en la pagina "Todos los rompecabezas" salen
+// en el tab "Por afinar", separados de los que ya estan en el juego
+// ("Listos"), con un selector de piezas para ver como quedaria el corte en
+// cada nivel. Cuando se decide su nivel, se mueven de "porAfinar" a ese
+// nivel y pasan solos al juego.
+const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, porAfinar = [], soloLaptop }) => {
   // Solo quedan los rompecabezas cuya imagen existe, y solo los niveles que
   // conservan al menos uno.
+  const conCarga = (lista) => lista
+    .map((r) => ({ ...r, cargar: cargadorRompecabezas(id, r.id) }))
+    .filter((r) => r.cargar);
   const nivelesConCarga = niveles
-    .map((n) => ({
-      ...n,
-      rompecabezas: n.rompecabezas
-        .map((r) => ({ ...r, cargar: cargadorRompecabezas(id, r.id) }))
-        .filter((r) => r.cargar),
-    }))
+    .map((n, i) => ({ ...n, numero: i + 1, rompecabezas: conCarga(n.rompecabezas) }))
     .filter((n) => n.rompecabezas.length > 0);
+  const porAfinarConCarga = conCarga(porAfinar);
   return {
     id,
     nombre,
     header,
     niveles: nivelesConCarga,
+    porAfinar: porAfinarConCarga,
+    // Lo que muestra cada tab del catalogo, como bloques de niveles: los por
+    // afinar van en un solo bloque "sin nivel".
+    catalogo: {
+      afinar: porAfinarConCarga.length > 0 ? [{ sinNivel: true, rompecabezas: porAfinarConCarga }] : [],
+      listos: nivelesConCarga,
+    },
     // Listo con al menos el primer nivel disponible — los siguientes
     // pueden ir llegando despues sin que el tema deje de jugarse.
     listo: nivelesConCarga.length > 0,
     soloLaptop: Boolean(soloLaptop),
   };
 });
+
+// Cuantos rompecabezas hay en un estado del catalogo ('afinar' | 'listos').
+function contarRompecabezas(temas, estado) {
+  return temas.reduce(
+    (total, t) => total + t.catalogo[estado].reduce((s, n) => s + n.rompecabezas.length, 0),
+    0
+  );
+}
+
+// Cantidades de piezas que se pueden elegir para un rompecabezas por
+// afinar (una por nivel posible, de menor a mayor). Cada tema declara sus
+// niveles con estas mismas cantidades; un nivel sin rompecabezas todavia no
+// aparece en el juego.
+const PIEZAS_ROMPECABEZAS = [12, 18, 24, 30, 36, 42];
 
 function nivelKeyRompecabezas(temaId) {
   return `musica-kids-rompecabezas-nivel-${temaId}`;
@@ -540,26 +666,48 @@ function leerNivelGuardadoRompecabezas(temaId, totalNiveles) {
 
 // Codigos de los rompecabezas del tema que ya se armaron al menos una vez
 // (persistidos por tema). Junto con el nivel maximo desbloqueado deciden si
-// un nivel esta completo.
+// un nivel esta completo, y el modal de "Reiniciar" los muestra en color
+// (los que faltan, en gris).
+// Se guarda { desde, ids }: "desde" es cuando se armo el primero del
+// registro. A las 24 horas el registro se vacia solo, sin avisar (pedido
+// explicito), y vuelven a faltar todos; el nivel maximo desbloqueado NO se
+// toca. El formato viejo (solo la lista) se toma como recien empezado.
+const DURACION_COMPLETADOS_ROMP_MS = 24 * 60 * 60 * 1000;
+
 function completadosKeyRompecabezas(temaId) {
   return `musica-kids-rompecabezas-completados-${temaId}`;
 }
 
-function leerCompletadosRompecabezas(temaId) {
+function leerRegistroCompletadosRompecabezas(temaId) {
   try {
-    const lista = JSON.parse(localStorage.getItem(completadosKeyRompecabezas(temaId)));
-    return Array.isArray(lista) ? lista.filter((c) => typeof c === 'string') : [];
+    const guardado = JSON.parse(localStorage.getItem(completadosKeyRompecabezas(temaId)));
+    const ids = Array.isArray(guardado) ? guardado : guardado?.ids;
+    const desde = Number.isFinite(guardado?.desde) ? guardado.desde : Date.now();
+    if (!Array.isArray(ids) || Date.now() - desde >= DURACION_COMPLETADOS_ROMP_MS) return null;
+    return { desde, ids: ids.filter((c) => typeof c === 'string') };
   } catch {
-    return [];
+    return null;
   }
 }
 
+function leerCompletadosRompecabezas(temaId) {
+  return leerRegistroCompletadosRompecabezas(temaId)?.ids ?? [];
+}
+
+// Conserva el "desde" del registro vigente; si ya vencio (o no habia), la
+// lista nueva empieza un registro nuevo y se queda solo con lo que se armo
+// desde ahora.
 function guardarCompletadosRompecabezas(temaId, lista) {
+  const vigente = leerRegistroCompletadosRompecabezas(temaId);
+  const registro = vigente
+    ? { desde: vigente.desde, ids: lista }
+    : { desde: Date.now(), ids: lista.slice(-1) };
   try {
-    localStorage.setItem(completadosKeyRompecabezas(temaId), JSON.stringify(lista));
+    localStorage.setItem(completadosKeyRompecabezas(temaId), JSON.stringify(registro));
   } catch {
     // Sin localStorage el progreso dura lo que dure la sesion.
   }
+  return registro.ids;
 }
 
 // Todos los pares (columnas, filas) que arman exactamente "total" piezas.
@@ -1094,6 +1242,9 @@ export default function MenuActividades({ onOpenChange }) {
   // Id de la pieza que se esta arrastrando ahora (para el DragOverlay).
   const [piezaArrastrandoRomp, setPiezaArrastrandoRomp] = useState(null);
   const [mostrarNivelesRomp, setMostrarNivelesRomp] = useState(false);
+  // Nivel cuya grilla de rompecabezas se ve en ese modal (null = la lista
+  // de niveles).
+  const [nivelVistoRomp, setNivelVistoRomp] = useState(null);
   // Vista previa de la imagen completa armada (boton "Ver imagen" del
   // header) — util sobre todo del nivel 2 en adelante, donde ya no hay
   // guia transparente de fondo.
@@ -1102,6 +1253,33 @@ export default function MenuActividades({ onOpenChange }) {
   // laptop): un tab por tema, con todos sus niveles en miniatura.
   const [catalogoRomp, setCatalogoRomp] = useState(false);
   const [tabCatalogoRomp, setTabCatalogoRomp] = useState(null);
+  // 'afinar' | 'listos' | null (null = el que corresponda, ver elegirEstadoDev).
+  const [estadoCatalogoRompElegido, setEstadoCatalogoRompElegido] = useState(null);
+  // true mientras el panel lateral de "Por afinar" esta abierto: el Escape
+  // lo cierra el (antd Drawer) y no debe cerrar tambien el drawer del menu.
+  const panelAfinarRompAbiertoRef = useRef(false);
+  const marcarPanelAfinarRomp = useCallback((abierto) => {
+    panelAfinarRompAbiertoRef.current = abierto;
+  }, []);
+  // Propuesta de asignacion por piezas ({ codigo: piezas }), armada en los
+  // dos tabs; el boton del centro del header la cuenta y abre su modal con
+  // "Copiar" (ver utils/propuestaRompecabezas.js).
+  const [propuestaRomp, setPropuestaRomp] = useState(leerPropuestaRompecabezas);
+  const [mostrarPropuestaRomp, setMostrarPropuestaRomp] = useState(false);
+  // false | 'ok' | 'error'
+  const [copiadoPropuestaRomp, setCopiadoPropuestaRomp] = useState(false);
+  useEffect(() => {
+    guardarPropuestaRompecabezas(propuestaRomp);
+  }, [propuestaRomp]);
+  // piezas = null lo saca de la propuesta.
+  const cambiarPropuestaRomp = useCallback((id, piezas) => {
+    setPropuestaRomp((prev) => {
+      const copia = { ...prev };
+      if (piezas) copia[id] = piezas;
+      else delete copia[id];
+      return copia;
+    });
+  }, []);
   // { "<temaId>-<idxNivel>": url } — se va llenando a medida que se abren tabs.
   const [miniaturasRomp, setMiniaturasRomp] = useState({});
 
@@ -1332,13 +1510,56 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarPreviaRomp(false);
   }, []);
 
-  // Pagina "Todos los rompecabezas": un tab por tema (solo los que ya
-  // tienen algun nivel), y el tab activo cae en el primero mientras no se
-  // haya elegido otro.
-  const temasCatalogoRomp = TEMAS_ROMPECABEZAS.filter((t) => t.listo);
+  // Pagina "Todos los rompecabezas": primero el estado ("Por afinar" /
+  // "Listos", abre en "Por afinar" si hay alguno), despues un tab por tema
+  // (solo los que tienen algun rompecabezas en ese estado), y el tab activo
+  // cae en el primero mientras no se haya elegido otro.
+  const estadoCatalogoRomp = elegirEstadoDev(
+    estadoCatalogoRompElegido,
+    TEMAS_ROMPECABEZAS.some((t) => t.catalogo.afinar.length > 0)
+  );
+  const temasCatalogoRomp = TEMAS_ROMPECABEZAS.filter((t) => t.catalogo[estadoCatalogoRomp].length > 0);
   const tabActivaRomp = temasCatalogoRomp.some((t) => t.id === tabCatalogoRomp)
     ? tabCatalogoRomp
     : temasCatalogoRomp[0]?.id;
+  const temaActivoCatalogoRomp = temasCatalogoRomp.find((t) => t.id === tabActivaRomp);
+  // Bloques del tab activo para RompecabezasPropuesta: "Sin nivel" en Por
+  // afinar, uno por nivel en Listos (con las piezas de ese nivel).
+  let seccionesCatalogoRomp = [];
+  if (temaActivoCatalogoRomp && estadoCatalogoRomp === 'afinar') {
+    const lista = temaActivoCatalogoRomp.porAfinar;
+    seccionesCatalogoRomp = [{
+      clave: 'sin-nivel',
+      titulo: 'Sin nivel',
+      subtitulo: `${lista.length} rompecabezas`,
+      rompecabezas: lista.map((r) => ({ ...r, piezasActuales: null })),
+    }];
+  } else if (temaActivoCatalogoRomp) {
+    seccionesCatalogoRomp = temaActivoCatalogoRomp.niveles.map((n) => ({
+      clave: `nivel-${n.numero}`,
+      titulo: `Nivel ${n.numero}`,
+      subtitulo: `${n.piezas} piezas · ${n.rompecabezas.length} rompecabezas`,
+      rompecabezas: n.rompecabezas.map((r) => ({ ...r, piezasActuales: n.piezas })),
+    }));
+  }
+  const cantidadPropuestaRomp = contarPropuesta(TEMAS_ROMPECABEZAS, propuestaRomp);
+  const textoPropuestaRomp = textoPropuesta(TEMAS_ROMPECABEZAS, propuestaRomp);
+
+  const copiarPropuestaRomp = () => {
+    const avisar = (valor) => {
+      setCopiadoPropuestaRomp(valor);
+      setTimeout(() => setCopiadoPropuestaRomp(false), valor === 'error' ? 4000 : 1600);
+    };
+    if (!navigator.clipboard) {
+      avisar('error');
+      return;
+    }
+    navigator.clipboard.writeText(textoPropuestaRomp).then(() => avisar('ok')).catch(() => avisar('error'));
+  };
+
+  const vaciarPropuestaRomp = () => {
+    if (window.confirm('¿Vaciar toda la propuesta? Se pierden las piezas elegidas.')) setPropuestaRomp({});
+  };
 
   // Trae las imagenes de los niveles del tab activo (recien cuando se
   // abre esa pagina, y solo las del tab que se esta viendo). Los loaders de
@@ -1349,7 +1570,7 @@ export default function MenuActividades({ onOpenChange }) {
     const tema = TEMAS_ROMPECABEZAS.find((t) => t.id === tabActivaRomp);
     if (!tema) return;
     let vivo = true;
-    tema.niveles.forEach((nivel) => {
+    tema.catalogo[estadoCatalogoRomp].forEach((nivel) => {
       nivel.rompecabezas.forEach((romp) => {
         // Con la proporcion real de la foto: la misma que usa el juego para
         // elegir la grilla, asi el corte que se dibuja encima es el real.
@@ -1362,7 +1583,7 @@ export default function MenuActividades({ onOpenChange }) {
     return () => {
       vivo = false;
     };
-  }, [catalogoRomp, tabActivaRomp]);
+  }, [catalogoRomp, tabActivaRomp, estadoCatalogoRomp]);
 
   // Elegir un tema (o volver a elegirlo) retoma el nivel guardado de ESE
   // tema y sortea su rompecabezas antes de pedir ninguna imagen — asi el
@@ -1438,9 +1659,7 @@ export default function MenuActividades({ onOpenChange }) {
   useEffect(() => {
     if (!ganoRomp || !temaRompId || !rompActualRomp) return;
     if (completadosRomp.includes(rompActualRomp.id)) return;
-    const siguiente = [...completadosRomp, rompActualRomp.id];
-    setCompletadosRomp(siguiente);
-    guardarCompletadosRompecabezas(temaRompId, siguiente);
+    setCompletadosRomp(guardarCompletadosRompecabezas(temaRompId, [...completadosRomp, rompActualRomp.id]));
   }, [ganoRomp, temaRompId, rompActualRomp, completadosRomp]);
 
   // El techo nunca baja, misma logica que el Memorice.
@@ -1464,14 +1683,43 @@ export default function MenuActividades({ onOpenChange }) {
   // vez dispara el armado del tablero cuando esa foto este lista. Solo si
   // el sorteo cae en el mismo (un nivel con un unico rompecabezas) no hay
   // carga: ahi se rebaraja el tablero directamente, la imagen ya esta lista.
-  const reiniciarRomp = useCallback((idx) => {
+  // Abre el modal de "Reiniciar" en la lista de niveles, releyendo los
+  // armados por si el registro de 24 horas vencio con el juego abierto.
+  const abrirNivelesRomp = useCallback(() => {
+    if (temaRompId) setCompletadosRomp(leerCompletadosRompecabezas(temaRompId));
+    setNivelVistoRomp(null);
+    setMostrarNivelesRomp(true);
+  }, [temaRompId]);
+
+  // Miniaturas del nivel abierto en el modal (solo de ese nivel, y recien
+  // cuando se abre). Comparten el cache con la pagina "Todos los
+  // rompecabezas".
+  useEffect(() => {
+    if (!mostrarNivelesRomp || nivelVistoRomp === null || !temaRomp) return;
+    const nivel = temaRomp.niveles[nivelVistoRomp];
+    if (!nivel) return;
+    let vivo = true;
+    nivel.rompecabezas.forEach((romp) => {
+      cargarImagenConAspecto(romp.cargar).then((res) => {
+        if (!vivo) return;
+        setMiniaturasRomp((prev) => (prev[romp.id]?.src === res.src ? prev : { ...prev, [romp.id]: res }));
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [mostrarNivelesRomp, nivelVistoRomp, temaRomp]);
+
+  // "idElegido" (opcional) salta a ese rompecabezas puntual en vez de
+  // sortear: es el que se toca en la grilla del modal de niveles.
+  const reiniciarRomp = useCallback((idx, idElegido) => {
     if (!temaRomp) return;
     const siguiente = idx ?? nivelIdxRomp;
     const nivel = temaRomp.niveles[siguiente];
     if (!nivel) return;
     setPiezaArrastrandoRomp(null);
     setMostrarPreviaRomp(false);
-    const nuevoId = elegirAlAzarPendiente(nivel.rompecabezas, rompIdRomp, idsCompletosRomp);
+    const nuevoId = idElegido ?? elegirAlAzarPendiente(nivel.rompecabezas, rompIdRomp, idsCompletosRomp);
     if (siguiente === nivelIdxRomp && nuevoId === rompIdRomp) {
       setTableroRomp(estadoInicialRompecabezas(nivel.piezas));
       return;
@@ -2100,7 +2348,7 @@ export default function MenuActividades({ onOpenChange }) {
   // propio de salida, asi que el Volver de arriba sigue siendo la salida.
   const subModalAbierto =
     (vista === 'memorice' && mostrarNiveles)
-    || (vista === 'rompecabezas' && (mostrarNivelesRomp || mostrarPreviaRomp))
+    || (vista === 'rompecabezas' && (mostrarNivelesRomp || mostrarPreviaRomp || mostrarPropuestaRomp))
     || (vista === 'contar' && mostrarNivelesContar)
     || (vista === 'secuencias' && mostrarNivelesSec)
     || (vista === 'diferencias' && mostrarNivelesDif);
@@ -2109,6 +2357,7 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarNiveles(false);
     setMostrarNivelesRomp(false);
     setMostrarPreviaRomp(false);
+    setMostrarPropuestaRomp(false);
     setMostrarNivelesContar(false);
     setMostrarNivelesSec(false);
     setMostrarNivelesDif(false);
@@ -2120,7 +2369,7 @@ export default function MenuActividades({ onOpenChange }) {
       if (e.key !== 'Escape') return;
       // Con la vista previa de una foto abierta, el Escape lo maneja ella
       // (se cierra sola) y el drawer se queda como esta.
-      if (previewGaleriaAbiertaRef.current) return;
+      if (previewGaleriaAbiertaRef.current || panelAfinarRompAbiertoRef.current) return;
       // Igual con un modal del juego: Escape cierra solo ese modal, nunca
       // la partida que esta debajo.
       if (subModalAbierto) {
@@ -2300,6 +2549,16 @@ export default function MenuActividades({ onOpenChange }) {
                 {vista === 'rompecabezas' && temaRompId && !cargandoRomp && (
                   <span className="memory-nivel-badge">Nivel {nivelIdxRomp + 1}</span>
                 )}
+                {vista === 'rompecabezas' && catalogoRomp && (
+                  <button
+                    type="button"
+                    className={`romp-propuesta-btn${cantidadPropuestaRomp > 0 ? ' con-cambios' : ''}`}
+                    onClick={() => setMostrarPropuestaRomp(true)}
+                  >
+                    Propuesta
+                    <span>{cantidadPropuestaRomp}</span>
+                  </button>
+                )}
                 {vista === 'contar' && temaContarId && !cargandoContar && (
                   <span className="memory-nivel-badge">Nivel {nivelIdxContar + 1}</span>
                 )}
@@ -2334,7 +2593,7 @@ export default function MenuActividades({ onOpenChange }) {
                   <button
                     type="button"
                     className="memory-reiniciar-btn"
-                    onClick={() => setMostrarNivelesRomp(true)}
+                    onClick={abrirNivelesRomp}
                   >
                     <ReloadOutlined /> Reiniciar
                   </button>
@@ -2670,6 +2929,17 @@ export default function MenuActividades({ onOpenChange }) {
 
               {vista === 'rompecabezas' && catalogoRomp && (
                 <div className="romp-catalogo">
+                  <EstadoDevTabs
+                    estado={estadoCatalogoRomp}
+                    cantidades={{
+                      afinar: contarRompecabezas(TEMAS_ROMPECABEZAS, 'afinar'),
+                      listos: contarRompecabezas(TEMAS_ROMPECABEZAS, 'listos'),
+                    }}
+                    onChange={setEstadoCatalogoRompElegido}
+                  />
+                  {temasCatalogoRomp.length === 0 && (
+                    <p className="gallery-empty">No hay rompecabezas por afinar.</p>
+                  )}
                   <div className="romp-tabs" role="tablist" aria-label="Temas">
                     {temasCatalogoRomp.map((t) => (
                       <button
@@ -2686,60 +2956,69 @@ export default function MenuActividades({ onOpenChange }) {
                     ))}
                   </div>
                   <div className="romp-tab-panel" role="tabpanel">
-                    {temasCatalogoRomp
-                      .find((t) => t.id === tabActivaRomp)
-                      ?.niveles.map((nivel, i) => (
-                        <section key={i} className="romp-nivel-seccion">
-                          <h3 className="romp-nivel-titulo">
-                            Nivel {i + 1}
-                            <span>{nivel.piezas} piezas · {nivel.rompecabezas.length} rompecabezas</span>
-                          </h3>
-                          <div className="romp-miniaturas">
-                            {nivel.rompecabezas.map((romp) => {
-                              const imagen = miniaturasRomp[romp.id];
-                              // Misma grilla que arma el juego para esta foto y
-                              // esta cantidad de piezas (grillaRompecabezas).
-                              const grilla = imagen ? grillaRompecabezas(nivel.piezas, imagen.aspecto) : null;
-                              return (
-                                <figure key={romp.id} className="romp-miniatura-item">
-                                  {imagen ? (
-                                    <div className="romp-miniatura-marco">
-                                      <img src={imagen.src} alt="" className={`romp-miniatura romp-miniatura--${romp.orientacion}`} />
-                                      <div
-                                        className="romp-miniatura-cortes"
-                                        style={{
-                                          gridTemplateColumns: `repeat(${grilla.columnas}, 1fr)`,
-                                          gridTemplateRows: `repeat(${grilla.filas}, 1fr)`,
-                                        }}
-                                        aria-hidden="true"
-                                      >
-                                        {Array.from({ length: nivel.piezas }, (_, p) => (
-                                          <span key={p} className="romp-miniatura-pieza" />
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className={`romp-miniatura romp-miniatura--${romp.orientacion} romp-miniatura--cargando`} />
-                                  )}
-                                  <figcaption>
-                                    <span className="romp-nivel-codigo" title="Código del rompecabezas (un click lo selecciona)">
-                                      {romp.id}
-                                    </span>
-                                    <span className="romp-miniatura-orientacion">{romp.orientacion}</span>
-                                    {grilla && (
-                                      <span className="romp-miniatura-orientacion">
-                                        {grilla.columnas} × {grilla.filas}
-                                        {imagen.ancho > 0 && ` · pieza de ${Math.round(imagen.ancho / grilla.columnas)}×${Math.round(imagen.alto / grilla.filas)} px`}
-                                      </span>
-                                    )}
-                                  </figcaption>
-                                </figure>
-                              );
-                            })}
-                          </div>
-                        </section>
-                      ))}
+                    {temaActivoCatalogoRomp && (
+                      <RompecabezasPropuesta
+                        secciones={seccionesCatalogoRomp}
+                        miniaturas={miniaturasRomp}
+                        propuesta={propuestaRomp}
+                        onCambiarPropuesta={cambiarPropuestaRomp}
+                        opcionesPiezas={PIEZAS_ROMPECABEZAS}
+                        calcularGrilla={grillaRompecabezas}
+                        zIndex={Z_PREVIEW_GALERIA}
+                        onPanelAbiertoChange={marcarPanelAfinarRomp}
+                      />
+                    )}
                   </div>
+
+                  {mostrarPropuestaRomp && (
+                    <div className="memory-victoria-overlay" onClick={() => setMostrarPropuestaRomp(false)}>
+                      <div className="memory-niveles-modal romp-propuesta-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="memory-niveles-header">
+                          <h3>
+                            Propuesta de asignación
+                            <span>{cantidadPropuestaRomp} {cantidadPropuestaRomp === 1 ? 'imagen' : 'imágenes'}</span>
+                          </h3>
+                          <button
+                            type="button"
+                            className="memory-cerrar-x memory-niveles-cerrar"
+                            onClick={() => setMostrarPropuestaRomp(false)}
+                            aria-label="Cerrar"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                        {textoPropuestaRomp ? (
+                          <pre className="dif-dev-texto">{textoPropuestaRomp}</pre>
+                        ) : (
+                          <p className="dif-dev-vacio">
+                            Todavía no hay nada. Toca una imagen, prueba el corte con cada cantidad de piezas y
+                            aplica la que corresponda.
+                          </p>
+                        )}
+                        {copiadoPropuestaRomp === 'error' && (
+                          <p className="dif-dev-alerta">No se pudo copiar. Selecciona el texto y cópialo con Ctrl+C.</p>
+                        )}
+                        <div className="romp-propuesta-acciones">
+                          <button
+                            type="button"
+                            className="dif-dev-boton dif-dev-boton--suave"
+                            onClick={vaciarPropuestaRomp}
+                            disabled={!textoPropuestaRomp}
+                          >
+                            Vaciar propuesta
+                          </button>
+                          <button
+                            type="button"
+                            className="dif-dev-boton"
+                            onClick={copiarPropuestaRomp}
+                            disabled={!textoPropuestaRomp}
+                          >
+                            {copiadoPropuestaRomp === 'ok' ? '¡Copiado!' : 'Copiar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2808,6 +3087,7 @@ export default function MenuActividades({ onOpenChange }) {
                       className="memory-victoria-overlay"
                       onClick={() => setMostrarNivelesRomp(false)}
                     >
+                      {nivelVistoRomp === null ? (
                       <div className="memory-niveles-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="memory-niveles-header">
                           <h3>Elige un nivel</h3>
@@ -2826,16 +3106,83 @@ export default function MenuActividades({ onOpenChange }) {
                               type="button"
                               key={i}
                               className={`memory-nivel-btn${i === nivelIdxRomp ? ' activo' : ''}`}
-                              onClick={() => {
-                                reiniciarRomp(i);
-                                setMostrarNivelesRomp(false);
-                              }}
+                              onClick={() => setNivelVistoRomp(i)}
                             >
                               {i + 1}
                             </button>
                           ))}
                         </div>
                       </div>
+                      ) : (() => {
+                        // Grilla del nivel elegido: los ya armados (en las
+                        // ultimas 24 horas) en color y se pueden volver a
+                        // jugar tocandolos; los que faltan, en gris y sin
+                        // accion. "Jugar uno que falta" sortea como antes.
+                        const nivel = temaRomp.niveles[nivelVistoRomp];
+                        const armados = nivel.rompecabezas.filter((r) => idsCompletosRomp.includes(r.id)).length;
+                        const total = nivel.rompecabezas.length;
+                        const faltan = total - armados;
+                        const jugar = (id) => {
+                          reiniciarRomp(nivelVistoRomp, id);
+                          setMostrarNivelesRomp(false);
+                        };
+                        return (
+                          <div className="memory-niveles-modal romp-nivel-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="memory-niveles-header">
+                              <button
+                                type="button"
+                                className="memory-cerrar-x memory-niveles-cerrar"
+                                onClick={() => setNivelVistoRomp(null)}
+                                aria-label="Volver a los niveles"
+                              >
+                                <LeftOutlined />
+                              </button>
+                              <h3 className="romp-nivel-modal-titulo">
+                                Nivel {nivelVistoRomp + 1}
+                                <span>
+                                  {faltan === 0
+                                    ? `Armaste los ${total}`
+                                    : `Armaste ${armados} de ${total} · ${faltan === 1 ? 'falta 1' : `faltan ${faltan}`}`}
+                                </span>
+                              </h3>
+                              <button
+                                type="button"
+                                className="memory-cerrar-x memory-niveles-cerrar"
+                                onClick={() => setMostrarNivelesRomp(false)}
+                                aria-label="Cerrar"
+                              >
+                                <CloseOutlined />
+                              </button>
+                            </div>
+                            <div className="romp-nivel-grilla">
+                              {nivel.rompecabezas.map((romp) => {
+                                const armado = idsCompletosRomp.includes(romp.id);
+                                const actual = nivelVistoRomp === nivelIdxRomp && romp.id === rompIdRomp;
+                                const imagen = miniaturasRomp[romp.id];
+                                return (
+                                  <button
+                                    type="button"
+                                    key={romp.id}
+                                    className={`romp-nivel-mini${armado ? '' : ' falta'}${actual ? ' actual' : ''}`}
+                                    disabled={!armado}
+                                    onClick={() => jugar(romp.id)}
+                                    aria-label={armado ? 'Volver a armar este rompecabezas' : 'Rompecabezas que falta'}
+                                  >
+                                    {imagen ? <img src={imagen.src} alt="" draggable={false} /> : <PictureOutlined aria-hidden="true" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <button
+                              type="button"
+                              className="memory-victoria-btn romp-nivel-modal-jugar"
+                              onClick={() => jugar()}
+                            >
+                              {faltan > 0 ? 'Jugar uno que falta' : 'Jugar uno al azar'}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 

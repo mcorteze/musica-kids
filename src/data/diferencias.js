@@ -31,8 +31,9 @@
 //     guardan solas en el navegador; "Copiar este par" o "Copiar todos" arman
 //     el texto listo para pegar aqui abajo.
 //  3. Pegar las coordenadas en el mapa de abajo, bajo la clave
-//     "<tema>/<par>". Un par sin coordenadas aparece en el Modo
-//     desarrollador pero todavia no se puede jugar.
+//     "<tema>/<par>". Un par sin coordenadas todavia no se puede jugar y en
+//     el Modo desarrollador sale en el tab "Por afinar"; al pegarle sus
+//     coordenadas pasa al juego y al tab "Listos".
 //
 // Las coordenadas son PORCENTAJES (0 a 100) medidos desde la esquina
 // superior izquierda de la imagen: x sobre el ANCHO, y sobre el ALTO. Como

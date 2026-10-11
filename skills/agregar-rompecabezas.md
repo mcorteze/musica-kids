@@ -87,7 +87,8 @@ la miniatura más chica o más grande de lo ideal.
 ## También preguntar (no se puede deducir)
 
 - **Tema**: ¿es un tema que ya existe o uno nuevo?
-- **Nivel** de cada imagen dentro del tema: ¿se suma a un nivel que ya existe
+- **Nivel** de cada imagen dentro del tema (si el usuario prefiere decidirlo
+  después mirando el corte, la imagen entra en `porAfinar` y no se pregunta): ¿se suma a un nivel que ya existe
   (queda como una opción más del sorteo) o abre un nivel nuevo? Si abre un
   nivel nuevo: ¿va al final o en medio? Si va en medio, los niveles de
   después se corren y cambia de sentido el progreso guardado en localStorage
@@ -132,14 +133,37 @@ el PNG temporal.
 
 - Tema nuevo: agregar la entrada a `TEMAS_ROMPECABEZAS_META` con `id` igual al
   del Memorice, `nombre` y `header` (copiar el gradiente del Memorice).
-- Rompecabezas nuevo en un nivel existente: agregar
-  `{ id: '<codigo>', orientacion }` a su arreglo `rompecabezas`.
-- Nivel nuevo: agregar `{ piezas, rompecabezas: [{ id: '<codigo>', orientacion }] }`
-  al arreglo `niveles`, en orden de dificultad.
+- **Todo rompecabezas nuevo entra en `porAfinar`** del tema (arreglo
+  `porAfinar: [{ id: '<codigo>', orientacion }]`, sin nivel): no se juega
+  todavía y en la página "Todos los rompecabezas" aparece en el tab **"Por
+  afinar"**. En ese tab y en "Listos" (`RompecabezasPropuesta.jsx`) cada
+  imagen se toca y abre un panel lateral donde el usuario prueba el corte
+  con 12/18/24/30/36/42 piezas (`PIEZAS_ROMPECABEZAS`) y aplica una: queda
+  en la **propuesta de asignación** (borde violeta en pantalla). El botón
+  "Propuesta N" del centro del header la abre con "Copiar", y el usuario
+  pega ese texto en el chat:
+  ```
+  Propuesta de asignación de rompecabezas por cantidad de piezas:
+  Frozen (frozen)
+    Por afinar → nivel:
+      36 piezas: frozen_013
+    Ya en juego → cambiar de nivel:
+      24 piezas: frozen_001 (estaba en 12)
+  ```
+- Al recibir ese texto: mover cada código (`{ id, orientacion }`, desde
+  `porAfinar` o desde su nivel actual) al arreglo `rompecabezas` del nivel
+  con esa cantidad de `piezas` del mismo tema. Avisar si un nivel queda
+  vacío (desaparece del juego y los de después se corren: cambia el sentido
+  del progreso guardado). Después recordarle al usuario que vacíe la
+  propuesta. Todos los temas declaran los niveles 12, 18, 24, 30, 36 y 42 (un
+  nivel vacío no aparece en el juego). Desde ese momento se juega y sale en
+  el tab "Listos". Avisar si un nivel que estaba vacío queda con
+  rompecabezas: aparece un nivel nuevo al final del tema.
 - El archivo debe llamarse exactamente como el `id` (sin extensión).
 - No hay que tocar nada más: el selector, la página "Todos los rompecabezas"
-  (tabs por tema, un bloque por nivel con todas sus miniaturas y códigos) y
-  el juego (sorteo dentro del nivel) los toman solos.
+  (estado Por afinar/Listos, tabs por tema, un bloque por nivel con todas sus
+  miniaturas y códigos) y el juego (sorteo dentro del nivel, sin los por
+  afinar) los toman solos.
 
 ### 5. Verificar
 
