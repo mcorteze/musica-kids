@@ -1,8 +1,11 @@
-El Memorice tiene TEMAS (Paw Patrol, Toy Story, Casa de Muñecas, Frozen
-por ahora — se agregan mas editando TEMAS_META en MenuActividades.jsx).
+El Memorice tiene TEMAS (Paw Patrol, Toy Story, Casa de Muñecas, Frozen,
+Mickey y Moana por ahora — se agregan mas editando TEMAS_META en
+MenuActividades.jsx).
 
 paw-patrol/, toy-story/, munecas/ y frozen/ son sets completos (fondo +
 dorso + 23-24 fotos): los cuatro listos para jugar.
+mickey/ es set completo (fondo + dorso + 24 fotos). moana/ (23 fotos) queda
+SIN fondo a proposito (decision del usuario): se juega con un degradado.
 
 Nota sobre TEMAS_META: cada entrada tiene "grupo" (id de groups.js, para
 reusar el nombre que ya usa el reproductor) O "nombre" fijo cuando el tema
@@ -30,11 +33,11 @@ Cada tema es una carpeta acá adentro con esta forma:
   ver paw-patrol/ui/fondo.avif como referencia de los parametros usados).
 - Cada archivo de caras/ es UN personaje: el juego arma la pareja solo,
   duplicando esa misma foto. No hace falta subir la imagen dos veces.
-- Un tema queda "listo para jugar" recien cuando tiene fondo.avif +
-  back.avif + al menos 2 fotos en caras/ (el tablero minimo son 4 cartas
-  = 2 parejas). Mientras le falte algo de eso, aparece en el selector de
-  temas marcado "Muy pronto" y no se puede elegir — no hay que tocar
-  código para habilitarlo, con completar la carpeta alcanza.
+- Un tema queda "listo para jugar" cuando tiene back.avif + al menos 2
+  fotos en caras/ (el tablero minimo son 4 cartas = 2 parejas). fondo.avif
+  es opcional: sin el, el drawer usa un degradado del tema. Mientras falte
+  el dorso o las fotos, aparece en el selector marcado "Muy pronto" y no se
+  puede elegir — no hay que tocar código, con completar la carpeta alcanza.
 - Los tableros de ESE tema (4, 8, 12... hasta 48 cartas) se habilitan
   solos segun cuantas fotos tenga: hacen falta al menos la mitad de fotos
   que cartas (ej. para el tablero de 16 hacen falta 8 fotos distintas).

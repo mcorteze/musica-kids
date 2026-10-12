@@ -22,8 +22,9 @@ Todo vive en `src/assets/memorice/<tema>/` con esta forma:
 `src/components/MenuActividades.jsx` detecta todo esto solo via
 `import.meta.glob` — nombre e id del tema salen de `TEMAS_META` (arriba del
 archivo) cruzado con `src/data/groups.js` (para el nombre a mostrar). Un
-tema queda **jugable** recién cuando tiene `fondo.avif` + `back.avif` + al
-menos 2 fotos en `caras/`; si falta algo, aparece "Muy pronto" en el
+tema queda **jugable** cuando tiene `back.avif` + al menos 2 fotos en
+`caras/`; `fondo.avif` es opcional (sin él, el drawer usa un degradado del
+tema: `fondoAlterno`). Si falta el dorso o las fotos, aparece "Muy pronto" en el
 selector solo, sin tocar código. Los tableros van de 4 a 48 cartas
 (`NIVELES` en MenuActividades.jsx: 4, 8, 12, 16, 20, 24, 30, 36, 42, 48) y cada
 uno pide la mitad de fotos que cartas — **24 fotos distintas destraban el

@@ -26,7 +26,35 @@ Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
   falte alguno. Fix: grilla del modal Reiniciar se superponía en móvil
   (aspect-ratio → padding-bottom; la grilla scrollea).
 
+- 2026-10-11 Memorice: temas nuevos Mickey (nombre fijo) y Moana (grupo moana),
+  24 caras + dorso cada uno, en AVIF. Dorso de Mickey: se le borró un ícono
+  de Google Lens del recorte. FALTA fondo.avif de ambos → "Muy pronto".
+- 2026-10-11 Moana renovada por el usuario: salen 4 paisajes, entran 3
+  (moana-palmera, moana-nadando, maui-y-moana) → 23 fotos (tope 42 cartas).
+  El "24°" era un duplicado descargado en Downloads/ raíz.
+
+- 2026-10-11 Memorice: fondo.avif pasa a ser OPCIONAL (pedido: "dejarlas
+  disponibles"); sin él, el drawer usa fondoAlterno (degradado del tema).
+  Mickey y Moana jugables. El selector muestra el dorso de todo tema con back.
+- 2026-10-11 Rompecabezas: temas nuevos Mickey (34) y Moana (59) en porAfinar,
+  códigos mickey_001–034 / moana_001–059. Excluidos: 2 = fotos del Memorice
+  (mickey 21, moana 23), 2 iguales al Memorice por hash (moana 6, 7),
+  2 duplicados internos (moana 19, 27). Se juegan cuando se asignen a niveles.
+
 ## Pendiente
+- [x] Usuario asigna niveles a Mickey/Moana en el catálogo (Propuesta) → muevo códigos.
+      Hecho 1ª tanda Mickey (12) y Moana (16), 2026-10-11: ambos jugables.
+      2ª tanda Mickey (12): nivel 6 (42 piezas) abierto en Mickey.
+      2ª tanda Moana (8).
+      3ª tanda Mickey (8).
+      3ª tanda Moana (8).
+      Desechados mickey_005 y mickey_026 (archivos borrados, códigos no se
+      reutilizan): Mickey sin por afinar.
+      4ª tanda Moana (20) y 5ª (4). Desechados moana_029, 041, 057.
+      Rompecabezas sin nada por afinar: 210 listos en 5 temas.
+- [x] Fondo Memorice Mickey agregado (centrado abajo: fondoPosicion). Moana
+      queda SIN fondo a propósito (decisión del usuario).
+- [ ] Commit de todo lo de Memorice + rompecabezas nuevos (no comiteado aún).
 - [ ] Revisar en pantalla: catálogo (tabs, panel lateral, Propuesta) y grilla
       del modal Reiniciar (móvil/tablet/laptop/desktop).
 - [ ] paw_patrol_035 y paw_patrol_045 (mismo dibujo) están ambos en 18 piezas:

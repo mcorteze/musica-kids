@@ -52,8 +52,9 @@ const ROMPECABEZAS_HABILITADO = true;
 // ========== TEMAS ==========
 // Cada tema vive en src/assets/memorice/<id>/ (ver el README.txt de esa
 // carpeta): ui/fondo.avif, ui/back.avif y caras/*.avif (una foto por
-// personaje). Un tema queda "listo" recien cuando tiene los tres — si
-// falta algo aparece en el selector marcado "Muy pronto" y no se puede
+// personaje). Un tema queda "listo" con el dorso y al menos 2 caras; el
+// fondo es opcional (sin el, el drawer usa un degradado, ver fondoAlterno).
+// Si falta algo aparece en el selector marcado "Muy pronto" y no se puede
 // elegir, sin que haya que tocar codigo cuando se completen las fotos. El
 // selector muestra el dorso real de las cartas (no un emoji generico), asi
 // que el nombre sale de groups.js pero el "icono" es la propia imagen.
@@ -90,6 +91,21 @@ const TEMAS_META = [
     nombre: 'Frozen',
     header: 'linear-gradient(120deg, #47ACD8 0%, #1E5FA8 55%, #7C3AED 100%)',
   },
+  {
+    // Sin grupo propio en el reproductor ("Disney" es mas generico): nombre fijo.
+    id: 'mickey',
+    nombre: 'Mickey',
+    header: 'linear-gradient(120deg, #E8323C 0%, #B3121C 55%, #1F1F1F 100%)',
+    // Fondo apaisado (2.3:1) con Mickey al CENTRO: el anclaje por defecto
+    // (abajo a la derecha, pensado para la torre de Paw Patrol) lo dejaba
+    // fuera de cuadro en pantallas verticales.
+    fondoPosicion: 'center bottom',
+  },
+  {
+    id: 'moana',
+    grupo: 'moana',
+    header: 'linear-gradient(120deg, #2FB5B0 0%, #0E8C93 55%, #F2694B 100%)',
+  },
 ];
 
 // Rutas conocidas al toque (import.meta.glob solo espera cuando se llama
@@ -109,7 +125,7 @@ function etiquetaDesdeArchivo(nombreArchivo) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, oculto, soloLaptop }) => {
+const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, fondoPosicion, oculto, soloLaptop }) => {
   const info = grupo ? gruposReproductor.find((g) => g.id === grupo) : null;
   const nombre = nombreFijo ?? info?.name ?? id;
 
@@ -130,10 +146,16 @@ const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, oculto, s
     header,
     caras,
     fondo,
+    // Si el tema todavia no tiene fondo.avif, el drawer usa este degradado
+    // (el del tema del reproductor si tiene grupo, si no el del header): el
+    // fondo es opcional, no bloquea el juego (pedido explicito).
+    fondoAlterno: themes[info?.theme]?.gradient ?? header,
+    // Posicion propia del fondo (opcional; por defecto la del CSS).
+    fondoPosicion: fondoPosicion ?? null,
     back,
-    // Minimo jugable: fondo + dorso + al menos 2 caras (el tablero mas
-    // chico son 4 cartas = 2 parejas).
-    listo: Boolean(fondo && back && caras.length >= 2),
+    // Minimo jugable: dorso + al menos 2 caras (el tablero mas chico son 4
+    // cartas = 2 parejas). El fondo es opcional (ver fondoAlterno).
+    listo: Boolean(back && caras.length >= 2),
     oculto: Boolean(oculto),
     soloLaptop: Boolean(soloLaptop),
   };
@@ -571,6 +593,166 @@ const TEMAS_ROMPECABEZAS_META = [
         piezas: 36,
         rompecabezas: [
           { id: 'paw_patrol_033', orientacion: 'horizontal' },
+        ],
+      },
+      { piezas: 42, rompecabezas: [] },
+    ],
+  },
+  {
+    id: 'mickey',
+    nombre: 'Mickey',
+    header: 'linear-gradient(120deg, #E8323C 0%, #B3121C 55%, #1F1F1F 100%)',
+    porAfinar: [],
+    niveles: [
+      {
+        piezas: 12,
+        rompecabezas: [
+          { id: 'mickey_001', orientacion: 'vertical' },
+          { id: 'mickey_002', orientacion: 'cuadrado' },
+          { id: 'mickey_008', orientacion: 'vertical' },
+          { id: 'mickey_018', orientacion: 'horizontal' },
+          { id: 'mickey_020', orientacion: 'horizontal' },
+          { id: 'mickey_021', orientacion: 'horizontal' },
+          { id: 'mickey_027', orientacion: 'cuadrado' },
+          { id: 'mickey_031', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 18,
+        rompecabezas: [
+          { id: 'mickey_003', orientacion: 'cuadrado' },
+          { id: 'mickey_004', orientacion: 'horizontal' },
+          { id: 'mickey_009', orientacion: 'vertical' },
+          { id: 'mickey_013', orientacion: 'horizontal' },
+          { id: 'mickey_014', orientacion: 'cuadrado' },
+          { id: 'mickey_025', orientacion: 'vertical' },
+          { id: 'mickey_030', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 24,
+        rompecabezas: [
+          { id: 'mickey_012', orientacion: 'horizontal' },
+          { id: 'mickey_015', orientacion: 'cuadrado' },
+          { id: 'mickey_019', orientacion: 'cuadrado' },
+          { id: 'mickey_022', orientacion: 'vertical' },
+          { id: 'mickey_023', orientacion: 'vertical' },
+          { id: 'mickey_028', orientacion: 'vertical' },
+          { id: 'mickey_029', orientacion: 'horizontal' },
+          { id: 'mickey_032', orientacion: 'horizontal' },
+          { id: 'mickey_034', orientacion: 'horizontal' },
+        ],
+      },
+      {
+        piezas: 30,
+        rompecabezas: [
+          { id: 'mickey_006', orientacion: 'horizontal' },
+          { id: 'mickey_007', orientacion: 'horizontal' },
+          { id: 'mickey_010', orientacion: 'horizontal' },
+          { id: 'mickey_016', orientacion: 'horizontal' },
+          { id: 'mickey_024', orientacion: 'vertical' },
+          { id: 'mickey_033', orientacion: 'horizontal' },
+        ],
+      },
+      {
+        piezas: 36,
+        rompecabezas: [
+          { id: 'mickey_011', orientacion: 'horizontal' },
+        ],
+      },
+      {
+        piezas: 42,
+        rompecabezas: [
+          { id: 'mickey_017', orientacion: 'horizontal' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'moana',
+    nombre: 'Moana',
+    header: 'linear-gradient(120deg, #2FB5B0 0%, #0E8C93 55%, #F2694B 100%)',
+    porAfinar: [],
+    niveles: [
+      {
+        piezas: 12,
+        rompecabezas: [
+          { id: 'moana_003', orientacion: 'vertical' },
+          { id: 'moana_007', orientacion: 'horizontal' },
+          { id: 'moana_012', orientacion: 'vertical' },
+          { id: 'moana_014', orientacion: 'cuadrado' },
+          { id: 'moana_015', orientacion: 'cuadrado' },
+          { id: 'moana_024', orientacion: 'vertical' },
+          { id: 'moana_032', orientacion: 'horizontal' },
+          { id: 'moana_034', orientacion: 'vertical' },
+          { id: 'moana_037', orientacion: 'vertical' },
+          { id: 'moana_039', orientacion: 'vertical' },
+          { id: 'moana_053', orientacion: 'cuadrado' },
+          { id: 'moana_055', orientacion: 'cuadrado' },
+          { id: 'moana_058', orientacion: 'horizontal' },
+          { id: 'moana_059', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 18,
+        rompecabezas: [
+          { id: 'moana_001', orientacion: 'vertical' },
+          { id: 'moana_006', orientacion: 'horizontal' },
+          { id: 'moana_010', orientacion: 'horizontal' },
+          { id: 'moana_011', orientacion: 'horizontal' },
+          { id: 'moana_013', orientacion: 'cuadrado' },
+          { id: 'moana_016', orientacion: 'cuadrado' },
+          { id: 'moana_019', orientacion: 'horizontal' },
+          { id: 'moana_021', orientacion: 'horizontal' },
+          { id: 'moana_022', orientacion: 'horizontal' },
+          { id: 'moana_023', orientacion: 'vertical' },
+          { id: 'moana_027', orientacion: 'cuadrado' },
+          { id: 'moana_030', orientacion: 'vertical' },
+          { id: 'moana_035', orientacion: 'vertical' },
+          { id: 'moana_044', orientacion: 'cuadrado' },
+          { id: 'moana_046', orientacion: 'cuadrado' },
+          { id: 'moana_049', orientacion: 'vertical' },
+          { id: 'moana_054', orientacion: 'cuadrado' },
+          { id: 'moana_056', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 24,
+        rompecabezas: [
+          { id: 'moana_005', orientacion: 'horizontal' },
+          { id: 'moana_018', orientacion: 'cuadrado' },
+          { id: 'moana_020', orientacion: 'horizontal' },
+          { id: 'moana_026', orientacion: 'cuadrado' },
+          { id: 'moana_031', orientacion: 'cuadrado' },
+          { id: 'moana_033', orientacion: 'vertical' },
+          { id: 'moana_036', orientacion: 'vertical' },
+          { id: 'moana_038', orientacion: 'horizontal' },
+          { id: 'moana_040', orientacion: 'vertical' },
+          { id: 'moana_042', orientacion: 'cuadrado' },
+          { id: 'moana_043', orientacion: 'vertical' },
+          { id: 'moana_045', orientacion: 'vertical' },
+          { id: 'moana_048', orientacion: 'vertical' },
+        ],
+      },
+      {
+        piezas: 30,
+        rompecabezas: [
+          { id: 'moana_004', orientacion: 'horizontal' },
+          { id: 'moana_008', orientacion: 'vertical' },
+          { id: 'moana_009', orientacion: 'cuadrado' },
+          { id: 'moana_025', orientacion: 'cuadrado' },
+          { id: 'moana_028', orientacion: 'vertical' },
+          { id: 'moana_047', orientacion: 'horizontal' },
+          { id: 'moana_052', orientacion: 'cuadrado' },
+        ],
+      },
+      {
+        piezas: 36,
+        rompecabezas: [
+          { id: 'moana_002', orientacion: 'cuadrado' },
+          { id: 'moana_017', orientacion: 'vertical' },
+          { id: 'moana_050', orientacion: 'vertical' },
+          { id: 'moana_051', orientacion: 'vertical' },
         ],
       },
       { piezas: 42, rompecabezas: [] },
@@ -1366,8 +1548,10 @@ export default function MenuActividades({ onOpenChange }) {
   useEffect(() => {
     if (!open) return;
     let vivo = true;
-    const listos = TEMAS.filter((t) => t.listo);
-    Promise.all(listos.map((t) => t.back().then((m) => [t.id, m.default])))
+    // Todo tema con dorso, listo o no: un tema "Muy pronto" (ej. sin fondo
+    // todavia) tambien muestra su dorso en la card del selector.
+    const conDorso = TEMAS.filter((t) => t.back);
+    Promise.all(conDorso.map((t) => t.back().then((m) => [t.id, m.default])))
       .then((pares) => {
         if (vivo) setDorsosSelector(Object.fromEntries(pares));
       });
@@ -1433,13 +1617,13 @@ export default function MenuActividades({ onOpenChange }) {
     if (!tema || !tema.listo) return;
     let vivo = true;
     Promise.all([
-      tema.fondo(),
+      tema.fondo ? tema.fondo() : Promise.resolve(null),
       tema.back(),
       Promise.all(tema.caras.map(({ info, cargar }) =>
         cargar().then((m) => ({ id: info.archivo, src: m.default, alt: etiquetaDesdeArchivo(info.archivo) }))
       )),
     ]).then(([fondoMod, backMod, caras]) => {
-      if (vivo) setFotosTema({ fondo: fondoMod.default, back: backMod.default, caras });
+      if (vivo) setFotosTema({ fondo: fondoMod?.default ?? null, back: backMod.default, caras });
     });
     return () => {
       vivo = false;
@@ -2494,7 +2678,9 @@ export default function MenuActividades({ onOpenChange }) {
 
   let estiloDrawer;
   if (vista === 'memorice' && fotosTema) {
-    estiloDrawer = { backgroundImage: `url(${fotosTema.fondo})` };
+    estiloDrawer = fotosTema.fondo
+      ? { backgroundImage: `url(${fotosTema.fondo})`, ...(tema.fondoPosicion && { backgroundPosition: tema.fondoPosicion }) }
+      : { background: tema.fondoAlterno };
   } else if (esMenu) {
     estiloDrawer = { background: themes.munecas.gradient };
   }
