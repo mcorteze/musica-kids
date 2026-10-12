@@ -54,7 +54,10 @@ Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
       Rompecabezas sin nada por afinar: 210 listos en 5 temas.
 - [x] Fondo Memorice Mickey agregado (centrado abajo: fondoPosicion). Moana
       queda SIN fondo a propósito (decisión del usuario).
-- [ ] Commit de todo lo de Memorice + rompecabezas nuevos (no comiteado aún).
+- 2026-10-11 Memorice Moana completo (24): maui-perfil.avif. Es la MISMA imagen
+  que el rompecabezas moana_052; el usuario autorizó usarla en los dos juegos
+  (excepción puntual a la regla de no reciclar).
+- [x] Commit 629f8a8 en main y push (2026-10-11): Memorice + rompecabezas Mickey/Moana.
 - [ ] Revisar en pantalla: catálogo (tabs, panel lateral, Propuesta) y grilla
       del modal Reiniciar (móvil/tablet/laptop/desktop).
 - [ ] paw_patrol_035 y paw_patrol_045 (mismo dibujo) están ambos en 18 piezas:

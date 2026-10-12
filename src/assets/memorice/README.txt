@@ -4,7 +4,7 @@ MenuActividades.jsx).
 
 paw-patrol/, toy-story/, munecas/ y frozen/ son sets completos (fondo +
 dorso + 23-24 fotos): los cuatro listos para jugar.
-mickey/ es set completo (fondo + dorso + 24 fotos). moana/ (23 fotos) queda
+mickey/ es set completo (fondo + dorso + 24 fotos). moana/ (24 fotos) queda
 SIN fondo a proposito (decision del usuario): se juega con un degradado.
 
 Nota sobre TEMAS_META: cada entrada tiene "grupo" (id de groups.js, para
