@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey_024-Dx-clJ1U.avif`;export{e as default};

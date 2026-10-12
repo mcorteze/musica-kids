@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/te-ka-DaMJFuOl.avif`;export{e as default};

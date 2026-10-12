@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana_028-DtssOrm3.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-pluto-abrazo-DMJVjpsJ.avif`;export{e as default};

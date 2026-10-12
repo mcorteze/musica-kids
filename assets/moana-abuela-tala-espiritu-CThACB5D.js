@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana-abuela-tala-espiritu-D2K075kw.avif`;export{e as default};

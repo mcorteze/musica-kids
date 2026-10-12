@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-aprendiz-de-brujo-Dm_30nXy.avif`;export{e as default};

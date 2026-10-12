@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/goofy-Cf9CjgnA.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-ducha-DJ_hhvzO.avif`;export{e as default};

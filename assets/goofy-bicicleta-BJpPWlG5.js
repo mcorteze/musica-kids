@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/goofy-bicicleta-DNFgtGcx.avif`;export{e as default};

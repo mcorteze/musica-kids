@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-cocinando-BkOK1M-n.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana_004-CF5IMtZA.avif`;export{e as default};

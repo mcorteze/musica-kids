@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey_013-DiPbn-VD.avif`;export{e as default};

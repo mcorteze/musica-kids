@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-goofy-donald-DK3_AZlj.avif`;export{e as default};

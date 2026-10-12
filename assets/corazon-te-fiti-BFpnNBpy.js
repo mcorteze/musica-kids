@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/corazon-te-fiti-DJWSoHXA.avif`;export{e as default};

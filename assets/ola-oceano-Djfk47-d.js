@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/ola-oceano-C8n3yEOa.avif`;export{e as default};

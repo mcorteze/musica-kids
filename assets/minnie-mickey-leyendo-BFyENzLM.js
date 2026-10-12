@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-mickey-leyendo-CHudd_X1.avif`;export{e as default};

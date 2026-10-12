@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-daisy-surf-BXYBKarG.avif`;export{e as default};

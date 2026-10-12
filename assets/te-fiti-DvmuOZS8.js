@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/te-fiti-nZ3T8950.avif`;export{e as default};

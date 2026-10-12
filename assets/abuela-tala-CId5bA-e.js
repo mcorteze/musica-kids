@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/abuela-tala-B5NTw2xY.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana-nadando-BwusKLc_.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/goofy-buceo-DFiUB3mG.avif`;export{e as default};

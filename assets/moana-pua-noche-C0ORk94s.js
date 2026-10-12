@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana-pua-noche-BYQYxwQV.avif`;export{e as default};

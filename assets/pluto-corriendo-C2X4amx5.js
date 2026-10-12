@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pluto-corriendo-BM5KWwmW.avif`;export{e as default};

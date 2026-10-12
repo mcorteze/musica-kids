@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana-palmera-DQj4CEtV.avif`;export{e as default};

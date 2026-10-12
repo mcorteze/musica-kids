@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/fondo-DyX2Jhue.avif`;export{e as default};

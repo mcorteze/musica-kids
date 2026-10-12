@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/canoa-mar-VTthSW8v.avif`;export{e as default};

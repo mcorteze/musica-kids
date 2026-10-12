@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/daisy-BD4O-Ki2.avif`;export{e as default};

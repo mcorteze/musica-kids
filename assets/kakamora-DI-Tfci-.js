@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/kakamora-n_7t7cpU.avif`;export{e as default};

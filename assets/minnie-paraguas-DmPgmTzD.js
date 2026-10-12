@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-paraguas-BfE7Se0s.avif`;export{e as default};

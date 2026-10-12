@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/daisy-tina-C7rbsJh4.avif`;export{e as default};

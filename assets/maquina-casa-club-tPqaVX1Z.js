@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/maquina-casa-club-DgRLkscA.avif`;export{e as default};

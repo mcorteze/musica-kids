@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-lbw-P3bF.avif`;export{e as default};

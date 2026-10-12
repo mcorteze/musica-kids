@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/taller-casa-club-DIOD907o.avif`;export{e as default};

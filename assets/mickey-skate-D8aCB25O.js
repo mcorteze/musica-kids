@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-skate-DN_slEp9.avif`;export{e as default};

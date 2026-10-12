@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/jefe-tui-tyNMzQIR.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/maui-y-moana-BVc_a7G6.avif`;export{e as default};

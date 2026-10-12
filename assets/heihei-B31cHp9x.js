@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/heihei-AHmsPUiB.avif`;export{e as default};

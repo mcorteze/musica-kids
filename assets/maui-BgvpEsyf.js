@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/maui-UuQl1Bdb.avif`;export{e as default};

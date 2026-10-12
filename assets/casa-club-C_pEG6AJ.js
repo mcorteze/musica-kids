@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/casa-club-CITPNSM0.avif`;export{e as default};

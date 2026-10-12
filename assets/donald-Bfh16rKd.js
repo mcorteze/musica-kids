@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-Dd-08YLn.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/guante-casa-club-DrjCFnjf.avif`;export{e as default};
