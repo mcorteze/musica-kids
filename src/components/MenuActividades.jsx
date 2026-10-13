@@ -13,6 +13,7 @@ import {
   textoPropuesta,
 } from '../utils/propuestaRompecabezas';
 import { elegirEstadoDev } from '../utils/estadoDev';
+import { aplicarDesgaste } from '../utils/desgasteRompecabezas';
 import diferenciasCoordenadas, { RADIO_ACIERTO } from '../data/diferencias';
 import {
   DndContext,
@@ -350,7 +351,7 @@ const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) =>
 // DESBLOQUEAR el nivel siguiente hay que armar TODOS los rompecabezas del
 // nivel: mientras falten, el sorteo solo toma los que aun no se armaron
 // (los ya armados se guardan por tema en localStorage, ver
-// leerCompletadosRompecabezas). Por eso la cantidad de piezas se define
+// leerRegistroCompletadosRompecabezas). Por eso la cantidad de piezas se define
 // aqui, por nivel, no se calcula sola.
 // Cada rompecabezas tiene un CODIGO permanente "<tema>_NNN" (ej.
 // toy_story_001: el id del tema con guion bajo + un numero de 3 cifras,
@@ -786,8 +787,8 @@ function elegirAlAzarPendiente(items, excluirId, completados) {
 
 // Los rompecabezas recien agregados van en "porAfinar" (del tema, sin
 // nivel): NO se juegan todavia y en la pagina "Todos los rompecabezas" salen
-// en el tab "Por afinar", separados de los que ya estan en el juego
-// ("Listos"), con un selector de piezas para ver como quedaria el corte en
+// en el tab "En preparacion", separados de los que ya estan en el juego
+// ("Procesados"), con un selector de piezas para ver como quedaria el corte en
 // cada nivel. Cuando se decide su nivel, se mueven de "porAfinar" a ese
 // nivel y pasan solos al juego.
 const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, porAfinar = [], soloLaptop }) => {
@@ -850,12 +851,13 @@ function leerNivelGuardadoRompecabezas(temaId, totalNiveles) {
 // (persistidos por tema). Junto con el nivel maximo desbloqueado deciden si
 // un nivel esta completo, y el modal de "Reiniciar" los muestra en color
 // (los que faltan, en gris).
-// Se guarda { desde, ids }: "desde" es cuando se armo el primero del
-// registro. A las 24 horas el registro se vacia solo, sin avisar (pedido
-// explicito), y vuelven a faltar todos; el nivel maximo desbloqueado NO se
-// toca. El formato viejo (solo la lista) se toma como recien empezado.
-const DURACION_COMPLETADOS_ROMP_MS = 24 * 60 * 60 * 1000;
-
+// Se guarda { ids, ultima, aplicados }: "ultima" es cuando se armo el
+// ultimo rompecabezas del tema y "aplicados" cuantos reinicios por
+// inactividad ya se hicieron desde entonces. El avance se reinicia de a un
+// nivel, progresivamente, si el tema no se juega (ver
+// utils/desgasteRompecabezas.js). Formatos viejos (lista suelta o
+// { desde, ids } del antiguo vaciado diario): se conservan los ids y el reloj
+// empieza al leerlos.
 function completadosKeyRompecabezas(temaId) {
   return `musica-kids-rompecabezas-completados-${temaId}`;
 }
@@ -864,32 +866,52 @@ function leerRegistroCompletadosRompecabezas(temaId) {
   try {
     const guardado = JSON.parse(localStorage.getItem(completadosKeyRompecabezas(temaId)));
     const ids = Array.isArray(guardado) ? guardado : guardado?.ids;
-    const desde = Number.isFinite(guardado?.desde) ? guardado.desde : Date.now();
-    if (!Array.isArray(ids) || Date.now() - desde >= DURACION_COMPLETADOS_ROMP_MS) return null;
-    return { desde, ids: ids.filter((c) => typeof c === 'string') };
+    const conReloj = Number.isFinite(guardado?.ultima);
+    return {
+      ids: Array.isArray(ids) ? ids.filter((c) => typeof c === 'string') : [],
+      ultima: conReloj ? guardado.ultima : Date.now(),
+      aplicados: Number.isInteger(guardado?.aplicados) ? guardado.aplicados : 0,
+      sinReloj: !conReloj,
+    };
   } catch {
-    return null;
+    return { ids: [], ultima: Date.now(), aplicados: 0, sinReloj: true };
   }
 }
 
-function leerCompletadosRompecabezas(temaId) {
-  return leerRegistroCompletadosRompecabezas(temaId)?.ids ?? [];
-}
-
-// Conserva el "desde" del registro vigente; si ya vencio (o no habia), la
-// lista nueva empieza un registro nuevo y se queda solo con lo que se armo
-// desde ahora.
-function guardarCompletadosRompecabezas(temaId, lista) {
-  const vigente = leerRegistroCompletadosRompecabezas(temaId);
-  const registro = vigente
-    ? { desde: vigente.desde, ids: lista }
-    : { desde: Date.now(), ids: lista.slice(-1) };
+function escribirRegistroCompletadosRompecabezas(temaId, { ids, ultima, aplicados }) {
   try {
-    localStorage.setItem(completadosKeyRompecabezas(temaId), JSON.stringify(registro));
+    localStorage.setItem(completadosKeyRompecabezas(temaId), JSON.stringify({ ids, ultima, aplicados }));
   } catch {
     // Sin localStorage el progreso dura lo que dure la sesion.
   }
-  return registro.ids;
+}
+
+// Armar un rompecabezas es actividad: reinicia el reloj de inactividad.
+function guardarCompletadosRompecabezas(temaId, lista) {
+  escribirRegistroCompletadosRompecabezas(temaId, { ids: lista, ultima: Date.now(), aplicados: 0 });
+  return lista;
+}
+
+// Al elegir un tema: aplica los reinicios por inactividad que correspondan
+// (nivel maximo y armados) y deja guardado el resultado.
+function retomarProgresoRompecabezas(tema) {
+  const registro = leerRegistroCompletadosRompecabezas(tema.id);
+  const nivelGuardado = leerNivelGuardadoRompecabezas(tema.id, tema.niveles.length);
+  const resultado = aplicarDesgaste(
+    { nivelMaximo: nivelGuardado, ids: registro.ids, ultima: registro.ultima, aplicados: registro.aplicados },
+    tema.niveles.map((n) => n.rompecabezas.map((r) => r.id))
+  );
+  if (registro.sinReloj || resultado.aplicados !== registro.aplicados) {
+    escribirRegistroCompletadosRompecabezas(tema.id, resultado);
+  }
+  if (resultado.nivelMaximo !== nivelGuardado) {
+    try {
+      localStorage.setItem(nivelKeyRompecabezas(tema.id), String(resultado.nivelMaximo));
+    } catch {
+      // Sin localStorage el progreso dura lo que dure la sesion.
+    }
+  }
+  return resultado;
 }
 
 // Todos los pares (columnas, filas) que arman exactamente "total" piezas.
@@ -924,10 +946,14 @@ function grillaRompecabezas(total, aspecto) {
 // vacia) — CUALQUIER pieza puede ir en CUALQUIER ranura, se puede mover
 // libremente. El carrousel en pantalla sale de restar: las piezas de
 // "orden" que no aparecen en "posiciones" en ese momento.
-function estadoInicialRompecabezas(total) {
+// "rompId" ata el tablero al rompecabezas que se esta armando: asi un
+// tablero ya resuelto no cuenta como victoria del SIGUIENTE rompecabezas en
+// el instante en que se elige otro y todavia no se rearma (ver ganoRomp).
+function estadoInicialRompecabezas(total, rompId = null) {
   return {
     orden: shuffle(Array.from({ length: total }, (_, i) => i)),
     posiciones: new Array(total).fill(null),
+    rompId,
   };
 }
 
@@ -1437,7 +1463,7 @@ export default function MenuActividades({ onOpenChange }) {
   const [tabCatalogoRomp, setTabCatalogoRomp] = useState(null);
   // 'afinar' | 'listos' | null (null = el que corresponda, ver elegirEstadoDev).
   const [estadoCatalogoRompElegido, setEstadoCatalogoRompElegido] = useState(null);
-  // true mientras el panel lateral de "Por afinar" esta abierto: el Escape
+  // true mientras el panel lateral de la propuesta esta abierto: el Escape
   // lo cierra el (antd Drawer) y no debe cerrar tambien el drawer del menu.
   const panelAfinarRompAbiertoRef = useRef(false);
   const marcarPanelAfinarRomp = useCallback((abierto) => {
@@ -1694,8 +1720,8 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarPreviaRomp(false);
   }, []);
 
-  // Pagina "Todos los rompecabezas": primero el estado ("Por afinar" /
-  // "Listos", abre en "Por afinar" si hay alguno), despues un tab por tema
+  // Pagina "Todos los rompecabezas": primero el estado ("En preparacion" /
+  // "Procesados", abre en "En preparacion" si hay alguno), despues un tab por tema
   // (solo los que tienen algun rompecabezas en ese estado), y el tab activo
   // cae en el primero mientras no se haya elegido otro.
   const estadoCatalogoRomp = elegirEstadoDev(
@@ -1775,8 +1801,7 @@ export default function MenuActividades({ onOpenChange }) {
   // la del nivel que se estaba jugando en el tema anterior.
   useEffect(() => {
     if (!temaRompId || !temaRomp) return;
-    const inicial = leerNivelGuardadoRompecabezas(temaRompId, temaRomp.niveles.length);
-    const completados = leerCompletadosRompecabezas(temaRompId);
+    const { nivelMaximo: inicial, ids: completados } = retomarProgresoRompecabezas(temaRomp);
     setNivelMaximoRomp(inicial);
     setNivelIdxRomp(inicial);
     setCompletadosRomp(completados);
@@ -1791,7 +1816,7 @@ export default function MenuActividades({ onOpenChange }) {
     let vivo = true;
     setImagenRomp(null);
     cargarImagenConAspecto(rompActualRomp.cargar).then((res) => {
-      if (vivo) setImagenRomp(res);
+      if (vivo) setImagenRomp({ ...res, rompId: rompActualRomp.id });
     });
     return () => {
       vivo = false;
@@ -1803,14 +1828,21 @@ export default function MenuActividades({ onOpenChange }) {
   // nivel o de rompecabezas despues.
   useEffect(() => {
     if (!imagenRomp || !nivelActualRomp) return;
-    setTableroRomp(estadoInicialRompecabezas(nivelActualRomp.piezas));
+    setTableroRomp(estadoInicialRompecabezas(nivelActualRomp.piezas, imagenRomp.rompId));
   }, [imagenRomp, nivelActualRomp]);
 
   const totalPiezasRomp = tableroRomp.posiciones.length;
   // Gana cuando CADA ranura tiene puesta justo la pieza que le corresponde
   // (no solo "todas ocupadas": podrian estar todas llenas pero mal
   // repartidas, ya que ahora cualquier pieza puede ir en cualquier lado).
-  const ganoRomp = totalPiezasRomp > 0 && tableroRomp.posiciones.every((p, i) => p === i);
+  // Y solo si el tablero es del rompecabezas elegido AHORA: al tocar "Otro
+  // rompecabezas" (o uno de la grilla del modal) el tablero viejo, resuelto,
+  // sigue en pantalla hasta que carga la foto nueva; sin este control, en
+  // ese instante se guardaba como armado el rompecabezas NUEVO sin haberlo
+  // hecho.
+  const ganoRomp = totalPiezasRomp > 0
+    && tableroRomp.rompId === rompIdRomp
+    && tableroRomp.posiciones.every((p, i) => p === i);
   // El carrousel en pantalla: las piezas de "orden" que ahora mismo no
   // estan puestas en ninguna ranura.
   const pendientesRomp = useMemo(
@@ -1839,7 +1871,7 @@ export default function MenuActividades({ onOpenChange }) {
     : 0;
   // Mientras falte alguno del nivel se sigue en el, sea o no el nivel mas
   // alto desbloqueado: un nivel ya superado puede volver a tener pendientes
-  // (rompecabezas nuevos, o el registro de armados que se vacia cada 24 h)
+  // (rompecabezas nuevos, o armados borrados por inactividad)
   // y antes, al armar uno, se saltaba al siguiente aunque faltaran.
   const seguirEnNivelRomp = faltanRomp > 0;
 
@@ -1871,13 +1903,11 @@ export default function MenuActividades({ onOpenChange }) {
   // vez dispara el armado del tablero cuando esa foto este lista. Solo si
   // el sorteo cae en el mismo (un nivel con un unico rompecabezas) no hay
   // carga: ahi se rebaraja el tablero directamente, la imagen ya esta lista.
-  // Abre el modal de "Reiniciar" en la lista de niveles, releyendo los
-  // armados por si el registro de 24 horas vencio con el juego abierto.
+  // Abre el modal de "Reiniciar" en la lista de niveles.
   const abrirNivelesRomp = useCallback(() => {
-    if (temaRompId) setCompletadosRomp(leerCompletadosRompecabezas(temaRompId));
     setNivelVistoRomp(null);
     setMostrarNivelesRomp(true);
-  }, [temaRompId]);
+  }, []);
 
   // Miniaturas del nivel abierto en el modal (solo de ese nivel, y recien
   // cuando se abre). Comparten el cache con la pagina "Todos los
@@ -1909,7 +1939,7 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarPreviaRomp(false);
     const nuevoId = idElegido ?? elegirAlAzarPendiente(nivel.rompecabezas, rompIdRomp, idsCompletosRomp);
     if (siguiente === nivelIdxRomp && nuevoId === rompIdRomp) {
-      setTableroRomp(estadoInicialRompecabezas(nivel.piezas));
+      setTableroRomp(estadoInicialRompecabezas(nivel.piezas, nuevoId));
       return;
     }
     setRompIdRomp(nuevoId);
@@ -3130,7 +3160,7 @@ export default function MenuActividades({ onOpenChange }) {
                     onChange={setEstadoCatalogoRompElegido}
                   />
                   {temasCatalogoRomp.length === 0 && (
-                    <p className="gallery-empty">No hay rompecabezas por afinar.</p>
+                    <p className="gallery-empty">No hay rompecabezas en preparación.</p>
                   )}
                   <div className="romp-tabs" role="tablist" aria-label="Temas">
                     {temasCatalogoRomp.map((t) => (
@@ -3306,8 +3336,8 @@ export default function MenuActividades({ onOpenChange }) {
                         </div>
                       </div>
                       ) : (() => {
-                        // Grilla del nivel elegido: los ya armados (en las
-                        // ultimas 24 horas) en color y se pueden volver a
+                        // Grilla del nivel elegido: los ya armados en
+                        // color y se pueden volver a
                         // jugar tocandolos; los que faltan, en gris y sin
                         // accion. "Jugar uno que falta" sortea como antes.
                         const nivel = temaRomp.niveles[nivelVistoRomp];

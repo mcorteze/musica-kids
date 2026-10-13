@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { cargarImagenConAspecto } from '../utils/cargarImagen';
+import { centroDe, distanciaDeAcierto, esZona } from '../utils/zonasDiferencias';
 
 // Tienen que coincidir con App.css: GAP_IMAGENES es el gap de .dif-par,
 // ALTO_PUNTOS el alto de .dif-puntos y GAP_VERTICAL el gap de .dif-juego.
@@ -16,9 +17,10 @@ const FALLO_MS = 700;
 const COMPLETADO_MS = 800;
 
 // Encuentra las diferencias: dos imagenes lado a lado; se hace click en la
-// SEGUNDA (la que tiene las diferencias) y, si el click cae dentro del radio
-// de una diferencia anotada en src/data/diferencias.js, aparece un circulo
-// verde de acierto SOLO en esa imagen (la primera se queda limpia, es la
+// SEGUNDA (la que tiene las diferencias) y, si el click cae dentro de la
+// ZONA de una diferencia anotada en src/data/diferencias.js (o del radio, si
+// esta anotada como punto; ver utils/zonasDiferencias.js), aparece un
+// circulo verde de acierto en el CENTRO de esa zona, SOLO en esa imagen (la primera se queda limpia, es la
 // referencia). Un click errado muestra un ✕ rojo un instante, sin
 // penalizar. Al encontrar todas llama a
 // onCompletado. El padre lo vuelve a montar (key) para reiniciar el juego.
@@ -76,9 +78,10 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
   useEffect(() => () => clearTimeout(falloTimeoutRef.current), []);
 
   // Click en la segunda imagen: convierte el punto a % de la imagen y busca
-  // la diferencia MAS CERCANA que lo tenga dentro de su radio. La distancia
-  // se mide en pixeles reales (no en % por separado) para que el margen sea
-  // un circulo y no una elipse cuando la imagen no es cuadrada.
+  // la diferencia que lo contiene (zona) o lo tiene dentro de su radio
+  // (punto); si toca dos, gana la mas cercana. Las distancias van en
+  // pixeles reales para que el margen no se deforme si la imagen no es
+  // cuadrada.
   const alClickear = (e) => {
     if (cantidad === total) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -88,11 +91,8 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
     let mejor = -1;
     let mejorDist = Infinity;
     par.diferencias.forEach((d, i) => {
-      const dx = ((x - d.x) * rect.width) / 100;
-      const dy = ((y - d.y) * rect.height) / 100;
-      const dist = Math.hypot(dx, dy);
-      const radioPx = ((d.r ?? radio) * rect.width) / 100;
-      if (dist <= radioPx && dist < mejorDist) {
+      const dist = distanciaDeAcierto(d, x, y, rect.width, rect.height, radio);
+      if (dist !== null && dist < mejorDist) {
         mejor = i;
         mejorDist = dist;
       }
@@ -109,20 +109,33 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
     setEncontradas((prev) => prev.map((v, i) => (i === mejor ? true : v)));
   };
 
-  // Circulos verdes de las diferencias ya encontradas (solo se dibujan en la
-  // segunda imagen). Ancho en % del ancho de la imagen + aspect-ratio 1 = un
-  // circulo perfecto sin importar la proporcion de la imagen.
-  const aciertos = par.diferencias.map((d, i) => (
-    encontradas[i] ? (
+  // Diferencias ya encontradas (solo en la segunda imagen). Una ZONA se
+  // ilumina entera (borde y relleno verdes, la misma forma marcada en el
+  // Modo desarrollador) con un check chico en su centro (pedido explicito);
+  // las zonas van en un SVG estirado a la imagen (viewBox 0-100 = %). Una
+  // diferencia vieja anotada como PUNTO conserva el circulo con check
+  // (ancho en % + aspect-ratio 1 = circulo perfecto).
+  const zonasEncontradas = par.diferencias
+    .map((d, i) => (encontradas[i] && esZona(d) ? (
+      <polygon key={i} points={d.zona.map(([x, y]) => `${x},${y}`).join(' ')} className="dif-zona-acierto" />
+    ) : null));
+  const aciertos = par.diferencias.map((d, i) => {
+    if (!encontradas[i]) return null;
+    const c = centroDe(d);
+    return esZona(d) ? (
+      <span key={i} className="dif-acierto-check" style={{ left: `${c.x}%`, top: `${c.y}%` }}>
+        <CheckOutlined />
+      </span>
+    ) : (
       <span
         key={i}
         className="dif-acierto"
-        style={{ left: `${d.x}%`, top: `${d.y}%`, width: `${(d.r ?? radio) * 2}%` }}
+        style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${(d.r ?? radio) * 2}%` }}
       >
         <CheckOutlined />
       </span>
-    ) : null
-  ));
+    );
+  });
 
   return (
     <div className="dif-juego" ref={areaRef}>
@@ -147,6 +160,9 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
             onClick={alClickear}
           >
             <img src={imagenes.b.src} alt="" draggable={false} />
+            <svg className="dif-zonas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              {zonasEncontradas}
+            </svg>
             {aciertos}
             {fallo && (
               <span

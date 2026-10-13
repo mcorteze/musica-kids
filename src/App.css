@@ -2998,7 +2998,7 @@ body {
   box-shadow: 0 4px 12px rgba(8, 40, 66, 0.25);
 }
 
-/* Selector "Por afinar" / "Listos" de las paginas de trabajo (catalogo de
+/* Selector "En preparacion" / "Procesados" de las paginas de trabajo (catalogo de
    rompecabezas y Modo desarrollador de diferencias), arriba de los tabs de
    tema. Violeta como los botones que abren esas paginas. */
 .dev-estado {
@@ -3408,7 +3408,7 @@ body {
   justify-content: center;
 }
 
-/* Nivel en que esta hoy (solo los del tab "Listos"). */
+/* Nivel en que esta hoy (solo los del tab "Procesados"). */
 .romp-afinar-opciones .dif-dev-nivel.actual:not(.activo) {
   border-style: dashed;
   border-color: rgba(8, 40, 66, 0.3);
@@ -3527,6 +3527,40 @@ body {
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
+/* Acierto en una ZONA: la zona entera se ilumina en verde (aparece con un
+   fundido) y en su centro va un check chico. */
+.dif-zona-acierto {
+  fill: rgba(46, 204, 113, 0.32);
+  stroke: #2ecc71;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px rgba(46, 204, 113, 0.9));
+  animation: difZonaAcierto 0.45s ease;
+}
+
+@keyframes difZonaAcierto {
+  from { fill-opacity: 0; stroke-opacity: 0; }
+  to { fill-opacity: 1; stroke-opacity: 1; }
+}
+
+.dif-acierto-check {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #2ecc71;
+  box-shadow: 0 0 0 2px #ffffff, 0 2px 8px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  pointer-events: none;
+  animation: difAcierto 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .dif-fallo {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -3635,8 +3669,13 @@ body {
   font-size: 14px;
 }
 
+/* Ancho FIJO: si cambiara con el texto (cursor dentro/fuera, numeros de
+   distinto largo) la barra podria reacomodarse y mover las imagenes justo
+   mientras se marca una zona. */
 .dif-dev-lectura {
-  min-width: 220px;
+  width: 190px;
+  flex: none;
+  white-space: nowrap;
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
@@ -3701,8 +3740,10 @@ body {
   user-select: none;
 }
 
+/* user-select: none para que arrastrar un rectangulo no seleccione texto. */
 .dif-dev-imagen--marcar {
   cursor: crosshair;
+  user-select: none;
 }
 
 .dif-grid {
@@ -3772,6 +3813,92 @@ body {
 .dif-marca {
   border: 3px solid #ff8a00;
   background: rgba(255, 138, 0, 0.2);
+}
+
+/* Zonas (poligonos) de las diferencias: SVG estirado a la imagen
+   (viewBox 0-100 = coordenadas en %); el trazo no se deforma con
+   vector-effect. Verde punteado = ya anotadas, naranja = marcas nuevas,
+   violeta = la zona que se esta dibujando. */
+.dif-zonas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.dif-zona {
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.dif-zona--registrada {
+  stroke: #2ecc71;
+  stroke-dasharray: 7 5;
+  fill: rgba(46, 204, 113, 0.15);
+}
+
+.dif-zona--marca {
+  stroke: #ff8a00;
+  fill: rgba(255, 138, 0, 0.22);
+}
+
+.dif-zona--curso {
+  stroke: #7C3AED;
+  stroke-dasharray: 6 4;
+  fill: rgba(124, 58, 237, 0.12);
+}
+
+/* Numero de la zona, en su centro (donde aparece el check en el juego). */
+.dif-zona-numero {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.dif-zona-numero.dif-zona--registrada {
+  background: #1f9d55;
+}
+
+.dif-zona-numero.dif-zona--marca {
+  background: #e67600;
+}
+
+/* Vertices de la zona libre en curso; el primero se agranda cuando ya se
+   puede cerrar tocandolo. */
+.dif-vertice {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #7C3AED;
+  border: 2px solid #ffffff;
+  pointer-events: none;
+}
+
+.dif-vertice.cierre {
+  width: 18px;
+  height: 18px;
+  background: #C026D3;
+}
+
+.dif-dev-acciones--fila {
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
 /* Misma posicion del cursor, marcada en la imagen original. */

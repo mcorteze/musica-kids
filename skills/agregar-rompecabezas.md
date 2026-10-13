@@ -37,12 +37,18 @@ Todo vive en `src/assets/rompecabezas/<tema>/<codigo>.avif` y en
 - **Para desbloquear el nivel siguiente hay que armar TODOS los rompecabezas
   del nivel** (pedido explícito). Mientras falten, el sorteo solo toma los
   que aún no se armaron; los ya armados se guardan por tema en
-  localStorage (`musica-kids-rompecabezas-completados-<tema>`, lista de
-  códigos). Consecuencia al agregar: un rompecabezas nuevo en el nivel de
-  la frontera de una jugadora agrega una pieza más por armar antes de
-  avanzar; en niveles ya desbloqueados no bloquea nada. Agregar uno a un
-  nivel existente no cambia la posición de ningún nivel, así que no toca el
-  nivel máximo guardado.
+  localStorage (`musica-kids-rompecabezas-completados-<tema>`:
+  `{ ids, ultima, aplicados }`). Mientras falte alguno del nivel en juego
+  se sigue en ese nivel, aunque ya se hubiera superado. Consecuencia al
+  agregar: un rompecabezas nuevo en un nivel agrega uno más por armar ahí;
+  no cambia la posición de ningún nivel, así que no toca el nivel máximo
+  guardado.
+- **Reinicio progresivo por inactividad** (`src/utils/desgasteRompecabezas.js`):
+  si pasan 7 días sin armar ningún rompecabezas del tema, el nivel más alto
+  vuelve a bloquearse (y se borran los armados de ese nivel y del que queda
+  como más alto); sin actividad, sigue hacia abajo a los 4 días, a los 2 y
+  luego de a 1 día. El nivel 1 nunca se bloquea. Armar cualquier
+  rompecabezas del tema reinicia el reloj.
 - Cada rompecabezas tiene un **código permanente `<tema>_NNN`** (ej.
   `toy_story_001`, `frozen_002`): el id del tema con guion bajo en vez de
   guion, más un número de 3 cifras **correlativo por tema** (no por nivel).
@@ -135,8 +141,8 @@ el PNG temporal.
   del Memorice, `nombre` y `header` (copiar el gradiente del Memorice).
 - **Todo rompecabezas nuevo entra en `porAfinar`** del tema (arreglo
   `porAfinar: [{ id: '<codigo>', orientacion }]`, sin nivel): no se juega
-  todavía y en la página "Todos los rompecabezas" aparece en el tab **"Por
-  afinar"**. En ese tab y en "Listos" (`RompecabezasPropuesta.jsx`) cada
+  todavía y en la página "Todos los rompecabezas" aparece en el tab **"En
+  preparación"**. En ese tab y en "Procesados" (`RompecabezasPropuesta.jsx`) cada
   imagen se toca y abre un panel lateral donde el usuario prueba el corte
   con 12/18/24/30/36/42 piezas (`PIEZAS_ROMPECABEZAS`) y aplica una: queda
   en la **propuesta de asignación** (borde violeta en pantalla). El botón
@@ -145,9 +151,9 @@ el PNG temporal.
   ```
   Propuesta de asignación de rompecabezas por cantidad de piezas:
   Frozen (frozen)
-    Por afinar → nivel:
+    En preparación → nivel:
       36 piezas: frozen_013
-    Ya en juego → cambiar de nivel:
+    Procesados → cambiar de nivel:
       24 piezas: frozen_001 (estaba en 12)
   ```
 - Al recibir ese texto: mover cada código (`{ id, orientacion }`, desde
@@ -157,13 +163,13 @@ el PNG temporal.
   del progreso guardado). Después recordarle al usuario que vacíe la
   propuesta. Todos los temas declaran los niveles 12, 18, 24, 30, 36 y 42 (un
   nivel vacío no aparece en el juego). Desde ese momento se juega y sale en
-  el tab "Listos". Avisar si un nivel que estaba vacío queda con
+  el tab "Procesados". Avisar si un nivel que estaba vacío queda con
   rompecabezas: aparece un nivel nuevo al final del tema.
 - El archivo debe llamarse exactamente como el `id` (sin extensión).
 - No hay que tocar nada más: el selector, la página "Todos los rompecabezas"
-  (estado Por afinar/Listos, tabs por tema, un bloque por nivel con todas sus
-  miniaturas y códigos) y el juego (sorteo dentro del nivel, sin los por
-  afinar) los toman solos.
+  (estado En preparación/Procesados, tabs por tema, un bloque por nivel con todas sus
+  miniaturas y códigos) y el juego (sorteo dentro del nivel, sin los en
+  preparación) los toman solos.
 
 ### 5. Verificar
 

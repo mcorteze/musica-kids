@@ -3,7 +3,7 @@ import { Drawer } from 'antd';
 import { CloseOutlined, LeftOutlined, PictureOutlined, RightOutlined } from '@ant-design/icons';
 
 // Contenido de un tab de la pagina "Todos los rompecabezas" (herramienta de
-// trabajo, solo laptop), igual en "Por afinar" y en "Listos": bloques de
+// trabajo, solo laptop), igual en "En preparacion" y en "Procesados": bloques de
 // miniaturas tocables. Cada una abre un panel lateral donde se prueba el
 // corte con cada cantidad de piezas y se APLICA una: eso la suma a la
 // propuesta de asignacion (estado de MenuActividades, ver

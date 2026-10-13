@@ -41,7 +41,36 @@ Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
   (mickey 21, moana 23), 2 iguales al Memorice por hash (moana 6, 7),
   2 duplicados internos (moana 19, 27). Se juegan cuando se asignen a niveles.
 
+- 2026-10-12 Tabs de las páginas de trabajo renombrados: "En preparación" /
+  "Procesados" (Rompecabezas y Diferencias). Texto de la Propuesta también.
+- 2026-10-12 Diferencias por ZONA: { zona: [[x,y],...] } (libre o rectángulo
+  en el Modo desarrollador); acierto = click dentro (+MARGEN_ZONA 1.5%); check
+  en el centro del rectángulo que la encierra. Los puntos viejos siguen
+  valiendo. Lógica en src/utils/zonasDiferencias.js.
+
+- 2026-10-13 Fix Rompecabezas: al elegir otro rompecabezas justo después de
+  ganar, el nuevo (sin hacer) quedaba marcado como armado. Ahora el tablero
+  guarda su rompId y la victoria solo cuenta si coincide.
+- 2026-10-13 Reinicio progresivo (reemplaza el vaciado cada 24 h): 7 días sin
+  armar nada en el tema → se BLOQUEA el nivel más alto (+ armados de ese y del
+  nuevo tope); luego 4, 2 y 1 día por nivel; el nivel 1 nunca se bloquea;
+  armar uno reinicia el reloj. src/utils/desgasteRompecabezas.js.
+
+- 2026-10-13 Acierto en Diferencias: la zona encontrada se ilumina (borde y
+  relleno verdes, misma forma que en el Modo desarrollador) + check chico en
+  su centro; reemplaza al círculo grande (que queda solo para puntos viejos).
+
+- 2026-10-13 Fix Modo desarrollador Diferencias: la imagen saltaba al primer
+  click de una zona (aparecían los botones Cerrar/Deshacer/Cancelar y la barra
+  crecía). Ahora esos botones están siempre (deshabilitados) y la lectura de
+  coordenadas tiene ancho fijo. Pendiente que el usuario confirme en pantalla.
+
 ## Pendiente
+- 2026-10-12 Los 5 pares de Diferencias pasados a "En preparación" (mapa de
+  diferencias.js vacío; descripciones de cada par conservadas como comentario).
+  El juego queda "Muy pronto" hasta que se peguen las zonas.
+- [x] Usuario re-marca los 5 pares como zonas (2026-10-13): los 5 procesados
+      (paw-patrol 001–004, toy-story 001). Diferencias sin nada en preparación.
 - [x] Usuario asigna niveles a Mickey/Moana en el catálogo (Propuesta) → muevo códigos.
       Hecho 1ª tanda Mickey (12) y Moana (16), 2026-10-11: ambos jugables.
       2ª tanda Mickey (12): nivel 6 (42 piezas) abierto en Mickey.

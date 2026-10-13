@@ -1,5 +1,5 @@
 // Propuesta de asignacion de rompecabezas por cantidad de piezas (pagina
-// "Todos los rompecabezas", tabs "Por afinar" y "Listos"): { "<codigo>":
+// "Todos los rompecabezas", tabs "En preparacion" y "Procesados"): { "<codigo>":
 // piezas }. Se guarda en este navegador hasta que se copia y se le pasa a
 // Claude, que mueve cada rompecabezas al nivel de esa cantidad de piezas
 // (ver skills/agregar-rompecabezas.md). La clave conserva su nombre
@@ -24,7 +24,7 @@ export function guardarPropuestaRompecabezas(propuesta) {
   }
 }
 
-// Cambios que de verdad propone, por tema: los por afinar con piezas
+// Cambios que de verdad propone, por tema: los en preparacion con piezas
 // elegidas y los ya en juego cuyo nivel cambia. Lo que no existe mas o
 // coincide con el nivel actual no cuenta.
 export function cambiosPropuesta(temas, propuesta) {
@@ -57,9 +57,9 @@ export function textoPropuesta(temas, propuesta) {
     .filter((c) => c.afinar.length + c.mover.length > 0)
     .map(({ tema, afinar, mover }) => {
       const filas = [`${tema.nombre} (${tema.id})`];
-      if (afinar.length) filas.push('  Por afinar → nivel:', ...porPiezas(afinar, (c) => c.id));
+      if (afinar.length) filas.push('  En preparación → nivel:', ...porPiezas(afinar, (c) => c.id));
       if (mover.length) {
-        filas.push('  Ya en juego → cambiar de nivel:', ...porPiezas(mover, (c) => `${c.id} (estaba en ${c.desde})`));
+        filas.push('  Procesados → cambiar de nivel:', ...porPiezas(mover, (c) => `${c.id} (estaba en ${c.desde})`));
       }
       return filas.join('\n');
     });

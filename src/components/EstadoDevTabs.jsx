@@ -1,4 +1,4 @@
-// Selector "Por afinar" / "Listos" de las paginas de trabajo (catalogo de
+// Selector "En preparacion" / "Procesados" de las paginas de trabajo (catalogo de
 // Rompecabezas y Modo desarrollador de Diferencias): separa lo que todavia
 // se esta preparando de lo que ya esta en el juego, para que lo nuevo no se
 // pierda entre todo lo que ya esta listo. El estado inicial lo decide
@@ -6,8 +6,8 @@
 
 export default function EstadoDevTabs({ estado, cantidades, onChange }) {
   const opciones = [
-    { id: 'afinar', nombre: 'Por afinar' },
-    { id: 'listos', nombre: 'Listos' },
+    { id: 'afinar', nombre: 'En preparación' },
+    { id: 'listos', nombre: 'Procesados' },
   ];
   return (
     <div className="dev-estado" role="tablist" aria-label="Estado">
