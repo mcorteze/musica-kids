@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/te-fiti-JBmP1cEs.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/marciano-C46P658R.avif`;export{e as default};

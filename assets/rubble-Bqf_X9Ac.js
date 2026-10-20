@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/rubble-BUm_L49f.avif`;export{e as default};

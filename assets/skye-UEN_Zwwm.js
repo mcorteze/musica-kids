@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/skye-Cfqs5ekl.avif`;export{e as default};

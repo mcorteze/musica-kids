@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/maui-anzuelo-CWQGswLV.avif`;export{e as default};

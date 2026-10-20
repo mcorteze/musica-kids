@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/chase-cara-B9XozPLr.avif`;export{e as default};

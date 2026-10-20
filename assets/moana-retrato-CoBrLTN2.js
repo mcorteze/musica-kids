@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/moana-retrato-BmWiWL-8.avif`;export{e as default};

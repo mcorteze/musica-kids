@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/everest-cara-D0WD-www.avif`;export{e as default};

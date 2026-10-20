@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/skye-cara-Cl5YQCf-.avif`;export{e as default};

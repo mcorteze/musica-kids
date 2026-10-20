@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/olaf-nieve-3d-CWf8byQ1.avif`;export{e as default};

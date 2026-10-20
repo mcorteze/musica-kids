@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/buzz-chibi-Ca8kos79.avif`;export{e as default};
