@@ -1,11 +1,34 @@
 # Flujo activo — musica-kids
-Actualizado: 2026-10-11
+Actualizado: 2026-10-20
 
 ## Tarea actual
-Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
-6 desechados, nada por afinar. Falta revisión en pantalla y commit.
+Juego "Pintar por números" publicado (commit + push 2026-10-20): 4 temas
+jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
+(14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
+skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
-## Decisiones tomadas esta sesión
+## Decisiones Pintar por números (2026-10-19)
+- Imágenes propias del juego (no se reusan las de Rompecabezas), en
+  src/assets/pintar/<tema>/nivel-<n>/. Skill: skills/agregar-pintar.md.
+- Niveles por tamaño de cuadrícula (valores iniciales; los vigentes en
+  skills/agregar-pintar.md): 10/6, 14/8, 18/10, 24/12 (lado largo /
+  tope de colores). Se desbloquea terminando todas las láminas del nivel.
+- Orden obligado 01→02→03; se pinta tocando o arrastrando (trazo
+  interpolado: Chrome agrupa los pointermove y dejaba huecos).
+- Cuadrícula calculada en el navegador (k-means + mayoría por celda); números
+  de más a menos celdas; transparente = celda vacía.
+- Tarjeta del menú provisional: corazón pixel art hecho a mano
+  (menu-general/pintar.avif). Las otras tarjetas son ilustraciones de Skye.
+- Temas como en los demás juegos: card del selector = dorso del Memorice.
+- Primera lámina: moana/nivel-4/maui-perfil.avif (desde Downloads
+  "descarga (5).jpg"; misma imagen que el Memorice y moana_052, pedido
+  explícito). Nivel 4 elegido por el usuario tras ver los 4 tamaños (en 1–2
+  no se reconoce). Moana parte en "Nivel 4" mientras sea la única lámina.
+- Script para ver una imagen en los 4 niveles antes de asignarla: el del
+  scratchpad de la sesión 2026-10-19 (vista-niveles.mjs) inyecta
+  utils/pintarNumeros.js en Chrome headless; reconstruirlo si hace falta.
+
+## Decisiones tomadas esta sesión (2026-10-11 a 13)
 - 2026-10-11 Catálogo de Rompecabezas y Modo desarrollador de Diferencias
   separan "Por afinar" / "Listos" (EstadoDevTabs). Diferencias: por afinar =
   par sin coordenadas. Rompecabezas: nuevos van en `porAfinar` del tema.
@@ -66,6 +89,75 @@ Rompecabezas nuevos: incorporación terminada. 61 nuevos asignados a niveles,
   coordenadas tiene ancho fijo. Pendiente que el usuario confirme en pantalla.
 
 ## Pendiente
+- [x] Primera lámina de Moana cargada (nivel 4). Faltan más láminas/temas.
+- 2026-10-19 Maui DESECHADO (se perdía demasiado). Reemplazo:
+  moana/nivel-4/moana-y-pua.avif (chibi, Downloads/pixel/1ba2a4f6….jpg).
+- 2026-10-19 Niveles afinados: 12/18/24/32 (antes 10/14/18/24). Imagen
+  original tenue detrás de las celdas sin pintar (opacidad 0.55 + celdas
+  semitransparentes). "Revelar la imagen real" descartado por el usuario.
+- 2026-10-19 Niveles otra vez un poco más finos: 14/20/28/36. Imagen de
+  fondo más transparente (opacidad 0.3).
+- 2026-10-19 TODOS los juegos: el modal de victoria aparece 3 s después de
+  completar (clase .victoria en el overlay, retardo por CSS) para apreciar
+  el resultado; el de "Elige un nivel" sigue inmediato. Emojis del modal
+  (🎉🧩🏆🔢) reemplazados por iconos SVG de react-icons/gi: en la tablet
+  salían como símbolo desconocido.
+- 2026-10-19 Chibi moana-y-pua DESECHADO. Nuevas en
+  moana/por-asignar/: maui, moana, moana-bebe (Downloads/pixel). Carpeta
+  por-asignar = "En preparación" (no se juega).
+- 2026-10-19 Modo desarrollador de Pintar (PintarDev.jsx): cada imagen en los
+  4 niveles ya pintada + datos (cuadrícula, colores, celdas, % del 01).
+- 2026-10-19 Modo desarrollador de Pintar: checkbox por nivel + Descartar
+  (una elección por lámina), barra "Propuesta N" con Copiar/Vaciar
+  (utils/propuestaPintar.js, guardada en localStorage). Formato del texto en
+  skills/agregar-pintar.md.
+- [x] Propuesta aplicada (2026-10-19): moana → nivel-3, moana-bebe →
+      nivel-4, maui descartado (borrado). Moana jugable, parte en Nivel 3.
+- 2026-10-19 Tanda 2 en por-asignar (12): moana/ maui-anzuelo,
+  moana-perfil, moana-bebe-conchas, te-fiti, moana-retrato (Downloads/pixel);
+  toy-story/ forky, rex, jessie, woody, marciano, woody-chibi, buzz-chibi
+  (Downloads/toystory). Recortadas al personaje: jessie (sin marca de agua
+  freesvgdownload), marciano, woody-chibi, buzz-chibi.
+- [x] Propuesta Toy Story aplicada (2026-10-19): nivel-4 = buzz-chibi,
+      forky, marciano, rex; descartados (borrados) jessie, woody, woody-chibi.
+      Toy Story jugable, parte en Nivel 4.
+- [x] Propuesta Moana tanda 2 aplicada (2026-10-19): nivel-4 = maui-anzuelo,
+      moana-retrato, te-fiti; descartados (borrados) moana-bebe-conchas,
+      moana-perfil. Estado: Moana = nivel 3 (1) + nivel 4 (4); Toy Story =
+      nivel 4 (4). Nada en preparación.
+- 2026-10-19 Frozen (tema nuevo en Pintar) en frozen/por-asignar/: olaf,
+  elsa (recortada), elsa-trenza, anna, elsa-copo-3d, olaf-nieve-3d
+  (Downloads/frozen). Propuesta aplicada: anna → nivel-3 (Frozen jugable).
+  Las otras 5 siguen en por-asignar (no descartadas).
+- 2026-10-19 Conclusión del usuario: "no es lo mismo pixelear una imagen
+  que tener una imagen creada como pixel art". Prototipo v2 (contornos +
+  fondo vacío + Lab, scratchpad algoritmo-v2.js) dio poca mejora a 36; a 64
+  mejora pero ~2300 celdas + zoom. Propuesto (sin respuesta): detectar la
+  cuadrícula nativa de imágenes pixel art (perler/hama beads, pixel art)
+  → 1 cuadro = 1 celda, color exacto.
+- 2026-10-19 Nivel 5 agregado a Pintar: 44 celdas lado largo, 14 colores.
+  Sin láminas todavía (no aparece en el juego hasta que tenga alguna).
+- 2026-10-20 Frozen: descartados (borrados) elsa, elsa-copo-3d, elsa-trenza,
+  olaf. Queda olaf-nieve-3d en por-asignar (no venía en la propuesta).
+- 2026-10-20 Paw Patrol en paw-patrol/por-asignar/ (9, Downloads/pawpatrol):
+  everest, everest-cara, rocky, ryder, skye, rubble, skye-cara, marshall-cara,
+  chase-cara. Rótulo "Easy Drawing Guides" tapado con blanco puro (ffmpeg:
+  format=rgb24 ANTES de drawbox; sin eso el parche sale gris 235) en everest,
+  rocky, ryder, skye, rubble. marshall-cara recortado al personaje.
+  Propuesta aplicada: nivel-4 = everest-cara, rubble, skye-cara; nivel-5 =
+  rocky; descartados (borrados) marshall-cara, ryder. Siguen en por-asignar:
+  chase-cara, everest, skye.
+- 2026-10-20 Pintar por números habilitado de tablet para arriba
+  (.memory-solo-tablet). Modo desarrollador sigue solo laptop.
+- 2026-10-20 Memoria nueva: no levantar ni detener servidores sin permiso.
+  Verificación de láminas SIN servidor: scratchpad vista-tema.mjs (inyecta
+  pintarNumeros.js en Chrome headless, lee NIVELES_PINTAR del menú).
+- Nota: en nivel 4 con imagen casi cuadrada (33×36) la celda queda ~15 px
+  en laptop y el número en 8 px; vigilar legibilidad en la tablet.
+- [ ] Ofrecido, sin respuesta: fondo blanco = 01 con 426 de 736 celdas
+      (58%); propuesta de dejarlo como celdas vacías (relleno desde los bordes).
+- [ ] Pintar por números: ¿tarjeta del menú definitiva (estilo Skye)?
+- [x] Pintar por números: commit + push a main (2026-10-20, pedido explícito).
 - 2026-10-12 Los 5 pares de Diferencias pasados a "En preparación" (mapa de
   diferencias.js vacío; descripciones de cada par conservadas como comentario).
   El juego queda "Muy pronto" hasta que se peguen las zonas.

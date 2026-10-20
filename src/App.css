@@ -2113,10 +2113,35 @@ body {
   to { transform: scale(1); opacity: 1; }
 }
 
-.memory-victoria-emoji {
-  font-size: 40px;
-  line-height: 1;
+/* Modal de victoria (clase .victoria; no el de "Elige un nivel", que usa el
+   mismo overlay y debe salir al instante): aparece RETARDO segundos despues
+   de completar el juego, para alcanzar a ver lo armado/pintado/encontrado
+   sin nada encima (pedido explicito). Mientras espera queda invisible y sin
+   recibir toques (visibility:hidden por el fill "both"). */
+.memory-victoria-overlay.victoria {
+  animation: victoriaAparece 0.35s ease 3s both;
 }
+
+.memory-victoria-overlay.victoria .memory-victoria {
+  animation: memoryModalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) 3s both;
+}
+
+@keyframes victoriaAparece {
+  from { opacity: 0; visibility: hidden; }
+  to { opacity: 1; visibility: visible; }
+}
+
+/* Iconos SVG (react-icons) en vez de emojis: se ven igual en cualquier
+   dispositivo. */
+.memory-victoria-icono {
+  font-size: 44px;
+  flex: none;
+}
+
+.memory-victoria-icono.fiesta { color: #F2694B; }
+.memory-victoria-icono.rompecabezas { color: #7C3AED; }
+.memory-victoria-icono.trofeo { color: #E6A700; }
+.memory-victoria-icono.numeros { color: #0E8C93; }
 
 .memory-victoria p {
   margin: 0;
@@ -3611,6 +3636,258 @@ body {
 
 .dif-dev-btn:hover {
   box-shadow: 0 6px 18px rgba(124, 58, 237, 0.55);
+}
+
+/* ========== PINTAR POR NÚMEROS ==========
+   Tablero arriba (ocupa todo el alto que sobra) y paleta abajo. El tamaño
+   de la celda lo calcula PintarJuego: el gap (1px) y el padding (6px) de
+   .pintar-tablero tienen que coincidir con GAP_CELDAS y BORDE_TABLERO. */
+.pintar-juego {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.pintar-area {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fondo blanco: el gap de 1px entre celdas se ve como la cuadrícula. Sin
+   seleccion ni gestos del navegador: arrastrar el dedo pinta, no scrollea. */
+.pintar-tablero {
+  position: relative;
+  display: grid;
+  gap: 1px;
+  padding: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(8, 40, 66, 0.3);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+/* Lámina terminada: sin cuadrícula, se ve la imagen entera. */
+.pintar-tablero.terminado {
+  gap: 0;
+  cursor: default;
+}
+
+/* Imagen original detrás de la cuadrícula (posición y tamaño los pone
+   PintarJuego). Tenue: las celdas sin pintar son semitransparentes y la
+   dejan asomar; las pintadas la tapan. No recibe toques: pintar sigue
+   siendo cosa del tablero. */
+.pintar-fondo {
+  position: absolute;
+  object-fit: fill;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Celdas sobre la imagen (position: relative las sube por encima). */
+.pintar-celda {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background: rgba(236, 236, 243, 0.78);
+  color: #8a8aa2;
+  font-weight: 700;
+  line-height: 1;
+  transition: background-color 0.25s ease;
+}
+
+/* Celdas del número que toca pintar ahora: un gris más oscuro y el número
+   bien legible, para encontrarlas de un vistazo. */
+.pintar-celda.actual {
+  background: rgba(190, 190, 212, 0.88);
+  color: #2f2f45;
+}
+
+.pintar-celda.vacia {
+  background: transparent;
+}
+
+.pintar-celda.pintada {
+  border-radius: 0;
+}
+
+/* Terminada: sin gap la cuadrícula se achica y la imagen (con el tamaño
+   de antes) se saldría del marco; ya no hace falta, la tapan las celdas. */
+.pintar-tablero.terminado .pintar-fondo {
+  display: none;
+}
+
+.pintar-paleta {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 8px 4px;
+}
+
+/* Mismo tamaño en todos los estados (el que toca solo suma un anillo),
+   para que la paleta no se reacomode al pasar de un número al siguiente. */
+.pintar-color {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pintar-color.claro {
+  color: #2f2f45;
+  text-shadow: none;
+}
+
+.pintar-color.despues {
+  opacity: 0.6;
+}
+
+/* Modo desarrollador de Pintar: una fila por lámina con la original y su
+   versión pintada entera en cada nivel (PintarDev). */
+.pintar-dev-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.pintar-dev-arriba {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pintar-dev-error {
+  color: #B42318;
+  font-weight: 700;
+}
+
+.pintar-dev-fila-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Marcada para descartar: se atenúa (sigue clickeable para desmarcar). */
+.pintar-dev-fila.descartada .pintar-dev-vistas {
+  opacity: 0.4;
+}
+
+/* Nivel elegido en la propuesta: borde violeta, igual que en el catálogo de
+   rompecabezas. */
+.pintar-dev-vista.elegido {
+  border-color: #C026D3;
+  box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.18);
+}
+
+.pintar-dev-fila h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.pintar-dev-vistas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pintar-dev-vista {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.pintar-dev-vista.asignado {
+  border-color: #7C3AED;
+}
+
+.pintar-dev-vista figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.pintar-dev-asignado {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7C3AED, #C026D3);
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.pintar-dev-original,
+.pintar-dev-canvas {
+  display: block;
+  max-width: 240px;
+  max-height: 240px;
+}
+
+.pintar-dev-canvas {
+  image-rendering: pixelated;
+}
+
+.pintar-dev-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f2f45;
+}
+
+.pintar-dev-datos span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pintar-dev-datos i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.pintar-color.actual {
+  box-shadow: 0 0 0 4px #ffffff, 0 0 0 7px #7C3AED, 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* Arriba del todo (margin-bottom:auto), igual que el catalogo de

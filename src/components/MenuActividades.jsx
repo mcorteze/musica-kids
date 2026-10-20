@@ -1,9 +1,14 @@
 import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect, cloneElement, Children } from 'react';
 import { createPortal } from 'react-dom';
+// Iconos SVG en vez de emojis en los modales de victoria: algunas tablets
+// no tienen esos emojis y mostraban un simbolo desconocido.
+import { GiAbacus, GiPartyPopper, GiPuzzle, GiTrophyCup } from 'react-icons/gi';
 import { Image } from 'antd';
 import { cargarImagenConAspecto } from '../utils/cargarImagen';
 import DiferenciasJuego from './DiferenciasJuego';
 import DiferenciasDev from './DiferenciasDev';
+import PintarJuego from './PintarJuego';
+import PintarDev from './PintarDev';
 import EstadoDevTabs from './EstadoDevTabs';
 import RompecabezasPropuesta from './RompecabezasPropuesta';
 import {
@@ -41,6 +46,7 @@ import imagenRompecabezas from '../assets/menu-general/rompecabezas.avif';
 import imagenContar from '../assets/menu-general/contar.avif';
 import imagenDiferencias from '../assets/menu-general/diferencias.avif';
 import imagenSecuencias from '../assets/menu-general/secuencias.avif';
+import imagenPintar from '../assets/menu-general/pintar.avif';
 
 // ========== MENU GENERAL ==========
 // El icono del header abre este drawer con un menu de tarjetas (Imprimir,
@@ -1387,6 +1393,100 @@ function guardarCompletadosDiferencias(temaId, lista) {
   }
 }
 
+// ========== PINTAR POR NÚMEROS ==========
+// Habilitado de tablet para arriba (.memory-solo-tablet, igual que
+// Diferencias); el boton "Modo desarrollador" de su selector queda solo en
+// laptop (.dif-dev-btn). Cada lámina es UNA imagen en
+// src/assets/pintar/<tema>/nivel-<n>/<archivo>; la cuadrícula numerada la
+// arma sola PintarJuego al abrirla (utils/pintarNumeros.js), así que no hay
+// nada que anotar: basta con dejar el archivo en la carpeta del nivel (ver
+// skills/agregar-pintar.md). Los temas y su orden se toman de TEMAS (mismos
+// ids que el Memorice). El nivel define el tamaño de la cuadrícula (celdas
+// del lado más largo) y el tope de colores. Igual que Diferencias: se
+// sortea una lámina del nivel y para desbloquear el siguiente hay que
+// terminar TODAS las del nivel; un nivel sin láminas no aparece.
+const NIVELES_PINTAR = [
+  { numero: 1, lado: 14, colores: 6 },
+  { numero: 2, lado: 20, colores: 8 },
+  { numero: 3, lado: 28, colores: 10 },
+  { numero: 4, lado: 36, colores: 12 },
+  { numero: 5, lado: 44, colores: 14 },
+];
+
+const ENTRADAS_PINTAR = import.meta.glob('../assets/pintar/*/*/*.{png,jpg,jpeg,webp,avif}');
+
+// { <tema>: [{ id, nombre, cargar, nivel }] } — nivel = null si está en
+// <tema>/por-asignar/ (solo se ve en el Modo desarrollador, PintarDev).
+const LAMINAS_PINTAR = {};
+for (const [ruta, cargar] of Object.entries(ENTRADAS_PINTAR)) {
+  const m = ruta.match(/pintar\/([^/]+)\/(?:nivel-(\d+)|por-asignar)\/([^/]+)\.[a-z0-9]+$/i);
+  if (!m) continue;
+  const nivel = m[2] ? Number(m[2]) : null;
+  (LAMINAS_PINTAR[m[1]] ??= []).push({
+    id: `${nivel ? `nivel-${nivel}` : 'por-asignar'}/${m[3]}`,
+    nombre: m[3],
+    cargar,
+    nivel,
+  });
+}
+
+// Todas las láminas por tema (para el Modo desarrollador).
+const TEMAS_PINTAR_DEV = TEMAS
+  .map((t) => ({
+    id: t.id,
+    nombre: t.nombre,
+    header: t.header,
+    laminas: (LAMINAS_PINTAR[t.id] ?? []).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true })),
+  }))
+  .filter((t) => t.laminas.length > 0);
+
+// Solo lo jugable: láminas con nivel, agrupadas por nivel.
+const TEMAS_PINTAR = TEMAS_PINTAR_DEV
+  .map((t) => ({
+    id: t.id,
+    nombre: t.nombre,
+    header: t.header,
+    niveles: NIVELES_PINTAR
+      .map((n) => ({ ...n, laminas: t.laminas.filter((l) => l.nivel === n.numero) }))
+      .filter((n) => n.laminas.length > 0),
+  }))
+  .filter((t) => t.niveles.length > 0);
+
+function nivelKeyPintar(temaId) {
+  return `musica-kids-pintar-nivel-${temaId}`;
+}
+
+function leerNivelGuardadoPintar(temaId, totalNiveles) {
+  try {
+    const n = parseInt(localStorage.getItem(nivelKeyPintar(temaId)), 10);
+    return n >= 0 && n < totalNiveles ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Ids de las láminas del tema ya terminadas al menos una vez (por tema).
+function completadosKeyPintar(temaId) {
+  return `musica-kids-pintar-completados-${temaId}`;
+}
+
+function leerCompletadosPintar(temaId) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(completadosKeyPintar(temaId)));
+    return Array.isArray(lista) ? lista.filter((c) => typeof c === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function guardarCompletadosPintar(temaId, lista) {
+  try {
+    localStorage.setItem(completadosKeyPintar(temaId), JSON.stringify(lista));
+  } catch {
+    // Sin localStorage el progreso dura lo que dure la sesion.
+  }
+}
+
 export default function MenuActividades({ onOpenChange }) {
   // 'menu' = las 2 tarjetas raiz. 'memorice'/'imprimir' = cada seccion.
   const [vista, setVista] = useState('menu');
@@ -1537,6 +1637,19 @@ export default function MenuActividades({ onOpenChange }) {
   // Pagina del Modo desarrollador (para sacar las coordenadas).
   const [devDif, setDevDif] = useState(false);
 
+  // ===== Pintar por números: el juego vive en PintarJuego (mismo esquema
+  // que Diferencias: se reinicia volviendolo a montar con otra "key"). =====
+  const [temaPinId, setTemaPinId] = useState(null);
+  const [nivelIdxPin, setNivelIdxPin] = useState(0);
+  const [nivelMaximoPin, setNivelMaximoPin] = useState(0);
+  const [laminaIdPin, setLaminaIdPin] = useState(null);
+  const [completadosPin, setCompletadosPin] = useState([]);
+  const [partidaPin, setPartidaPin] = useState(0);
+  const [ganoPin, setGanoPin] = useState(false);
+  const [mostrarNivelesPin, setMostrarNivelesPin] = useState(false);
+  // Pagina del Modo desarrollador (ver cada lamina en todos los niveles).
+  const [devPin, setDevPin] = useState(false);
+
   const tema = temaId ? TEMAS.find((t) => t.id === temaId) : null;
   const cargando = Boolean(temaId) && fotosTema === null;
 
@@ -1566,6 +1679,7 @@ export default function MenuActividades({ onOpenChange }) {
   const irAContar = useCallback(() => setVista('contar'), []);
   const irASecuencias = useCallback(() => setVista('secuencias'), []);
   const irADiferencias = useCallback(() => setVista('diferencias'), []);
+  const irAPintar = useCallback(() => setVista('pintar'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -2452,6 +2566,88 @@ export default function MenuActividades({ onOpenChange }) {
     }
   }, [temaDifId, nivelMaximoDif]);
 
+  // ===== Pintar por números: logica del drawer (misma que Diferencias) =====
+  const temaPin = temaPinId ? TEMAS_PINTAR.find((t) => t.id === temaPinId) : null;
+  const nivelActualPin = temaPin?.niveles[nivelIdxPin];
+  const laminaActualPin = nivelActualPin?.laminas.find((l) => l.id === laminaIdPin) ?? null;
+
+  const elegirTemaPin = useCallback((id) => {
+    const t = TEMAS_PINTAR.find((x) => x.id === id);
+    if (!t) return;
+    const inicial = leerNivelGuardadoPintar(id, t.niveles.length);
+    const completados = leerCompletadosPintar(id);
+    setTemaPinId(id);
+    setNivelIdxPin(inicial);
+    setNivelMaximoPin(inicial);
+    setCompletadosPin(completados);
+    setLaminaIdPin(elegirAlAzarPendiente(t.niveles[inicial].laminas, null, completados));
+    setPartidaPin((p) => p + 1);
+    setGanoPin(false);
+    setMostrarNivelesPin(false);
+  }, []);
+
+  const volverAlSelectorPin = useCallback(() => {
+    setTemaPinId(null);
+    setLaminaIdPin(null);
+    setGanoPin(false);
+    setMostrarNivelesPin(false);
+  }, []);
+
+  const marcarGanoPin = useCallback(() => setGanoPin(true), []);
+
+  const siguienteNivelIdxPin = temaPin && nivelIdxPin + 1 < temaPin.niveles.length
+    ? nivelIdxPin + 1
+    : undefined;
+  const numeroSiguienteNivelPin = siguienteNivelIdxPin !== undefined
+    ? temaPin.niveles[siguienteNivelIdxPin].numero
+    : null;
+  const enFronteraPin = nivelIdxPin === nivelMaximoPin;
+  const nivelesAlcanzadosPin = temaPin ? temaPin.niveles.slice(0, nivelMaximoPin + 1) : [];
+
+  const idsCompletosPin = useMemo(
+    () => (ganoPin && laminaActualPin && !completadosPin.includes(laminaActualPin.id)
+      ? [...completadosPin, laminaActualPin.id]
+      : completadosPin),
+    [ganoPin, laminaActualPin, completadosPin]
+  );
+  const faltanPin = nivelActualPin
+    ? nivelActualPin.laminas.filter((l) => !idsCompletosPin.includes(l.id)).length
+    : 0;
+  const seguirEnNivelPin = faltanPin > 0;
+
+  useEffect(() => {
+    if (!ganoPin || !temaPinId || !laminaActualPin) return;
+    if (completadosPin.includes(laminaActualPin.id)) return;
+    const siguiente = [...completadosPin, laminaActualPin.id];
+    setCompletadosPin(siguiente);
+    guardarCompletadosPintar(temaPinId, siguiente);
+  }, [ganoPin, temaPinId, laminaActualPin, completadosPin]);
+
+  const reiniciarPin = useCallback((idx) => {
+    if (!temaPin) return;
+    const siguiente = idx ?? nivelIdxPin;
+    const nivel = temaPin.niveles[siguiente];
+    if (!nivel) return;
+    setNivelIdxPin(siguiente);
+    setLaminaIdPin(elegirAlAzarPendiente(nivel.laminas, laminaIdPin, idsCompletosPin));
+    setPartidaPin((p) => p + 1);
+    setGanoPin(false);
+    setMostrarNivelesPin(false);
+  }, [temaPin, nivelIdxPin, laminaIdPin, idsCompletosPin]);
+
+  useEffect(() => {
+    if (nivelIdxPin > nivelMaximoPin) setNivelMaximoPin(nivelIdxPin);
+  }, [nivelIdxPin, nivelMaximoPin]);
+
+  useEffect(() => {
+    if (!temaPinId) return;
+    try {
+      localStorage.setItem(nivelKeyPintar(temaPinId), String(nivelMaximoPin));
+    } catch {
+      // Sin localStorage el progreso dura lo que dure la sesion.
+    }
+  }, [temaPinId, nivelMaximoPin]);
+
   // Al cerrar el drawer se vuelve a foja cero: la proxima vez que se abre,
   // arranca en el menu general de nuevo (pedido explicito, extendido del
   // "siempre elegir tema de nuevo" que ya regia solo para Memorice).
@@ -2497,6 +2693,12 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarNivelesDif(false);
     setDevDif(false);
     setNivelIdxDif(0);
+    setTemaPinId(null);
+    setLaminaIdPin(null);
+    setGanoPin(false);
+    setMostrarNivelesPin(false);
+    setNivelIdxPin(0);
+    setDevPin(false);
   }, [open]);
 
   // Volver desde donde sea: dentro de Memorice, si hay tema elegido vuelve
@@ -2520,12 +2722,16 @@ export default function MenuActividades({ onOpenChange }) {
       if (devDif) setDevDif(false);
       else if (temaDifId) volverAlSelectorDif();
       else volverAlMenu();
+    } else if (vista === 'pintar') {
+      if (devPin) setDevPin(false);
+      else if (temaPinId) volverAlSelectorPin();
+      else volverAlMenu();
     } else if (vista === 'rompecabezas') {
       if (catalogoRomp) setCatalogoRomp(false);
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
   useEffect(() => () => clearTimeout(avisoDevTimeoutRef.current), []);
@@ -2571,7 +2777,8 @@ export default function MenuActividades({ onOpenChange }) {
     || (vista === 'rompecabezas' && (mostrarNivelesRomp || mostrarPreviaRomp || mostrarPropuestaRomp))
     || (vista === 'contar' && mostrarNivelesContar)
     || (vista === 'secuencias' && mostrarNivelesSec)
-    || (vista === 'diferencias' && mostrarNivelesDif);
+    || (vista === 'diferencias' && mostrarNivelesDif)
+    || (vista === 'pintar' && mostrarNivelesPin);
 
   const cerrarSubModales = useCallback(() => {
     setMostrarNiveles(false);
@@ -2581,6 +2788,7 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarNivelesContar(false);
     setMostrarNivelesSec(false);
     setMostrarNivelesDif(false);
+    setMostrarNivelesPin(false);
   }, []);
 
   useEffect(() => {
@@ -2703,6 +2911,10 @@ export default function MenuActividades({ onOpenChange }) {
     mostrarVolver = true;
     tituloHeader = devDif ? 'Modo desarrollador' : temaDifId ? temaDif.nombre : 'Encuentra las diferencias';
     colorHeader = devDif ? undefined : temaDif?.header;
+  } else if (vista === 'pintar') {
+    mostrarVolver = true;
+    tituloHeader = devPin ? 'Modo desarrollador' : temaPinId ? temaPin.nombre : 'Pintar por números';
+    colorHeader = devPin ? undefined : temaPin?.header;
   }
   const esMenu = !colorHeader;
 
@@ -2790,6 +3002,9 @@ export default function MenuActividades({ onOpenChange }) {
                 {vista === 'diferencias' && temaDifId && !devDif && (
                   <span className="memory-nivel-badge">Nivel {temaDif?.niveles[nivelIdxDif]?.cantidad}</span>
                 )}
+                {vista === 'pintar' && temaPinId && (
+                  <span className="memory-nivel-badge">Nivel {nivelActualPin?.numero}</span>
+                )}
               </div>
               <div className="memory-header-actions">
                 {vista === 'memorice' && temaId && !cargando && !gano && (
@@ -2843,6 +3058,15 @@ export default function MenuActividades({ onOpenChange }) {
                     type="button"
                     className="memory-reiniciar-btn"
                     onClick={() => setMostrarNivelesDif(true)}
+                  >
+                    <ReloadOutlined /> Reiniciar
+                  </button>
+                )}
+                {vista === 'pintar' && temaPinId && !ganoPin && (
+                  <button
+                    type="button"
+                    className="memory-reiniciar-btn"
+                    onClick={() => setMostrarNivelesPin(true)}
                   >
                     <ReloadOutlined /> Reiniciar
                   </button>
@@ -2929,6 +3153,17 @@ export default function MenuActividades({ onOpenChange }) {
                         <img src={imagenDiferencias} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Encuentra las diferencias</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-tablet"
+                      onClick={irAPintar}
+                      aria-label="Pintar por números"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <img src={imagenPintar} alt="" className="memory-picker-img" />
+                      </span>
+                      <span className="memory-picker-nombre">Pintar por números</span>
                     </button>
                   </div>
                 </div>
@@ -3045,9 +3280,9 @@ export default function MenuActividades({ onOpenChange }) {
                   {/* Modal superpuesto (no un elemento en el flujo): no debe
                       correr ni achicar la fila de cartas al aparecer. */}
                   {gano && (
-                    <div className="memory-victoria-overlay">
+                    <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
-                        <span className="memory-victoria-emoji">🎉</span>
+                        <GiPartyPopper className="memory-victoria-icono fiesta" aria-hidden="true" />
                         <p>
                           {!siguienteTamano
                             ? '¡Completaste todos los niveles!'
@@ -3279,9 +3514,9 @@ export default function MenuActividades({ onOpenChange }) {
               ) : (
                 <>
                   {ganoRomp && (
-                    <div className="memory-victoria-overlay">
+                    <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
-                        <span className="memory-victoria-emoji">🧩</span>
+                        <GiPuzzle className="memory-victoria-icono rompecabezas" aria-hidden="true" />
                         <p>
                           {seguirEnNivelRomp
                             ? `¡Lo armaste! ${faltanRomp === 1 ? 'Te falta 1 rompecabezas' : `Te faltan ${faltanRomp} rompecabezas`} ${enFronteraRomp ? 'para el nivel siguiente' : 'de este nivel'}.`
@@ -3544,12 +3779,12 @@ export default function MenuActividades({ onOpenChange }) {
               ) : (
                 <>
                   {ganoNivelContar && (
-                    <div className="memory-victoria-overlay">
+                    <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
                         {siguienteNivelIdxContar === undefined ? (
                           <>
                             {/* Fin del juego: sin "jugar de nuevo" en bucle. */}
-                            <span className="memory-victoria-emoji">🏆</span>
+                            <GiTrophyCup className="memory-victoria-icono trofeo" aria-hidden="true" />
                             <p>¡Completaste el juego de contar!</p>
                             <p>Ya sabes contar hasta {NIVELES_CONTAR[nivelIdxContar].max}.</p>
                             <button
@@ -3569,7 +3804,7 @@ export default function MenuActividades({ onOpenChange }) {
                           </>
                         ) : (
                           <>
-                            <span className="memory-victoria-emoji">🔢</span>
+                            <GiAbacus className="memory-victoria-icono numeros" aria-hidden="true" />
                             <p>
                               {enFronteraContar
                                 ? `¡Nivel ${nivelIdxContar + 2} desbloqueado!`
@@ -3707,9 +3942,9 @@ export default function MenuActividades({ onOpenChange }) {
               ) : (
                 <>
                   {ganoSec && (
-                    <div className="memory-victoria-overlay">
+                    <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
-                        <span className="memory-victoria-emoji">🎉</span>
+                        <GiPartyPopper className="memory-victoria-icono fiesta" aria-hidden="true" />
                         <p>
                           {siguienteNivelIdxSec === undefined
                             ? '¡Completaste todas las secuencias!'
@@ -3879,9 +4114,9 @@ export default function MenuActividades({ onOpenChange }) {
               ) : (
                 <>
                   {ganoDif && (
-                    <div className="memory-victoria-overlay">
+                    <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
-                        <span className="memory-victoria-emoji">🎉</span>
+                        <GiPartyPopper className="memory-victoria-icono fiesta" aria-hidden="true" />
                         <p>
                           {seguirEnNivelDif
                             ? `¡Encontraste todo! ${faltanDif === 1 ? 'Te falta 1 juego' : `Te faltan ${faltanDif} juegos`} ${enFronteraDif ? 'para el nivel siguiente' : 'de este nivel'}.`
@@ -3943,6 +4178,116 @@ export default function MenuActividades({ onOpenChange }) {
                       par={parActualDif}
                       radio={RADIO_ACIERTO}
                       onCompletado={marcarGanoDif}
+                    />
+                  )}
+                </>
+              ))}
+
+              {vista === 'pintar' && devPin && (
+                <PintarDev temas={TEMAS_PINTAR_DEV} niveles={NIVELES_PINTAR} />
+              )}
+
+              {vista === 'pintar' && !devPin && (!temaPinId ? (
+                <div className="memory-picker">
+                  {TEMAS_PINTAR.length === 0 ? (
+                    <p className="gallery-empty">Muy pronto van a haber imágenes aquí.</p>
+                  ) : (
+                    <div className="memory-picker-grid">
+                      {TEMAS_PINTAR.map((t) => (
+                        <button
+                          type="button"
+                          key={t.id}
+                          className="memory-picker-tile"
+                          onClick={() => elegirTemaPin(t.id)}
+                          aria-label={`Pintar con ${t.nombre}`}
+                        >
+                          <span className="memory-picker-img-wrap">
+                            {dorsosSelector[t.id] ? (
+                              <img src={dorsosSelector[t.id]} alt="" className="memory-picker-img" />
+                            ) : (
+                              <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
+                            )}
+                          </span>
+                          <span className="memory-picker-nombre">{t.nombre}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="dif-dev-btn"
+                    onClick={() => setDevPin(true)}
+                  >
+                    <PictureOutlined /> Modo desarrollador
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {ganoPin && (
+                    <div className="memory-victoria-overlay victoria">
+                      <div className="memory-victoria">
+                        <GiPartyPopper className="memory-victoria-icono fiesta" aria-hidden="true" />
+                        <p>
+                          {seguirEnNivelPin
+                            ? `¡Lámina terminada! ${faltanPin === 1 ? 'Te falta 1' : `Te faltan ${faltanPin}`} ${enFronteraPin ? 'para el nivel siguiente' : 'de este nivel'}.`
+                            : siguienteNivelIdxPin === undefined
+                              ? '¡Completaste todos los niveles!'
+                              : enFronteraPin
+                                ? `¡Nivel ${numeroSiguienteNivelPin} desbloqueado!`
+                                : '¡Lámina terminada de nuevo!'}
+                        </p>
+                        <button
+                          type="button"
+                          className="memory-victoria-btn"
+                          onClick={() => reiniciarPin(seguirEnNivelPin ? nivelIdxPin : (siguienteNivelIdxPin ?? nivelIdxPin))}
+                        >
+                          {seguirEnNivelPin
+                            ? 'Otra lámina'
+                            : siguienteNivelIdxPin === undefined ? 'Jugar de nuevo' : 'Jugar el siguiente nivel'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {mostrarNivelesPin && (
+                    <div
+                      className="memory-victoria-overlay"
+                      onClick={() => setMostrarNivelesPin(false)}
+                    >
+                      <div className="memory-niveles-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="memory-niveles-header">
+                          <h3>Elige un nivel</h3>
+                          <button
+                            type="button"
+                            className="memory-cerrar-x memory-niveles-cerrar"
+                            onClick={() => setMostrarNivelesPin(false)}
+                            aria-label="Cerrar"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                        <div className="memory-niveles-grid">
+                          {nivelesAlcanzadosPin.map((n, i) => (
+                            <button
+                              type="button"
+                              key={n.numero}
+                              className={`memory-nivel-btn${i === nivelIdxPin ? ' activo' : ''}`}
+                              onClick={() => reiniciarPin(i)}
+                            >
+                              {n.numero}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {laminaActualPin && (
+                    <PintarJuego
+                      key={`${temaPinId}-${nivelIdxPin}-${laminaIdPin}-${partidaPin}`}
+                      imagen={laminaActualPin}
+                      nivel={nivelActualPin}
+                      onCompletado={marcarGanoPin}
                     />
                   )}
                 </>

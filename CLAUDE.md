@@ -11,6 +11,7 @@ Stack: React + Ant Design + Vite. Deploy: GitHub Pages.
 | Agregar imagen a galeria | skills/agregar-imagen-galeria.md | Cuando el usuario tenga fotos propias para sumar a una galeria (ej. Paw Patrol) |
 | Agregar set de Memorice | skills/agregar-set-memorice.md | Cuando el usuario traiga (o renueve) las fotos de personajes + fondo + dorso de un tema del juego Memorice |
 | Agregar rompecabezas | skills/agregar-rompecabezas.md | Cuando el usuario traiga imagenes para un nivel o tema nuevo del Rompecabezas (obliga a preguntar la orientacion: horizontal/cuadrado/vertical) |
+| Agregar lámina de Pintar por números | skills/agregar-pintar.md | Cuando el usuario traiga imágenes para Pintar por números (qué imagen sirve, carpeta por nivel) |
 | Conversaciones de los juguetes | skills/conversaciones-juguetes.md | Crear, reutilizar o programar mensajes del chat de los juguetes |
 
 ## Estructura
@@ -23,6 +24,7 @@ musica-kids/
 ├── src/assets/memorice/ ← Sets del juego Memorice (por tema), SI viajan en git
 ├── src/assets/rompecabezas/ ← Una foto por nivel del Rompecabezas (por tema), SI viajan en git
 ├── src/assets/diferencias/ ← Pares original/modificada de "Encuentra las diferencias" (<tema>/<par>/, los niveles salen de la cantidad de diferencias); coordenadas en src/data/diferencias.js (ahi esta el flujo completo)
+├── src/assets/pintar/  ← Láminas de "Pintar por números" (<tema>/nivel-<n>/), la cuadrícula se arma sola (utils/pintarNumeros.js)
 ├── src/data/songs.js   ← Lista de canciones
 ├── src/themes/         ← Paletas de colores
 └── skills/             ← Skills del proyecto
