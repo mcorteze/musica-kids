@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/elsa-chibi-C6u7RG5F.avif`;export{e as default};
