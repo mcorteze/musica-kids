@@ -7,6 +7,15 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Favicon nuevo (2026-10-21)
+- public/favicon.svg: corcheas blancas + estrella sobre degradado rosado de
+  la app (reemplaza el rayo por defecto de Vite). Commit + push 2026-10-21.
+
+## Celdas legibles para preescolares (2026-10-21)
+- PintarJuego: mientras se pinta, celda mínima 64 px (número ~31 px), máx 96.
+  El 3x relativo dejaba celdas chicas en láminas densas. Medido en 4 pantallas
+  x 11 temas: 64–96 px. Commit + push 2026-10-21.
+
 ## Lote 5 (2026-10-21)
 - OK: gato-negro, daisy-cara, donald-navidad. Cuadrícula descalzada (lámina
   quitada): minnie-mini, unicornio-cara, pooh-pensativo, pooh-sentado.

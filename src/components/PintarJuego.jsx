@@ -7,12 +7,17 @@ import { cuadricularImagen, numeroLamina } from '../utils/pintarNumeros';
 const GAP_CELDAS = 1;
 const BORDE_TABLERO = 6;
 const CELDA_MAX = 64;
-// Mientras se pinta, la lámina se ve AMPLIADA (ZOOM veces el tamaño que cabe
-// entero, con tope CELDA_MAX_ZOOM) para que el dedo del niño atine a cada
-// celda; se desplaza con dos dedos (o rueda/barras con mouse). Al terminar
-// vuelve a 1x para ver la imagen completa.
+// Mientras se pinta, la lámina se ve AMPLIADA para que un niño PREESCOLAR lea
+// los números y atine con el dedo: ZOOM veces el tamaño que cabe entero, pero
+// NUNCA menos de CELDA_MIN_JUEGO (en láminas de muchos cuadros o pantallas
+// chicas el 3x relativo seguía dejando celdas diminutas) ni más de
+// CELDA_MAX_ZOOM. Se desplaza con dos dedos (o rueda/barras con mouse). Al
+// terminar vuelve a 1x para ver la imagen completa.
 const ZOOM = 3;
+const CELDA_MIN_JUEGO = 64;
 const CELDA_MAX_ZOOM = 96;
+// Número de la celda: proporción del lado (64 px → número de ~30 px).
+const FUENTE_CELDA = 0.48;
 
 // Espera antes de avisar que la lámina está terminada (deja ver cómo se
 // quita la cuadrícula). El modal de victoria además trae su propio retardo
@@ -77,7 +82,9 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     return null;
   }, [faltan]);
   const terminado = Boolean(lamina) && numeroActual === null;
-  const tamCelda = terminado ? celdaEntera : Math.min(celdaEntera * ZOOM, Math.max(celdaEntera, CELDA_MAX_ZOOM));
+  const tamCelda = terminado || !celdaEntera
+    ? celdaEntera
+    : Math.min(Math.max(celdaEntera * ZOOM, CELDA_MIN_JUEGO), CELDA_MAX_ZOOM);
 
   useEffect(() => {
     if (!terminado) return;
@@ -220,7 +227,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     );
   }
 
-  const fuente = Math.max(8, Math.round(tamCelda * 0.42));
+  const fuente = Math.max(8, Math.round(tamCelda * FUENTE_CELDA));
   // La imagen original va detrás de las celdas, del tamaño exacto de la
   // cuadrícula: se asoma tenue a través de las celdas sin pintar.
   const anchoGrilla = lamina.columnas * tamCelda + (lamina.columnas - 1) * GAP_CELDAS;
