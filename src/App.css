@@ -3689,41 +3689,6 @@ body {
   display: none;
 }
 
-.pintar-paleta {
-  flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  padding: 8px 8px 4px;
-}
-
-/* Mismo tamaño en todos los estados (el que toca solo suma un anillo),
-   para que la paleta no se reacomode al pasar de un número al siguiente. */
-.pintar-color {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 17px;
-  font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
-  transition: opacity 0.25s ease, box-shadow 0.25s ease;
-}
-
-.pintar-color.claro {
-  color: #2f2f45;
-  text-shadow: none;
-}
-
-.pintar-color.despues {
-  opacity: 0.6;
-}
-
 /* Modo desarrollador de Pintar: una fila por lámina con la original y su
    versión pintada entera en cada nivel (PintarDev). */
 .pintar-dev-fila {
@@ -4040,10 +4005,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.pintar-color.actual {
-  box-shadow: 0 0 0 4px #ffffff, 0 0 0 7px #7C3AED, 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* Arriba del todo (margin-bottom:auto), igual que el catalogo de

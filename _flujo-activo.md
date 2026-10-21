@@ -7,6 +7,13 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Lote 5 (2026-10-21)
+- OK: gato-negro, daisy-cara, donald-navidad. Cuadrícula descalzada (lámina
+  quitada): minnie-mini, unicornio-cara, pooh-pensativo, pooh-sentado.
+- Quitada la paleta de círculos bajo la lámina (pedido explícito).
+- Zoom 3x confirmado en el juego oficial (build y versión publicada).
+- Commit + push 2026-10-21.
+
 ## Pintar por números oficial = juego pixel (2026-10-21)
 - Decisión del usuario: el juego de cuadrícula (interno "pixel") es el oficial,
   publicado como "Pintar por números"; el de niveles = "Pintar por números

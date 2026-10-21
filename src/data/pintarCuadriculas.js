@@ -56,4 +56,11 @@ export default {
   'unicornio/unicornio-perfil': { x: 0, y: 0, ancho: 40.31, alto: 45.41, columnas: 16, filas: 17 },
   'unicornio/unicornio-pony': { x: 0, y: 0, ancho: 17.59, alto: 17, columnas: 27, filas: 27 },
   'winnie-pooh/pooh-cara': { x: 0, y: 0, ancho: 20.22, alto: 22.15, columnas: 23, filas: 20 },
+  'halloween/gato-negro': { x: 0, y: 0, ancho: 13.62, alto: 13.41, columnas: 21, filas: 32 },
+  'mickey/daisy-cara': { x: 0, y: 0, ancho: 26.25, alto: 29.54, columnas: 20, filas: 24 },
+  'mickey/donald-navidad': { x: 0, y: 0, ancho: 12.47, alto: 10.44, columnas: 32, filas: 48 },
+  'mickey/minnie-mini': { x: 0, y: 0, ancho: 14.58, alto: 24, columnas: 24, filas: 17 },
+  'unicornio/unicornio-cara': { x: 0, y: 0, ancho: 9.52, alto: 11.36, columnas: 23, filas: 25 },
+  'winnie-pooh/pooh-pensativo': { x: 0, y: 0, ancho: 25.45, alto: 15.27, columnas: 20, filas: 52 },
+  'winnie-pooh/pooh-sentado': { x: 0, y: 0, ancho: 30.76, alto: 16.72, columnas: 21, filas: 50 },
 };

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CheckOutlined } from '@ant-design/icons';
-import { cuadricularImagen, esColorClaro, numeroLamina } from '../utils/pintarNumeros';
+import { cuadricularImagen, numeroLamina } from '../utils/pintarNumeros';
 
 // Tienen que coincidir con App.css: GAP_CELDAS es el gap de .pintar-tablero
 // y BORDE_TABLERO su padding. CELDA_MAX evita celdas gigantes en un monitor
@@ -265,24 +264,6 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
             );
           })}
         </div>
-      </div>
-
-      <div className="pintar-paleta" aria-label="Colores">
-        {lamina.paleta.map((color, idx) => {
-          const n = idx + 1;
-          const listo = faltan[n] === 0;
-          const estado = listo ? 'listo' : n === numeroActual ? 'actual' : 'despues';
-          return (
-            <span
-              key={n}
-              className={`pintar-color ${estado}${esColorClaro(color) ? ' claro' : ''}`}
-              style={{ background: color }}
-              aria-label={`Color ${numeroLamina(n)}${listo ? ', listo' : ''}`}
-            >
-              {listo ? <CheckOutlined /> : numeroLamina(n)}
-            </span>
-          );
-        })}
       </div>
     </div>
   );
