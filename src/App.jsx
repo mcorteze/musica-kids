@@ -37,7 +37,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState('off');
-  const [drivingStage, setDrivingStage] = useState('off'); // 'off' | 'confirm' | 'active'
+  const [drivingActive, setDrivingActive] = useState(false);
   // Pagina de entrada en todos los responsives: al cargar se ve la grilla de
   // grupos en vez del reproductor.
   const [showGroupMenu, setShowGroupMenu] = useState(true);
@@ -172,10 +172,8 @@ export default function App() {
     });
   }, []);
 
-  const handleOpenDrivingConfirm = useCallback(() => setDrivingStage('confirm'), []);
-  const handleCancelDriving = useCallback(() => setDrivingStage('off'), []);
-  const handleConfirmDriving = useCallback(() => setDrivingStage('active'), []);
-  const handleExitDriving = useCallback(() => setDrivingStage('off'), []);
+  const handleOpenDriving = useCallback(() => setDrivingActive(true), []);
+  const handleExitDriving = useCallback(() => setDrivingActive(false), []);
 
   // En el modo conduccion, elegir un grupo (carrusel de caratulas) arranca
   // directo en la primera cancion de ese grupo; una cancion puntual se
@@ -189,7 +187,7 @@ export default function App() {
     }
   }, [getGroupSongs]);
 
-  useWakeLock(drivingStage === 'active');
+  useWakeLock(drivingActive);
 
   // Elegir un grupo en la pagina de menu la cierra y pasa al reproductor
   // (cambiar de grupo no interrumpe lo que suena: la cancion actual sigue
@@ -278,7 +276,7 @@ export default function App() {
       <div
         className={`app-shell${showGroupMenu ? ' menu-open' : ''}`}
         style={{ background: showGroupMenu ? menuTheme.gradient : theme.gradient }}
-        inert={drivingStage !== 'off'}
+        inert={drivingActive}
       >
         {currentSong && <audio ref={audioRef} src={currentSong.file} preload="metadata" />}
 
@@ -312,7 +310,7 @@ export default function App() {
             <MenuActividades onOpenChange={setActivitiesOpen} />
             <button
               type="button"
-              onClick={handleOpenDrivingConfirm}
+              onClick={handleOpenDriving}
               className="theme-trigger-btn driving-trigger-btn"
               aria-label="Modo conducción"
             >
@@ -390,9 +388,8 @@ export default function App() {
           />
         )}
 
-        {drivingStage !== 'off' && (
+        {drivingActive && (
           <DrivingMode
-            stage={drivingStage}
             song={currentSong}
             isPlaying={isPlaying}
             onPlayPause={handlePlayPause}
@@ -410,8 +407,6 @@ export default function App() {
             groups={groups}
             activeGroup={activeGroup}
             onPickGroup={handleDrivingPickGroup}
-            onConfirm={handleConfirmDriving}
-            onCancel={handleCancelDriving}
             onExit={handleExitDriving}
           />
         )}

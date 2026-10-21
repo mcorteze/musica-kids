@@ -10,7 +10,6 @@ import {
   CloseOutlined,
   AppstoreOutlined,
   CheckCircleFilled,
-  CarOutlined,
 } from '@ant-design/icons';
 import ScrubBar from './ScrubBar';
 
@@ -22,7 +21,6 @@ function formatTime(seconds) {
 }
 
 export default function DrivingMode({
-  stage,
   song,
   isPlaying,
   onPlayPause,
@@ -40,8 +38,6 @@ export default function DrivingMode({
   groups,
   activeGroup,
   onPickGroup,
-  onConfirm,
-  onCancel,
   onExit,
 }) {
   const pickerRef = useRef(null);
@@ -64,22 +60,20 @@ export default function DrivingMode({
   }, []);
 
   useEffect(() => {
-    if (stage !== 'active') return;
     centerCurrentSong(listPlacedRef.current ? 'smooth' : 'auto');
     listPlacedRef.current = true;
-  }, [stage, song?.id, songs, centerCurrentSong]);
+  }, [song?.id, songs, centerCurrentSong]);
 
   // El alto de cada fila sigue al tamano de letra, que depende del ancho de
   // pantalla: al girar el telefono o redimensionar cambia, y la cancion
   // actual tiene que seguir al centro.
   useEffect(() => {
-    if (stage !== 'active') return;
     const el = listRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => centerCurrentSong('auto'));
     ro.observe(el);
     return () => ro.disconnect();
-  }, [stage, centerCurrentSong]);
+  }, [centerCurrentSong]);
 
   // Al entrar, dejar el grupo activo a la vista sin que haya que buscarlo.
   // Calculado a mano (no scrollIntoView): .driving-screen tiene overflow
@@ -87,34 +81,13 @@ export default function DrivingMode({
   // se vea scrollbar, y scrollIntoView terminaba corriendolo tambien a el
   // (ademas del picker), desplazando todo el fondo unos pixeles.
   useEffect(() => {
-    if (stage !== 'active') return;
     const el = pickerRef.current;
     if (!el) return;
     const card = el.querySelector('.driving-group-card.active');
     if (card) {
       el.scrollLeft = card.offsetLeft - (el.clientWidth - card.clientWidth) / 2;
     }
-  }, [stage, activeGroup]);
-
-  if (stage === 'confirm') {
-    return createPortal(
-      <div className="driving-confirm-overlay" onClick={onCancel}>
-        <div className="driving-confirm-modal" onClick={(e) => e.stopPropagation()}>
-          <CarOutlined className="driving-confirm-icon" aria-hidden="true" />
-          <h2>¿Activar modo conducción?</h2>
-          <div className="driving-confirm-actions">
-            <button type="button" className="driving-confirm-btn ghost" onClick={onCancel}>
-              Cancelar
-            </button>
-            <button type="button" className="driving-confirm-btn solid" onClick={onConfirm}>
-              Activar
-            </button>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  }
+  }, [activeGroup]);
 
   return createPortal(
     <div className="driving-screen">

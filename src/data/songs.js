@@ -556,7 +556,7 @@ const songs = [
     title: 'No Acepto',
     artist: 'Héctor Ortiz',
     file: 'music/toy-story-no-acepto.mp3',
-    cover: 'covers/buzz-lightyear.jpg',
+    cover: 'covers/forky.jpg',
     groups: ['toy-story'],
   },
   {
