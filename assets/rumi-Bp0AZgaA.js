@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/rumi-BPgRlxYa.avif`;export{e as default};

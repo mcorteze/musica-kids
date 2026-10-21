@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/olaf-cara-CtjY7kM7.avif`;export{e as default};

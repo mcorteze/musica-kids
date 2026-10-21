@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bluey-cara-DUw4MLyj.avif`;export{e as default};

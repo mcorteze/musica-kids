@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-cara-B9ZCjoMz.avif`;export{e as default};

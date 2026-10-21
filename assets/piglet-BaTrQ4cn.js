@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/piglet-BmpbFmaO.avif`;export{e as default};

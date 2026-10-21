@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/daisy-cara-CpFr7lpQ.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-mini-DcM8P5ic.avif`;export{e as default};

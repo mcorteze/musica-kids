@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/gato-negro-lCmjCGGC.avif`;export{e as default};

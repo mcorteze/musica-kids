@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mariposa-DK58KNT4.avif`;export{e as default};

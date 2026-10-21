@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/tigger-BN5LKXxu.avif`;export{e as default};

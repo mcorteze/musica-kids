@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-pensativo-CSK1FQkQ.avif`;export{e as default};

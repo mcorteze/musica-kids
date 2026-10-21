@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mira-C_i9J5X6.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/chase-TrJmDiZA.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/anna-cara-DdvYIUUU.avif`;export{e as default};

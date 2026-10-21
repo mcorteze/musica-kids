@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bingo-B0mFWFmd.avif`;export{e as default};

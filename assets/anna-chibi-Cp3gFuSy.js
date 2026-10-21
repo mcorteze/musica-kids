@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/anna-chibi-Y8CNTD-3.avif`;export{e as default};

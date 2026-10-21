@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/hello-kitty-C7R4w3mp.avif`;export{e as default};

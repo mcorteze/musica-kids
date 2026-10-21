@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/goofy-mini-CT_oUPMA.avif`;export{e as default};

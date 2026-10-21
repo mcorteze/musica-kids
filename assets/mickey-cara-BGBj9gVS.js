@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/mickey-cara-iv5nz950.avif`;export{e as default};

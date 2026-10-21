@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-sonriente-BCt8Q-Cj.avif`;export{e as default};

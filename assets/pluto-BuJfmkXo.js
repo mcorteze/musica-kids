@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pluto-C5o2G3he.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-sentado-DMY4fnuX.avif`;export{e as default};

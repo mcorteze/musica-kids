@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/elsa-vestido-NQF2i_6Y.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-estrella-heEuBGkK.avif`;export{e as default};

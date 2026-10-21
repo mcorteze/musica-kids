@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-con-miel-D27uqDU7.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pluto-cara-DbWeGS8z.avif`;export{e as default};

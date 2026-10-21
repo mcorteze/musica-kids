@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/marciano-DOdvgkmi.avif`;export{e as default};

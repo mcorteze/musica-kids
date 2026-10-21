@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/daisy-mini-XSDXkM4z.avif`;export{e as default};

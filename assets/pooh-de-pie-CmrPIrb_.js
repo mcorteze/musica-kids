@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-de-pie-BHa7y3T9.avif`;export{e as default};

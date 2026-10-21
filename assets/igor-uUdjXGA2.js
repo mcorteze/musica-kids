@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/igor-CxSRmizb.avif`;export{e as default};

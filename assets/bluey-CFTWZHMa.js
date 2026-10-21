@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/bluey-5VpFu_z1.avif`;export{e as default};

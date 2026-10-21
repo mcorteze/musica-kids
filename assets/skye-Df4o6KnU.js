@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/skye-DnwaGS1g.avif`;export{e as default};

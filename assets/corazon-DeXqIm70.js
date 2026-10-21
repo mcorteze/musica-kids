@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/corazon-DRchzWJl.avif`;export{e as default};

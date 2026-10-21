@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/elsa-Cv_he7PS.avif`;export{e as default};

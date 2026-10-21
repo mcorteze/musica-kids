@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-mini-DWq1KRy9.avif`;export{e as default};

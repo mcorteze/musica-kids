@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-perfil-_z0hk6_q.avif`;export{e as default};

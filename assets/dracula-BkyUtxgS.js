@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/dracula-CIpdzi30.avif`;export{e as default};

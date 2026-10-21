@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-pequeno-CTd3s9VG.avif`;export{e as default};

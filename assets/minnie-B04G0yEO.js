@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/minnie-HCRqCg0d.avif`;export{e as default};

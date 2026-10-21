@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/ryder-DBXKfUcc.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-CulrCPuQ.avif`;export{e as default};

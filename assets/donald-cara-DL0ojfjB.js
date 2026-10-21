@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-cara-C0nqx5um.avif`;export{e as default};

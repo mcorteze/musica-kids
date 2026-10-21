@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-abeja-w3OxXGdA.avif`;export{e as default};

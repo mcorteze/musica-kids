@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/senor-cara-de-papa-D83q5ktE.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/arcoiris-lapiz-BDwgwpua.avif`;export{e as default};

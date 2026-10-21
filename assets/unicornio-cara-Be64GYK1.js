@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-cara-DMUEaczZ.avif`;export{e as default};

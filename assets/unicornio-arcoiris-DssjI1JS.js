@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-arcoiris-BFlvi8bZ.avif`;export{e as default};

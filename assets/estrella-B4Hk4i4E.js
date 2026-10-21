@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/estrella-CGN8M_bs.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pikachu-763hP6ho.avif`;export{e as default};

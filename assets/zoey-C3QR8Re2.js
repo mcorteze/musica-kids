@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/zoey-OihvX5Ia.avif`;export{e as default};

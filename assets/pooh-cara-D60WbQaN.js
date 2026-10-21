@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/pooh-cara-BjEjPZ7P.avif`;export{e as default};

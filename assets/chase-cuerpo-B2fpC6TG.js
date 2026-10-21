@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/chase-cuerpo-D1ulsEyi.avif`;export{e as default};

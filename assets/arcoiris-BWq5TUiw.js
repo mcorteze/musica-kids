@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/arcoiris-DELHQF8R.avif`;export{e as default};

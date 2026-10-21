@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/fantasma-bruja-kselZTuc.avif`;export{e as default};

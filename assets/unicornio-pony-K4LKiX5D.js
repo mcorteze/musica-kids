@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/unicornio-pony-CPom-GPA.avif`;export{e as default};

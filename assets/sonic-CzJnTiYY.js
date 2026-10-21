@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/sonic-_iobFxHt.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/donald-navidad-BnlwjyrZ.avif`;export{e as default};

@@ -1,0 +1,1 @@
+var e=`/musica-kids/assets/goofy-cara-CCAw5BPX.avif`;export{e as default};
