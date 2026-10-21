@@ -24,7 +24,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 - Portadas de los 8 temas propios reemplazadas por logos de internet
   (Commons, 1000logos; Halloween y Unicornios = emoji Noto). Regla en skill.
 - Descartados y borrados: chase-casco, jessie, logo-toy-story.
-- Sin commit.
+- Commit + push 2026-10-21 (73058c6).
 
 ## Páginas del modo desarrollador compactas (2026-10-20)
 - Bloque "VERSION COMPACTA" en App.css acotado a .dif-dev / .romp-catalogo
@@ -32,17 +32,17 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   sticky con scroll propio, controles small, previa 220. Arreglado
   .dif-dev-acciones--fila (salía apilado). Verificado con capturas 1366x768
   y 1280x650. Sin capturar: drawer "afinar" y modal de propuesta de
-  Rompecabezas (solo cambian sus botones). Sin commit.
+  Rompecabezas (solo cambian sus botones). Commit + push 2026-10-21.
 
 ## Visibilidad de Actividades (2026-10-20)
 - Ya no depende del responsive: publicados en todas las vistas (móvil
   incluido); no publicados (.memory-solo-dev / soloDev) y herramientas
   (.dif-dev-btn, .romp-catalogo-btn) solo con modo desarrollador. Build OK,
-  sin captura. Sin commit.
+  sin captura. Commit + push 2026-10-21.
 
 ## Diferencias en vertical (2026-10-20)
 - DiferenciasJuego calcula lado a lado vs apiladas y usa la que da
-  imágenes más grandes (.dif-par--apiladas). Build OK, sin captura. Sin commit.
+  imágenes más grandes (.dif-par--apiladas). Build OK, sin captura. Commit + push 2026-10-21.
 
 ## Pintar pixel art — carga masiva (2026-10-20)
 - 72 originales nuevos recortados en pintar-pixel/<tema>/originales/ desde
@@ -60,7 +60,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 - Portadas solo se ven en el selector cuando el tema tenga ≥1 lámina; hoy
   los temas nuevos aparecen únicamente en "Establecer cuadrícula".
 - [ ] Usuario establece cuadrículas → recrear láminas (pintar_desde_cuadricula.py).
-- [ ] Sin commit.
+- [ ] Commit + push 2026-10-21.
 
 ## Decisiones Pintar por números (2026-10-19)
 - Imágenes propias del juego (no se reusan las de Rompecabezas), en
@@ -219,7 +219,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   el AVIF 1 a 1 con el patrón (15/15 colores, 0 mezclas). Usuario aclaró que
   la idea era respetar las líneas del patrón → Elsa cargada a tamaño
   completo: frozen/por-asignar/elsa-patron.pixel.avif (86×108).
-  [ ] Revisar en el Modo desarrollador y en tablet (9.288 celdas). Sin commit.
+  [ ] Revisar en el Modo desarrollador y en tablet (9.288 celdas). Commit + push 2026-10-21.
 - 2026-10-20 Usuario: "no entendí; no veo la cuadrícula; debería verse la
   imagen original dividida en la grid en posición exacta". Hecho: extractor
   guarda <nombre>.patron.avif (recorte desde la 1ª línea); Modo
@@ -238,7 +238,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   clave <tema>/<nombre>). Juego: cuadricularConGrilla (percentil 75 del
   centro, MISMO_COLOR 5500, raros al frecuente). Elsa original en
   frozen/por-asignar/elsa-patron.cuadricula.avif. [ ] Usuario ajusta y pega.
-  Sin commit.
+  Commit + push 2026-10-21.
 - 2026-10-20 Agregada frozen/por-asignar/elsa-chibi.cuadricula.avif (pixel art
   ~23×28 con cuadrícula, Downloads/"Image recherchée visuellement.jpg").
   Descartados (borrados) elsa-patron.cuadricula y olaf-nieve-3d.
@@ -260,7 +260,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   (recrearConGrilla = vista previa, laminaDePixelArt = juego), sin niveles,
   la cuadrícula manda, máx. 15 colores. Primera lámina: frozen/elsa-chibi
   (24×29, 9 colores), verificada jugando completa sin servidor.
-  [ ] Siguiente imagen del usuario. Sin commit.
+  [ ] Siguiente imagen del usuario. Commit + push 2026-10-21.
 - 2026-10-20 DECISIÓN: "Pintar pixel art" es la opción que se queda (mucho
   mejor). Pero "Pintar por números" NO se quita todavía: está en uso. Plan:
   1) crear más láminas pixel art (sigue experimental, solo laptop);
