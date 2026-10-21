@@ -7,6 +7,21 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Pintar por números oficial = juego pixel (2026-10-21)
+- Decisión del usuario: el juego de cuadrícula (interno "pixel") es el oficial,
+  publicado como "Pintar por números"; el de niveles = "Pintar por números
+  (descontinuado)", solo modo dev. Verificado en menú (móvil/laptop, con y sin dev).
+- Casilla "Requiere limpieza" en Procesados (viaja en Copiar).
+- Recreadas con cuadrícula corregida: anna-chibi, marciano, senor-cara-de-papa.
+  Commit + push 2026-10-21.
+
+## Descartar en Procesados + Rubble 40x30 (2026-10-21)
+- Establecer cuadrícula: Descartar también en Procesados (borra original +
+  lámina). Rubble recreada con 40x30.
+- Pintar pixel art parte directo con lámina al azar pendiente (sin lista que
+  muestre la figura); victoria "Te faltan N" + "Otra lámina". Verificado.
+  Commit + push 2026-10-21.
+
 ## Pintar ampliado 3x (2026-10-21)
 - PintarJuego (ambos juegos de pintar): celdas 3x (tope 96 px) mientras se
   pinta; 1 dedo pinta, 2 dedos desplazan (mouse: rueda/barras); auto-scroll

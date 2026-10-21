@@ -1,4 +1,4 @@
-// Juego "Pintar pixel art" (EXPERIMENTAL, solo laptop): la cuadrícula la
+// Juego "Pintar pixel art" (oficial, "Pintar por números" en el menú): la cuadrícula la
 // establece el usuario sobre una imagen original y manda; no hay niveles.
 //
 // - recrearConGrilla(img, grilla): ajusta las líneas de la cuadrícula a las

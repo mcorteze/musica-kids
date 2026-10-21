@@ -1,5 +1,10 @@
 # Agregar lámina de Pintar por números — musica-kids
 
+> **2026-10-21: el juego OFICIAL "Pintar por números" es el de cuadrícula
+> (interno "pixel", sección más abajo). Lo que sigue hasta esa sección es el
+> juego viejo de niveles, hoy "Pintar por números (descontinuado)", visible
+> solo en modo desarrollador. Láminas nuevas van al oficial.**
+>
 > Incorpora imágenes nuevas al juego Pintar por números. Las imágenes las
 > trae SIEMPRE el usuario (nunca se buscan en internet) y se convierten a
 > AVIF. Lo que distingue esta skill: **no hay nada que anotar**. La
@@ -56,13 +61,13 @@
   mitad de las celdas: es lo primero y lo más largo de pintar. Avisar al
   usuario si trae imágenes así.
 
-## Juego APARTE: "Pintar pixel art" (experimental, solo laptop) — 2026-10-20
+## Juego OFICIAL "Pintar por números" (interno "Pintar pixel art") — 2026-10-21
 
-DECISIÓN del usuario (explícita, tras varias vueltas): el método de
-cuadrícula NO va en "Pintar por números". Es un SEGUNDO juego experimental,
-solo laptop (`.memory-solo-laptop`, badge "Experimental"), para desarrollarlo
-y después decidir si se unifican o queda uno. "Pintar por números" quedó
-idéntico a lo publicado (commit 78c787d): niveles, "Asignar niveles", propuesta.
+Nació el 2026-10-20 como juego experimental aparte. El 2026-10-21 el usuario
+decidió: este es el oficial, publicado para todos con el nombre "Pintar por
+números"; el de niveles pasa a "Pintar por números (descontinuado)", solo en
+modo desarrollador. En código sigue llamándose "pixel" (`vista === 'pixel'`,
+`src/assets/pintar-pixel/`, `PintarPixelDev`, `utils/pintarPixel.js`).
 
 En el juego nuevo la CUADRÍCULA MANDA: no hay niveles ni tamaños distintos.
 Flujo (exactamente este, pedido del usuario):
@@ -92,12 +97,17 @@ Flujo (exactamente este, pedido del usuario):
    (PintarPixelDev + PintarCuadriculaEditor): marca esquinas + columnas/filas,
    ajusta, ve la vista previa (mismo cálculo que el script), Guardar →
    "Copiar" (los borradores y descartes se limpian al copiar). Tabs "En
-   preparación" (originales sin lámina, con casilla "Descartar") /
-   "Procesados" (muestra la lámina recreada).
+   preparación" (originales sin lámina) / "Procesados" (muestra la lámina
+   recreada); ambos con casilla "Descartar".
 3. El usuario pega el texto → anotarlo en `src/data/pintarCuadriculas.js`
    (registro; clave `<tema>/<nombre>`, valores sobre el ORIGINAL). Si trae un
-   bloque "Descartar en Pintar pixel art", borrar esos originales (y su
-   entrada en pintarCuadriculas.js si la hubiera).
+   bloque "Descartar en Pintar pixel art", borrar esos originales, su lámina
+   en `laminas/` si la tiene y su entrada en pintarCuadriculas.js si la hubiera.
+   Si trae una cuadrícula para una lámina YA creada, se recrea encima.
+   Si trae un bloque "Limpiar en Pintar pixel art" (casilla "Requiere
+   limpieza" de Procesados): revisar esa lámina contra su original y quitar
+   líneas o manchas raras (cuadros sueltos de un color que no corresponde,
+   filas corridas); mostrar antes/después y regrabarla sin pérdida.
 4. RECREAR la lámina desde cero con esa cuadrícula:
    `py herramientas/pintar_desde_cuadricula.py <original> <salida.png> --x .. --y .. --ancho .. --alto .. --columnas .. --filas .. --vista v.png`
    → (2026-10-20) ajusta cada línea interior de la cuadrícula a la línea real
@@ -113,9 +123,12 @@ Flujo (exactamente este, pedido del usuario):
    y verificar decodificando (0 pixeles distintos). El juego la lee con
    `laminaDePixelArt` (utils/pintarPixel.js): colores exactos, sin fusionar.
 
-Juego: tema (dorso del Memorice) → lista de láminas (miniatura nítida, marca
-"Terminada") → se pinta con PintarJuego (`calcular`, `nitida`) → victoria
-"Elegir otra lámina". Tamaño ideal: 20–45 cuadros por lado.
+Juego: tema (dorso del Memorice / portada) → parte DIRECTO con una lámina al
+azar entre las pendientes (como los demás juegos: nunca una lista que muestre
+la figura antes de pintarla; pedido explícito 2026-10-21) → se pinta con
+PintarJuego (`calcular`, `nitida`) → victoria "Te faltan N" + "Otra lámina"
+(sortea entre las que faltan; con todas terminadas, entre todas). Tamaño
+ideal: 20–45 cuadros por lado.
 
 ## Modo desarrollador (PintarDev.jsx)
 

@@ -6,8 +6,10 @@ import { elegirEstadoDev } from '../utils/estadoDev';
 import {
   guardarBorradoresCuadricula,
   guardarDescartesPixel,
+  guardarLimpiezasPixel,
   leerBorradoresCuadricula,
   leerDescartesPixel,
+  leerLimpiezasPixel,
   textoCuadriculas,
 } from '../utils/cuadriculasPintar';
 
@@ -22,8 +24,9 @@ function cargarElemento(cargar) {
 
 // Una imagen: miniatura que abre el editor sobre su ORIGINAL. En "Procesados"
 // la miniatura es la lámina ya recreada (nítida, 1 pixel = 1 celda); en "En
-// preparación" es el original, con su casilla "Descartar".
-function TarjetaOriginal({ original, lamina, estado, descartada, onDescartar, onAbrir }) {
+// preparación" es el original. Ambas llevan su casilla "Descartar"; las de
+// "Procesados" además "Requiere limpieza" (líneas o manchas raras en la lámina).
+function TarjetaOriginal({ original, lamina, estado, descartada, onDescartar, limpiar, onLimpiar, onAbrir }) {
   const [img, setImg] = useState(null);
   const [vista, setVista] = useState(null);
   useEffect(() => {
@@ -55,11 +58,16 @@ function TarjetaOriginal({ original, lamina, estado, descartada, onDescartar, on
           Descartar
         </Checkbox>
       )}
+      {onLimpiar && (
+        <Checkbox checked={limpiar} onChange={onLimpiar}>
+          Requiere limpieza
+        </Checkbox>
+      )}
     </div>
   );
 }
 
-// MODO DESARROLLADOR de "Pintar pixel art" (experimental):
+// MODO DESARROLLADOR de "Pintar pixel art" (juego oficial "Pintar por números"):
 // página "Establecer cuadrícula". Flujo:
 // 1. Claude agrega la imagen que trae el usuario en
 //    src/assets/pintar-pixel/<tema>/originales/<nombre>.avif.
@@ -71,13 +79,16 @@ function TarjetaOriginal({ original, lamina, estado, descartada, onDescartar, on
 //    src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif (1 pixel = 1 celda,
 //    máx. 15 colores). La cuadrícula manda: no hay niveles.
 // Tabs "En preparación" (originales sin lámina; cada uno con "Descartar") /
-// "Procesados" (ya tienen lámina: se ve la lámina para revisarla). Lo marcado
-// para descartar viaja en el mismo texto de "Copiar" y Claude borra el original.
+// "Procesados" (ya tienen lámina: se ve la lámina para revisarla). En los dos
+// se puede marcar "Descartar" y en "Procesados" también "Requiere limpieza":
+// viajan en el mismo texto de "Copiar"; Claude borra el original (y la
+// lámina, si ya la tenía) o limpia la lámina.
 export default function PintarPixelDev({ temas: todosLosTemas, cuadriculas }) {
   const [estadoElegido, setEstadoElegido] = useState(null);
   const [tabId, setTabId] = useState(null);
   const [borradores, setBorradores] = useState(leerBorradoresCuadricula);
   const [descartes, setDescartes] = useState(leerDescartesPixel);
+  const [limpiezas, setLimpiezas] = useState(leerLimpiezasPixel);
   // { clave, img } de la imagen abierta en el editor.
   const [editando, setEditando] = useState(null);
   // false | 'ok' | 'error'
@@ -90,13 +101,18 @@ export default function PintarPixelDev({ temas: todosLosTemas, cuadriculas }) {
   useEffect(() => {
     guardarDescartesPixel(descartes);
   }, [descartes]);
+  useEffect(() => {
+    guardarLimpiezasPixel(limpiezas);
+  }, [limpiezas]);
   useEffect(() => () => clearTimeout(copiadoTimeoutRef.current), []);
 
   // Borradores que todavía no están (o difieren de lo) anotado en el código.
   const igual = (a, b) => a && b && ['x', 'y', 'ancho', 'alto', 'columnas', 'filas'].every((k) => Math.abs(a[k] - b[k]) < 0.005);
   const sinCopiar = Object.fromEntries(Object.entries(borradores).filter(([k, g]) => !igual(g, cuadriculas[k])));
-  const cantidad = Object.keys(sinCopiar).length + descartes.length;
-  const alternarDescarte = (clave) => setDescartes((prev) => (prev.includes(clave) ? prev.filter((c) => c !== clave) : [...prev, clave]));
+  const cantidad = Object.keys(sinCopiar).length + descartes.length + limpiezas.length;
+  const alternar = (setLista) => (clave) => setLista((prev) => (prev.includes(clave) ? prev.filter((c) => c !== clave) : [...prev, clave]));
+  const alternarDescarte = alternar(setDescartes);
+  const alternarLimpieza = alternar(setLimpiezas);
 
   const copiar = () => {
     const avisar = (valor) => {
@@ -109,11 +125,12 @@ export default function PintarPixelDev({ temas: todosLosTemas, cuadriculas }) {
       return;
     }
     const copiadas = Object.keys(sinCopiar);
-    navigator.clipboard.writeText(textoCuadriculas(sinCopiar, descartes))
+    navigator.clipboard.writeText(textoCuadriculas(sinCopiar, descartes, limpiezas))
       .then(() => {
         avisar('ok');
         setBorradores((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => !copiadas.includes(k))));
         setDescartes([]);
+        setLimpiezas([]);
       })
       .catch(() => avisar('error'));
   };
@@ -164,7 +181,7 @@ export default function PintarPixelDev({ temas: todosLosTemas, cuadriculas }) {
         </div>
         <div className="dif-dev-barra pintar-dev-propuesta">
           <span>
-            Cuadrículas sin copiar: <strong>{Object.keys(sinCopiar).length}</strong> · Descartes: <strong>{descartes.length}</strong>
+            Cuadrículas sin copiar: <strong>{Object.keys(sinCopiar).length}</strong> · Descartes: <strong>{descartes.length}</strong> · Limpiezas: <strong>{limpiezas.length}</strong>
           </span>
           <button type="button" className="dif-dev-boton" onClick={copiar} disabled={cantidad === 0}>
             {copiado === 'ok' ? '¡Copiado!' : 'Copiar'}
@@ -205,7 +222,9 @@ export default function PintarPixelDev({ temas: todosLosTemas, cuadriculas }) {
                   lamina={lamina}
                   estado={marca}
                   descartada={descartes.includes(clave)}
-                  onDescartar={estado === 'afinar' ? () => alternarDescarte(clave) : null}
+                  onDescartar={() => alternarDescarte(clave)}
+                  limpiar={limpiezas.includes(clave)}
+                  onLimpiar={lamina ? () => alternarLimpieza(clave) : null}
                   onAbrir={(img) => setEditando({ clave, img })}
                 />
               );

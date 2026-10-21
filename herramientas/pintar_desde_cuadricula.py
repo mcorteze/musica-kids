@@ -1,4 +1,4 @@
-# Juego "Pintar pixel art" (experimental): RECREA desde cero una lámina a
+# Juego "Pintar pixel art" (oficial, "Pintar por números" en el menú): RECREA desde cero una lámina a
 # partir de una imagen original y la cuadrícula que el usuario estableció en su
 # Modo desarrollador ("Establecer cuadrícula" → "Copiar cuadrículas").
 #

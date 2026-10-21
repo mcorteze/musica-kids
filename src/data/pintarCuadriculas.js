@@ -1,4 +1,4 @@
-// Juego "Pintar pixel art" (experimental): cuadrículas que el usuario
+// Juego "Pintar pixel art" (oficial, "Pintar por números" en el menú): cuadrículas que el usuario
 // estableció sobre cada imagen ORIGINAL (src/assets/pintar-pixel/<tema>/originales/).
 // Clave: "<tema>/<nombre>". Valores en pixeles del original: x, y = esquina
 // superior izquierda del primer cuadro; ancho, alto = tamaño de un cuadro;
@@ -16,7 +16,7 @@ export default {
   'paw-patrol/skye': { x: 2.5, y: 0, ancho: 10, alto: 8.73, columnas: 30, filas: 30 },
   'bluey/bluey-cara': { x: 0, y: 0, ancho: 20.15, alto: 20.35, columnas: 20, filas: 26 },
   'frozen/anna-cara': { x: 0, y: 0, ancho: 29.57, alto: 23.53, columnas: 23, filas: 30 },
-  'frozen/anna-chibi': { x: 0, y: 0, ancho: 25.53, alto: 35.37, columnas: 19, filas: 19 },
+  'frozen/anna-chibi': { x: 0, y: 0, ancho: 23.1, alto: 21, columnas: 21, filas: 32 },
   'frozen/elsa': { x: 0, y: 0, ancho: 27.75, alto: 33.45, columnas: 20, filas: 31 },
   'frozen/elsa-vestido': { x: 0, y: 0, ancho: 13.59, alto: 11.67, columnas: 22, filas: 49 },
   'frozen/olaf': { x: 0, y: 0, ancho: 14.3, alto: 11.11, columnas: 23, filas: 46 },
@@ -30,11 +30,11 @@ export default {
   'mickey/pluto-cara': { x: 0, y: 0, ancho: 37.69, alto: 37.92, columnas: 13, filas: 12 },
   'moana/moana-chibi': { x: 0, y: 0, ancho: 16.46, alto: 17.17, columnas: 24, filas: 30 },
   'paw-patrol/chase-cuerpo': { x: 0, y: 0, ancho: 11, alto: 13.65, columnas: 20, filas: 20 },
-  'paw-patrol/rubble': { x: 0, y: 0, ancho: 18.79, alto: 13.33, columnas: 29, filas: 30 },
+  'paw-patrol/rubble': { x: 0, y: 0, ancho: 13.62, alto: 13.33, columnas: 40, filas: 30 },
   'pokemon/pikachu': { x: 0, y: 0, ancho: 22.3, alto: 23.89, columnas: 30, filas: 28 },
   'toy-story/forky': { x: 0, y: 0, ancho: 11.85, alto: 15.12, columnas: 26, filas: 25 },
-  'toy-story/marciano': { x: 0, y: 0, ancho: 28.31, alto: 21.35, columnas: 26, filas: 37 },
-  'toy-story/senor-cara-de-papa': { x: 0, y: 0, ancho: 18.86, alto: 22.14, columnas: 22, filas: 21 },
+  'toy-story/marciano': { x: 0, y: 0, ancho: 21.65, alto: 21.35, columnas: 34, filas: 37 },
+  'toy-story/senor-cara-de-papa': { x: 0, y: 0, ancho: 14.82, alto: 19.37, columnas: 28, filas: 24 },
   'toy-story/woody': { x: 0, y: 0, ancho: 19.45, alto: 19.86, columnas: 22, filas: 29 },
   'winnie-pooh/igor': { x: 0, y: 0, ancho: 21.67, alto: 23.33, columnas: 30, filas: 24 },
   'winnie-pooh/piglet': { x: 0, y: 0, ancho: 24.32, alto: 23.63, columnas: 22, filas: 27 },
