@@ -8,6 +8,12 @@ import { cuadricularImagen, esColorClaro, numeroLamina } from '../utils/pintarNu
 const GAP_CELDAS = 1;
 const BORDE_TABLERO = 6;
 const CELDA_MAX = 64;
+// Mientras se pinta, la lámina se ve AMPLIADA (ZOOM veces el tamaño que cabe
+// entero, con tope CELDA_MAX_ZOOM) para que el dedo del niño atine a cada
+// celda; se desplaza con dos dedos (o rueda/barras con mouse). Al terminar
+// vuelve a 1x para ver la imagen completa.
+const ZOOM = 3;
+const CELDA_MAX_ZOOM = 96;
 
 // Espera antes de avisar que la lámina está terminada (deja ver cómo se
 // quita la cuadrícula). El modal de victoria además trae su propio retardo
@@ -20,15 +26,20 @@ const COMPLETADO_MS = 400;
 // pueden pintar (se ven en un gris más oscuro) y al terminarlas se pasa solo
 // al siguiente. Se pinta tocando o arrastrando el dedo por encima. Al
 // terminar se quita la cuadrícula para ver la imagen entera y se llama a
-// onCompletado. El padre lo vuelve a montar (key) para reiniciar el juego.
+// onCompletado. Mientras se pinta la lámina se ve ampliada (ZOOM) y se
+// desplaza con dos dedos; al terminar vuelve a 1x. El padre lo vuelve a
+// montar (key) para reiniciar el juego.
 // Opcionales (solo "Pintar pixel art"): calcular(img) arma la lámina en vez de
 // pixelar al nivel (utils/pintarPixel.js) y nitida muestra la imagen de fondo
 // sin suavizado (pixel art de pocos pixeles ampliado).
 export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nitida }) {
   const [lamina, setLamina] = useState(null);
   const [pintadas, setPintadas] = useState(null);
-  const [tamCelda, setTamCelda] = useState(0);
+  // Celda del tamaño que cabe entera (1x); mientras se pinta se amplía.
+  const [celdaEntera, setCeldaEntera] = useState(0);
   const areaRef = useRef(null);
+  // Dedos apoyados en el tablero ({ id: [x, y] }): con dos se desplaza.
+  const dedosRef = useRef(new Map());
   const tableroRef = useRef(null);
   const pintandoRef = useRef(false);
   // Último punto del trazo en curso ([x, y] de pantalla, null al levantar el dedo).
@@ -67,6 +78,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     return null;
   }, [faltan]);
   const terminado = Boolean(lamina) && numeroActual === null;
+  const tamCelda = terminado ? celdaEntera : Math.min(celdaEntera * ZOOM, Math.max(celdaEntera, CELDA_MAX_ZOOM));
 
   useEffect(() => {
     if (!terminado) return;
@@ -83,7 +95,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
       if (!width || !height) return;
       const porAncho = (width - 2 * BORDE_TABLERO - (lamina.columnas - 1) * GAP_CELDAS) / lamina.columnas;
       const porAlto = (height - 2 * BORDE_TABLERO - (lamina.filas - 1) * GAP_CELDAS) / lamina.filas;
-      setTamCelda(Math.max(0, Math.floor(Math.min(porAncho, porAlto, CELDA_MAX))));
+      setCeldaEntera(Math.max(0, Math.floor(Math.min(porAncho, porAlto, CELDA_MAX))));
     };
     recalcular();
     const ro = new ResizeObserver(recalcular);
@@ -128,20 +140,75 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     });
   }, [lamina, numeroActual, tamCelda]);
 
+  // Con el número nuevo: si ninguna de sus celdas está a la vista (lámina
+  // ampliada), se desplaza sola hasta la primera, centrada.
+  useLayoutEffect(() => {
+    const area = areaRef.current;
+    const tablero = tableroRef.current;
+    if (!area || !tablero || !lamina || numeroActual === null || !tamCelda) return;
+    const paso = tamCelda + GAP_CELDAS;
+    const vista = area.getBoundingClientRect();
+    const base = tablero.getBoundingClientRect();
+    let primera = null;
+    for (let i = 0; i < lamina.celdas.length; i++) {
+      if (lamina.celdas[i] !== numeroActual || pintadas[i]) continue;
+      const x = base.left + BORDE_TABLERO + (i % lamina.columnas) * paso;
+      const y = base.top + BORDE_TABLERO + Math.floor(i / lamina.columnas) * paso;
+      if (x + tamCelda > vista.left && x < vista.right && y + tamCelda > vista.top && y < vista.bottom) return;
+      if (!primera) primera = [x, y];
+    }
+    if (!primera) return;
+    area.scrollTo({
+      left: area.scrollLeft + primera[0] - vista.left - vista.width / 2 + tamCelda / 2,
+      top: area.scrollTop + primera[1] - vista.top - vista.height / 2 + tamCelda / 2,
+      behavior: 'smooth',
+    });
+    // Solo al cambiar de número o de tamaño, no con cada celda pintada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numeroActual, tamCelda, lamina]);
+
+  // Un dedo pinta; al apoyar el segundo se deja de pintar y los dos
+  // desplazan la lámina ampliada (el tablero no deja al navegador hacerlo:
+  // touch-action none, para que arrastrar un dedo pinte).
+  const centroDedos = () => {
+    const [a, b] = [...dedosRef.current.values()];
+    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  };
+
   const alPresionar = useCallback((e) => {
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Puntero que ya no existe (se levantó justo): se sigue sin captura.
+    }
+    dedosRef.current.set(e.pointerId, [e.clientX, e.clientY]);
+    if (dedosRef.current.size > 1) {
+      pintandoRef.current = false;
+      ultimoPuntoRef.current = null;
+      return;
+    }
     pintandoRef.current = true;
     ultimoPuntoRef.current = null;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
     pintarTrazo([[e.clientX, e.clientY]]);
   }, [pintarTrazo]);
 
   const alMover = useCallback((e) => {
+    const dedos = dedosRef.current;
+    if (dedos.has(e.pointerId) && dedos.size === 2) {
+      const antes = centroDedos();
+      dedos.set(e.pointerId, [e.clientX, e.clientY]);
+      const ahora = centroDedos();
+      const area = areaRef.current;
+      if (area) area.scrollBy(antes[0] - ahora[0], antes[1] - ahora[1]);
+      return;
+    }
     if (!pintandoRef.current) return;
     const eventos = e.nativeEvent.getCoalescedEvents?.() ?? [];
     pintarTrazo(eventos.length ? eventos.map((ev) => [ev.clientX, ev.clientY]) : [[e.clientX, e.clientY]]);
   }, [pintarTrazo]);
 
-  const alSoltar = useCallback(() => {
+  const alSoltar = useCallback((e) => {
+    dedosRef.current.delete(e.pointerId);
     pintandoRef.current = false;
     ultimoPuntoRef.current = null;
   }, []);

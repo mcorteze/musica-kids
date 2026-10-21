@@ -3598,13 +3598,21 @@ body {
   gap: 14px;
 }
 
+/* Con la lámina ampliada (PintarJuego, ZOOM) el área scrollea; el tablero
+   se centra con margin:auto (no con justify/align-content, que la cortaría
+   por la izquierda/arriba sin dejar llegar ahí con el scroll). */
 .pintar-area {
   flex: 1;
   min-height: 0;
   width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.pintar-area > .pintar-tablero {
+  flex: none;
+  margin: auto;
 }
 
 /* Fondo blanco: el gap de 1px entre celdas se ve como la cuadrícula. Sin
