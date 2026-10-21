@@ -25,6 +25,8 @@ musica-kids/
 ├── src/assets/rompecabezas/ ← Una foto por nivel del Rompecabezas (por tema), SI viajan en git
 ├── src/assets/diferencias/ ← Pares original/modificada de "Encuentra las diferencias" (<tema>/<par>/, los niveles salen de la cantidad de diferencias); coordenadas en src/data/diferencias.js (ahi esta el flujo completo)
 ├── src/assets/pintar/  ← Láminas de "Pintar por números" (<tema>/nivel-<n>/), la cuadrícula se arma sola (utils/pintarNumeros.js)
+├── src/assets/pintar-pixel/ ← Juego experimental "Pintar pixel art": <tema>/originales/ (imagen del usuario) y <tema>/laminas/ (recreada)
+├── herramientas/       ← pintar_desde_cuadricula.py: recrea la lámina de "Pintar pixel art" con la cuadrícula del usuario (ver skills/agregar-pintar.md)
 ├── src/data/songs.js   ← Lista de canciones
 ├── src/themes/         ← Paletas de colores
 └── skills/             ← Skills del proyecto

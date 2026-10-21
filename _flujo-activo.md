@@ -149,6 +149,73 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   chase-cara, everest, skye.
 - 2026-10-20 Pintar por números habilitado de tablet para arriba
   (.memory-solo-tablet). Modo desarrollador sigue solo laptop.
+- 2026-10-20 Propuesta Paw Patrol 2: chase-cara → nivel-4; descartados
+  everest, skye. Paw Patrol sin nada en preparación. (Sin commit todavía.)
+- 2026-10-20 PRUEBA pixel art con patrón (Downloads/descarga (1).jpg, Elsa
+  con grilla dibujada): extractor Python en scratchpad (extraer_patron4.py:
+  área del patrón → período de la grilla por autocorrelación → pixel más
+  claro del centro de cada celda → paleta Lab ΔE14 + limpieza de raros).
+  Resultado nítido, 15 colores, pero 86×108 = 9.288 celdas (inviable en
+  tablet). Reducido a la mitad (43×54 = 2.322) se reconoce, contornos más
+  gruesos.
+- 2026-10-20 IMPLEMENTADO modo pixel art nativo: archivos <nombre>.pixel.avif
+  (cada cuadro = bloque 8×8), cuadricularPixelArt en utils/pintarNumeros.js,
+  extractor en herramientas/extraer_pixel_art.py. Verificado: el juego lee
+  el AVIF 1 a 1 con el patrón (15/15 colores, 0 mezclas). Usuario aclaró que
+  la idea era respetar las líneas del patrón → Elsa cargada a tamaño
+  completo: frozen/por-asignar/elsa-patron.pixel.avif (86×108).
+  [ ] Revisar en el Modo desarrollador y en tablet (9.288 celdas). Sin commit.
+- 2026-10-20 Usuario: "no entendí; no veo la cuadrícula; debería verse la
+  imagen original dividida en la grid en posición exacta". Hecho: extractor
+  guarda <nombre>.patron.avif (recorte desde la 1ª línea); Modo
+  desarrollador muestra patrón original + cuadrícula del juego (tenue) +
+  LUPA 16×16 que sigue al mouse + "En el juego" con líneas de celda.
+  Bug corregido: fila y columna falsas sobre el marco/numeración (ahora
+  solo cuadros completos) → Elsa 85×107 = 9.095 celdas.
+- 2026-10-20 Usuario: "no funciona, es una mierda" → DESCARTADA la detección
+  automática (borrados herramientas/extraer_pixel_art.py y los .pixel/.patron).
+  NUEVO: cuadrícula ajustada a mano. Modo desarrollador con 2 pestañas:
+  "Asignar niveles" (página ORIGINAL intacta: 5 niveles + Descartar +
+  propuesta Copiar/Vaciar — el usuario exigió no tocarla) y "Establecer
+  cuadrícula" (elige lámina → PintarCuadriculaEditor: marcar esquinas +
+  columnas/filas, arrastrar, números, zoom, vista en vivo → Guardar en
+  navegador → "Copiar cuadrículas" → anotar en src/data/pintarCuadriculas.js,
+  clave <tema>/<nombre>). Juego: cuadricularConGrilla (percentil 75 del
+  centro, MISMO_COLOR 5500, raros al frecuente). Elsa original en
+  frozen/por-asignar/elsa-patron.cuadricula.avif. [ ] Usuario ajusta y pega.
+  Sin commit.
+- 2026-10-20 Agregada frozen/por-asignar/elsa-chibi.cuadricula.avif (pixel art
+  ~23×28 con cuadrícula, Downloads/"Image recherchée visuellement.jpg").
+  Descartados (borrados) elsa-patron.cuadricula y olaf-nieve-3d.
+  [x] Usuario ajustó la cuadrícula de elsa-chibi (24×29 sobre el original).
+- 2026-10-20 DECISIÓN del usuario: con la cuadrícula, dibujar la lámina DESDE
+  CERO (no leer el original en cada partida). herramientas/pintar_desde_cuadricula.py
+  → elsa-chibi.cuadricula.avif reemplazada por la lámina limpia 24×29 (AVIF
+  sin pérdida, 2 KB, 9 colores, verificada pixel a pixel) + cuadrícula 1 px
+  en src/data/pintarCuadriculas.js. Juego lee colores exactos (limpia =
+  sin fusionar). Fix: muestreo con cuadros de 1 px tomaba el vecino.
+- 2026-10-20 CORRECCIÓN DEL USUARIO (no se había entendido): el método de
+  cuadrícula es un JUEGO APARTE "Pintar pixel art", experimental, solo
+  laptop; después decide si unificar o quedarse con uno. "Pintar por números"
+  RESTAURADO idéntico al commit 78c787d (MenuActividades parte Pintar,
+  PintarDev, PintarJuego, pintarNumeros, App.css) + PintarJuego con 2 props
+  opcionales (calcular, nitida) que el juego viejo no usa.
+  Juego nuevo: src/assets/pintar-pixel/<tema>/{originales,laminas}/,
+  PintarPixelDev ("Establecer cuadrícula"), utils/pintarPixel.js
+  (recrearConGrilla = vista previa, laminaDePixelArt = juego), sin niveles,
+  la cuadrícula manda, máx. 15 colores. Primera lámina: frozen/elsa-chibi
+  (24×29, 9 colores), verificada jugando completa sin servidor.
+  [ ] Siguiente imagen del usuario. Sin commit.
+- 2026-10-20 DECISIÓN: "Pintar pixel art" es la opción que se queda (mucho
+  mejor). Pero "Pintar por números" NO se quita todavía: está en uso. Plan:
+  1) crear más láminas pixel art (sigue experimental, solo laptop);
+  2) recién entonces lanzarla (habilitar en tablet) y decidir el retiro del
+  juego antiguo. No adelantar ninguno de esos pasos sin orden del usuario.
+- 2026-10-20 "Establecer cuadrícula" muestra SOLO imágenes <nombre>.cuadricula.avif
+  (las láminas del método normal no se repiten ahí). "Asignar niveles" sigue
+  mostrando todo (página original intacta).
+- Verificación SIN servidor del build: scratchpad vv-sin-servidor.mjs
+  (puppeteer intercepta http://local.test/musica-kids/ y sirve dist/).
 - 2026-10-20 Memoria nueva: no levantar ni detener servidores sin permiso.
   Verificación de láminas SIN servidor: scratchpad vista-tema.mjs (inyecta
   pintarNumeros.js en Chrome headless, lee NIVELES_PINTAR del menú).

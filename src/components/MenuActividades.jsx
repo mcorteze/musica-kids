@@ -9,6 +9,9 @@ import DiferenciasJuego from './DiferenciasJuego';
 import DiferenciasDev from './DiferenciasDev';
 import PintarJuego from './PintarJuego';
 import PintarDev from './PintarDev';
+import PintarPixelDev from './PintarPixelDev';
+import { laminaDePixelArt } from '../utils/pintarPixel';
+import cuadriculasPintar from '../data/pintarCuadriculas';
 import EstadoDevTabs from './EstadoDevTabs';
 import RompecabezasPropuesta from './RompecabezasPropuesta';
 import {
@@ -1487,6 +1490,75 @@ function guardarCompletadosPintar(temaId, lista) {
   }
 }
 
+// ========== PINTAR PIXEL ART (EXPERIMENTAL) ==========
+// Juego aparte de "Pintar por números", solo laptop (.memory-solo-laptop)
+// mientras se desarrolla; después se decide si se unifican. La cuadrícula la
+// establece el usuario sobre cada imagen original y MANDA: no hay niveles.
+// - src/assets/pintar-pixel/<tema>/originales/<nombre>.avif: la imagen tal
+//   como la trajo el usuario (solo la ve el Modo desarrollador, PintarPixelDev).
+// - src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif: la lámina RECREADA
+//   desde cero con esa cuadrícula (herramientas/pintar_desde_cuadricula.py:
+//   1 pixel = 1 celda, máx. 15 colores, AVIF sin pérdida). Es lo que se juega.
+// Flujo completo en skills/agregar-pintar.md.
+const ENTRADAS_PIXEL = import.meta.glob('../assets/pintar-pixel/*/*/*.{png,jpg,jpeg,webp,avif}');
+const ARCHIVOS_PIXEL = {};
+for (const [ruta, cargar] of Object.entries(ENTRADAS_PIXEL)) {
+  const m = ruta.match(/pintar-pixel\/([^/]+)\/(originales|laminas)\/([^/]+)\.[a-z0-9]+$/i);
+  if (!m) continue;
+  ((ARCHIVOS_PIXEL[m[1]] ??= { originales: [], laminas: [] })[m[2]]).push({ id: m[3], nombre: m[3], cargar });
+}
+const TEMAS_PIXEL = TEMAS
+  .filter((t) => ARCHIVOS_PIXEL[t.id])
+  .map((t) => {
+    const orden = (a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true });
+    return {
+      id: t.id,
+      nombre: t.nombre,
+      header: t.header,
+      originales: ARCHIVOS_PIXEL[t.id].originales.sort(orden),
+      laminas: ARCHIVOS_PIXEL[t.id].laminas.sort(orden),
+    };
+  });
+
+// Láminas ya terminadas por tema (solo para marcarlas en la lista).
+function completadasKeyPixel(temaId) {
+  return `musica-kids-pixel-completadas-${temaId}`;
+}
+
+function leerCompletadasPixel(temaId) {
+  try {
+    const lista = JSON.parse(localStorage.getItem(completadasKeyPixel(temaId)));
+    return Array.isArray(lista) ? lista.filter((c) => typeof c === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function guardarCompletadasPixel(temaId, lista) {
+  try {
+    localStorage.setItem(completadasKeyPixel(temaId), JSON.stringify(lista));
+  } catch {
+    // Sin localStorage las marcas duran lo que dure la sesion.
+  }
+}
+
+// Miniatura de una lámina pixel art (pocos pixeles: se amplía sin suavizar).
+function MiniaturaPixel({ lamina }) {
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    lamina.cargar().then((m) => {
+      if (vivo) setSrc(m.default);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [lamina]);
+  return src
+    ? <img src={src} alt="" className="memory-picker-img pixel-miniatura" />
+    : <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />;
+}
+
 export default function MenuActividades({ onOpenChange }) {
   // 'menu' = las 2 tarjetas raiz. 'memorice'/'imprimir' = cada seccion.
   const [vista, setVista] = useState('menu');
@@ -1650,6 +1722,14 @@ export default function MenuActividades({ onOpenChange }) {
   // Pagina del Modo desarrollador (ver cada lamina en todos los niveles).
   const [devPin, setDevPin] = useState(false);
 
+  // ===== Pintar pixel art (experimental): tema → lámina → juego. =====
+  const [temaPixId, setTemaPixId] = useState(null);
+  const [laminaPixId, setLaminaPixId] = useState(null);
+  const [partidaPix, setPartidaPix] = useState(0);
+  const [ganoPix, setGanoPix] = useState(false);
+  const [completadasPix, setCompletadasPix] = useState([]);
+  const [devPix, setDevPix] = useState(false);
+
   const tema = temaId ? TEMAS.find((t) => t.id === temaId) : null;
   const cargando = Boolean(temaId) && fotosTema === null;
 
@@ -1680,6 +1760,7 @@ export default function MenuActividades({ onOpenChange }) {
   const irASecuencias = useCallback(() => setVista('secuencias'), []);
   const irADiferencias = useCallback(() => setVista('diferencias'), []);
   const irAPintar = useCallback(() => setVista('pintar'), []);
+  const irAPixel = useCallback(() => setVista('pixel'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -2699,6 +2780,10 @@ export default function MenuActividades({ onOpenChange }) {
     setMostrarNivelesPin(false);
     setNivelIdxPin(0);
     setDevPin(false);
+    setTemaPixId(null);
+    setLaminaPixId(null);
+    setGanoPix(false);
+    setDevPix(false);
   }, [open]);
 
   // Volver desde donde sea: dentro de Memorice, si hay tema elegido vuelve
@@ -2726,12 +2811,46 @@ export default function MenuActividades({ onOpenChange }) {
       if (devPin) setDevPin(false);
       else if (temaPinId) volverAlSelectorPin();
       else volverAlMenu();
+    } else if (vista === 'pixel') {
+      if (devPix) setDevPix(false);
+      else if (laminaPixId) {
+        setLaminaPixId(null);
+        setGanoPix(false);
+      } else if (temaPixId) setTemaPixId(null);
+      else volverAlMenu();
     } else if (vista === 'rompecabezas') {
       if (catalogoRomp) setCatalogoRomp(false);
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
+
+  // ===== Pintar pixel art: lógica del drawer =====
+  const temaPix = temaPixId ? TEMAS_PIXEL.find((t) => t.id === temaPixId) : null;
+  const laminaPix = temaPix?.laminas.find((l) => l.id === laminaPixId) ?? null;
+
+  const elegirTemaPix = useCallback((id) => {
+    setTemaPixId(id);
+    setLaminaPixId(null);
+    setGanoPix(false);
+    setCompletadasPix(leerCompletadasPixel(id));
+  }, []);
+
+  const elegirLaminaPix = useCallback((id) => {
+    setLaminaPixId(id);
+    setPartidaPix((p) => p + 1);
+    setGanoPix(false);
+  }, []);
+
+  const marcarGanoPix = useCallback(() => setGanoPix(true), []);
+
+  // Guarda la lámina como terminada apenas se completa.
+  useEffect(() => {
+    if (!ganoPix || !temaPixId || !laminaPixId || completadasPix.includes(laminaPixId)) return;
+    const siguiente = [...completadasPix, laminaPixId];
+    setCompletadasPix(siguiente);
+    guardarCompletadasPixel(temaPixId, siguiente);
+  }, [ganoPix, temaPixId, laminaPixId, completadasPix]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
   useEffect(() => () => clearTimeout(avisoDevTimeoutRef.current), []);
@@ -2914,6 +3033,10 @@ export default function MenuActividades({ onOpenChange }) {
   } else if (vista === 'pintar') {
     mostrarVolver = true;
     tituloHeader = devPin ? 'Modo desarrollador' : temaPinId ? temaPin.nombre : 'Pintar por números';
+  } else if (vista === 'pixel') {
+    mostrarVolver = true;
+    tituloHeader = devPix ? 'Modo desarrollador' : temaPixId ? temaPix.nombre : 'Pintar pixel art';
+    colorHeader = devPix ? undefined : temaPix?.header;
     colorHeader = devPin ? undefined : temaPin?.header;
   }
   const esMenu = !colorHeader;
@@ -3164,6 +3287,18 @@ export default function MenuActividades({ onOpenChange }) {
                         <img src={imagenPintar} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Pintar por números</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-laptop"
+                      onClick={irAPixel}
+                      aria-label="Pintar pixel art"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <img src={imagenPintar} alt="" className="memory-picker-img" />
+                      </span>
+                      <span className="memory-picker-nombre">Pintar pixel art</span>
+                      <span className="memory-picker-badge">Experimental</span>
                     </button>
                   </div>
                 </div>
@@ -4292,6 +4427,99 @@ export default function MenuActividades({ onOpenChange }) {
                   )}
                 </>
               ))}
+
+              {vista === 'pixel' && devPix && (
+                <PintarPixelDev temas={TEMAS_PIXEL} cuadriculas={cuadriculasPintar} />
+              )}
+
+              {vista === 'pixel' && !devPix && !temaPixId && (
+                <div className="memory-picker">
+                  {TEMAS_PIXEL.filter((t) => t.laminas.length > 0).length === 0 ? (
+                    <p className="gallery-empty">Muy pronto van a haber láminas aquí.</p>
+                  ) : (
+                    <div className="memory-picker-grid">
+                      {TEMAS_PIXEL.filter((t) => t.laminas.length > 0).map((t) => (
+                        <button
+                          type="button"
+                          key={t.id}
+                          className="memory-picker-tile"
+                          onClick={() => elegirTemaPix(t.id)}
+                          aria-label={`Pintar con ${t.nombre}`}
+                        >
+                          <span className="memory-picker-img-wrap">
+                            {dorsosSelector[t.id] ? (
+                              <img src={dorsosSelector[t.id]} alt="" className="memory-picker-img" />
+                            ) : (
+                              <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
+                            )}
+                          </span>
+                          <span className="memory-picker-nombre">{t.nombre}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="dif-dev-btn"
+                    onClick={() => setDevPix(true)}
+                  >
+                    <PictureOutlined /> Modo desarrollador
+                  </button>
+                </div>
+              )}
+
+              {vista === 'pixel' && !devPix && temaPix && !laminaPix && (
+                <div className="memory-picker">
+                  <div className="memory-picker-grid">
+                    {temaPix.laminas.map((l) => (
+                      <button
+                        type="button"
+                        key={l.id}
+                        className="memory-picker-tile"
+                        onClick={() => elegirLaminaPix(l.id)}
+                        aria-label={`Pintar ${l.nombre}`}
+                      >
+                        <span className="memory-picker-img-wrap">
+                          <MiniaturaPixel lamina={l} />
+                        </span>
+                        <span className="memory-picker-nombre">{l.nombre}</span>
+                        {completadasPix.includes(l.id) && <span className="memory-picker-badge">Terminada</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {vista === 'pixel' && !devPix && laminaPix && (
+                <>
+                  {ganoPix && (
+                    <div className="memory-victoria-overlay victoria">
+                      <div className="memory-victoria">
+                        <GiPartyPopper className="memory-victoria-icono fiesta" aria-hidden="true" />
+                        <p>¡Lámina terminada!</p>
+                        <button
+                          type="button"
+                          className="memory-victoria-btn"
+                          onClick={() => {
+                            setLaminaPixId(null);
+                            setGanoPix(false);
+                          }}
+                        >
+                          Elegir otra lámina
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <PintarJuego
+                    key={`${temaPixId}-${laminaPixId}-${partidaPix}`}
+                    imagen={laminaPix}
+                    nivel={null}
+                    calcular={laminaDePixelArt}
+                    nitida
+                    onCompletado={marcarGanoPix}
+                  />
+                </>
+              )}
             </div>
 
             {avisoDev && <div className="memory-toast" role="status">{avisoDev}</div>}

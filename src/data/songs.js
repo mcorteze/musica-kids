@@ -168,22 +168,6 @@ const songs = [
     groups: ['efecto-n'],
   },
   {
-    id: 21,
-    title: 'Tropicoqueta',
-    artist: 'KAROL G',
-    file: 'music/karol-g-tropicoqueta.mp3',
-    cover: 'covers/karol-g-tropicoqueta.jpg',
-    groups: ['efecto-n'],
-  },
-  {
-    id: 22,
-    title: 'ALO',
-    artist: 'Katteyes, SINAKA',
-    file: 'music/katteyes-sinaka-alo.mp3',
-    cover: 'covers/katteyes-sinaka-alo.jpg',
-    groups: ['efecto-n'],
-  },
-  {
     id: 23,
     title: 'Otono Los mas congelados del genero',
     artist: 'NTV',

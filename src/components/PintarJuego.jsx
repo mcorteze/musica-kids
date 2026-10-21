@@ -21,7 +21,10 @@ const COMPLETADO_MS = 400;
 // al siguiente. Se pinta tocando o arrastrando el dedo por encima. Al
 // terminar se quita la cuadrícula para ver la imagen entera y se llama a
 // onCompletado. El padre lo vuelve a montar (key) para reiniciar el juego.
-export default function PintarJuego({ imagen, nivel, onCompletado }) {
+// Opcionales (solo "Pintar pixel art"): calcular(img) arma la lámina en vez de
+// pixelar al nivel (utils/pintarPixel.js) y nitida muestra la imagen de fondo
+// sin suavizado (pixel art de pocos pixeles ampliado).
+export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nitida }) {
   const [lamina, setLamina] = useState(null);
   const [pintadas, setPintadas] = useState(null);
   const [tamCelda, setTamCelda] = useState(0);
@@ -37,7 +40,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado }) {
       const img = document.createElement('img');
       img.onload = () => {
         if (!vivo) return;
-        const l = cuadricularImagen(img, nivel.lado, nivel.colores);
+        const l = calcular ? calcular(img) : cuadricularImagen(img, nivel.lado, nivel.colores);
         setLamina({ ...l, src: m.default });
         setPintadas(l.celdas.map((n) => n === null));
       };
@@ -46,7 +49,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado }) {
     return () => {
       vivo = false;
     };
-  }, [imagen, nivel]);
+  }, [imagen, nivel, calcular]);
 
   // Celdas que faltan por número (índice = número).
   const faltan = useMemo(() => {
@@ -176,7 +179,7 @@ export default function PintarJuego({ imagen, nivel, onCompletado }) {
           <img
             src={lamina.src}
             alt=""
-            className="pintar-fondo"
+            className={`pintar-fondo${nitida ? ' nitida' : ''}`}
             style={{ left: BORDE_TABLERO, top: BORDE_TABLERO, width: anchoGrilla, height: altoGrilla }}
             draggable={false}
           />

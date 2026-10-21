@@ -56,6 +56,39 @@
   mitad de las celdas: es lo primero y lo más largo de pintar. Avisar al
   usuario si trae imágenes así.
 
+## Juego APARTE: "Pintar pixel art" (experimental, solo laptop) — 2026-10-20
+
+DECISIÓN del usuario (explícita, tras varias vueltas): el método de
+cuadrícula NO va en "Pintar por números". Es un SEGUNDO juego experimental,
+solo laptop (`.memory-solo-laptop`, badge "Experimental"), para desarrollarlo
+y después decidir si se unifican o queda uno. "Pintar por números" quedó
+idéntico a lo publicado (commit 78c787d): niveles, "Asignar niveles", propuesta.
+
+En el juego nuevo la CUADRÍCULA MANDA: no hay niveles ni tamaños distintos.
+Flujo (exactamente este, pedido del usuario):
+
+1. El usuario pasa una imagen (pixel art o patrón con cuadrícula) → guardarla
+   en `src/assets/pintar-pixel/<tema>/originales/<nombre>.avif` (crf 22).
+2. El usuario abre el juego → "Modo desarrollador" → "Establecer cuadrícula"
+   (PintarPixelDev + PintarCuadriculaEditor): marca esquinas + columnas/filas,
+   ajusta, ve la vista previa (mismo cálculo que el script), Guardar →
+   "Copiar cuadrículas" (los borradores se limpian al copiar).
+3. El usuario pega el texto → anotarlo en `src/data/pintarCuadriculas.js`
+   (registro; clave `<tema>/<nombre>`, valores sobre el ORIGINAL).
+4. RECREAR la lámina desde cero con esa cuadrícula:
+   `py herramientas/pintar_desde_cuadricula.py <original> <salida.png> --x .. --y .. --ancho .. --alto .. --columnas .. --filas .. --vista v.png`
+   → rescata el color de cada celda (percentil 75 del centro), consolida los
+   parecidos (Lab ΔE 12, sube hasta dejar MÁXIMO 15 colores), 1 pixel = 1 celda.
+   Mostrar al usuario original vs. lámina lado a lado.
+5. Guardar SIN pérdida en `src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif`:
+   `ffmpeg -i salida.png -c:v libaom-av1 -still-picture 1 -aom-params lossless=1 -pix_fmt gbrp <destino>`
+   y verificar decodificando (0 pixeles distintos). El juego la lee con
+   `laminaDePixelArt` (utils/pintarPixel.js): colores exactos, sin fusionar.
+
+Juego: tema (dorso del Memorice) → lista de láminas (miniatura nítida, marca
+"Terminada") → se pinta con PintarJuego (`calcular`, `nitida`) → victoria
+"Elegir otra lámina". Tamaño ideal: 20–45 cuadros por lado.
+
 ## Modo desarrollador (PintarDev.jsx)
 
 Botón "Modo desarrollador" en el selector de temas del juego (solo laptop).

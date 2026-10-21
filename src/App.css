@@ -3695,6 +3695,11 @@ body {
   pointer-events: none;
 }
 
+/* "Pintar pixel art": lámina de pocos pixeles ampliada, sin suavizado. */
+.pintar-fondo.nitida {
+  image-rendering: pixelated;
+}
+
 /* Celdas sobre la imagen (position: relative las sube por encima). */
 .pintar-celda {
   position: relative;
@@ -3884,6 +3889,141 @@ body {
   height: 12px;
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== PINTAR PIXEL ART (experimental) ==========
+   Miniaturas de láminas de pocos pixeles: ampliadas sin suavizar. */
+.memory-picker-img.pixel-miniatura {
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Modo desarrollador: página "Establecer cuadrícula" (PintarPixelDev). */
+.pintar-grilla-titulo {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.pintar-grilla-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.pintar-grilla-tarjeta {
+  appearance: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 200px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0B4F73;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.18s ease;
+}
+
+.pintar-grilla-tarjeta:hover {
+  border-color: #C026D3;
+}
+
+.pintar-grilla-tarjeta img {
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+}
+
+.pintar-grilla-tarjeta-nombre {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* Editor de cuadrícula (PintarCuadriculaEditor): imagen ampliada a la
+   izquierda (con scroll propio) y panel a la derecha. */
+.pintar-editor {
+  width: 100%;
+  max-width: 1400px;
+  margin-bottom: auto;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.pintar-editor-lienzo-wrap {
+  flex: 1;
+  min-width: 0;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(8, 40, 66, 0.15);
+}
+
+.pintar-editor-lienzo {
+  display: block;
+  cursor: move;
+  touch-action: none;
+  image-rendering: pixelated;
+}
+
+.pintar-editor-lienzo.marcando {
+  cursor: crosshair;
+}
+
+.pintar-editor-panel {
+  flex: none;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0B4F73;
+}
+
+.pintar-editor-panel h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.pintar-editor-instruccion {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pintar-editor-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.pintar-editor-campos label,
+.pintar-editor-zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pintar-editor-campos .ant-input-number {
+  width: 100%;
+}
+
+.pintar-editor-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .pintar-color.actual {
