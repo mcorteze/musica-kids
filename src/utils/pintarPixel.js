@@ -1,8 +1,9 @@
 // Juego "Pintar pixel art" (EXPERIMENTAL, solo laptop): la cuadrícula la
 // establece el usuario sobre una imagen original y manda; no hay niveles.
 //
-// - recrearConGrilla(img, grilla): rescata el color de cada celda de la
-//   cuadrícula sobre el ORIGINAL y consolida la paleta (máx. MAX_COLORES). Es
+// - recrearConGrilla(img, grilla): ajusta las líneas de la cuadrícula a las
+//   reales, rescata el color dominante de cada celda sobre el ORIGINAL y
+//   consolida la paleta (máx. MAX_COLORES). Es
 //   la vista previa del editor y hace exactamente lo mismo que
 //   herramientas/pintar_desde_cuadricula.py, que crea la lámina definitiva.
 // - laminaDePixelArt(img): lee una lámina YA RECREADA (1 pixel = 1 celda,
@@ -13,7 +14,13 @@
 const DELTA_E = 12;
 const MAX_COLORES = 15;
 // Zona central de cada celda que se mira, lejos de las líneas del patrón.
-const MARGEN = 0.3;
+const MARGEN = 0.25;
+// Cuánto (fracción de cuadro) puede moverse una línea interior para calzar
+// con la línea real de la imagen.
+const AJUSTE = 0.25;
+// Muestras por lado de la zona central y distancia RGB para "parecido".
+const MUESTRAS = 8;
+const PARECIDO = 40;
 // Un color con menos de esta fracción de las celdas pasa al frecuente más cercano.
 const RARO = 0.004;
 const ALFA_MIN = 128;
@@ -61,26 +68,93 @@ function numerar(columnas, filas, grupoDeCelda, colorDeGrupo) {
   };
 }
 
+// Acerca cada línea INTERIOR de la cuadrícula (hasta AJUSTE de cuadro) a la
+// línea real más marcada de la imagen: borde(i) = fuerza del borde entre los
+// pixeles i-1 e i a lo largo de toda la cuadrícula, suavizada en 3 (una
+// línea de 1-2 px son 2 bordes). Sin una línea clara ahí, queda la del
+// usuario. Los bordes de la cuadrícula no se mueven.
+function ajustarLineas(inicio, paso, n, largo, borde) {
+  const perfil = new Float64Array(largo + 1);
+  for (let i = 1; i < largo; i++) perfil[i] = borde(i);
+  const suave = (i) => (i > 0 && i < largo ? perfil[i - 1] + perfil[i] + perfil[i + 1] : 0);
+  const lineas = Array.from({ length: n + 1 }, (_, k) => inicio + k * paso);
+  for (let k = 1; k < n; k++) {
+    const e = lineas[k];
+    const desde = Math.max(1, Math.round(e - AJUSTE * paso));
+    const hasta = Math.min(largo - 1, Math.round(e + AJUSTE * paso));
+    if (hasta < desde) continue;
+    const valores = [];
+    let mejor = desde;
+    for (let i = desde; i <= hasta; i++) {
+      valores.push(suave(i));
+      if (suave(i) > suave(mejor)) mejor = i;
+    }
+    valores.sort((p, q) => p - q);
+    if (suave(mejor) > 1.5 * valores[Math.floor(valores.length / 2)] && mejor > lineas[k - 1] + paso / 2) lineas[k] = mejor;
+  }
+  return lineas;
+}
+
+// Pixeles de muestra (MUESTRAS por lado) de la zona central entre dos líneas.
+function rango(a0, a1, limite) {
+  const m = MARGEN * (a1 - a0);
+  const i0 = a0 + m;
+  const i1 = a1 - m;
+  const r = new Set();
+  for (let k = 0; k < MUESTRAS; k++) r.add(Math.min(limite - 1, Math.max(0, Math.floor(i0 + ((i1 - i0) * (k + 0.5)) / MUESTRAS))));
+  return [...r].sort((p, q) => p - q);
+}
+
+// Color DOMINANTE de las muestras: el pixel con más vecinos parecidos,
+// promediado con ellos. Las líneas del patrón (claras u oscuras) y los
+// agujeros de los beads son minoría y no ganan.
+function dominante(muestras) {
+  const t2 = PARECIDO * PARECIDO;
+  let mejor = [];
+  for (const p of muestras) {
+    const vecinos = muestras.filter((q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2 <= t2);
+    if (vecinos.length > mejor.length) mejor = vecinos;
+  }
+  return [0, 1, 2].map((j) => Math.round(mejor.reduce((t, q) => t + q[j], 0) / mejor.length));
+}
+
 export function recrearConGrilla(img, { x, y, ancho, alto, columnas, filas }) {
   const W = img.naturalWidth;
   const H = img.naturalHeight;
   const datos = leerPixeles(img);
-  const lum = (p) => 0.299 * datos[p] + 0.587 * datos[p + 1] + 0.114 * datos[p + 2];
+  const dif = (p, q) => Math.abs(datos[p] - datos[q]) + Math.abs(datos[p + 1] - datos[q + 1]) + Math.abs(datos[p + 2] - datos[q + 2]);
 
-  // Color de cada celda: percentil 75 por luminosidad de su zona central (las
-  // líneas del patrón solo oscurecen; una celda negra es negra entera).
+  const fy0 = Math.max(0, Math.floor(y));
+  const fy1 = Math.min(H, Math.floor(y + filas * alto));
+  const fx0 = Math.max(0, Math.floor(x));
+  const fx1 = Math.min(W, Math.floor(x + columnas * ancho));
+  const xs = ajustarLineas(x, ancho, columnas, W, (i) => {
+    let t = 0;
+    for (let yy = fy0; yy < fy1; yy++) t += dif((yy * W + i) * 4, (yy * W + i - 1) * 4);
+    return t;
+  });
+  const ys = ajustarLineas(y, alto, filas, H, (i) => {
+    let t = 0;
+    for (let xx = fx0; xx < fx1; xx++) t += dif((i * W + xx) * 4, ((i - 1) * W + xx) * 4);
+    return t;
+  });
+
+  // Celda transparente si la mayoría de sus muestras lo es.
   const celdas = [];
   for (let f = 0; f < filas; f++) {
+    const ry = rango(ys[f], ys[f + 1], H);
     for (let c = 0; c < columnas; c++) {
-      const x0 = Math.max(0, Math.floor(x + (c + MARGEN) * ancho));
-      const x1 = Math.min(W - 1, Math.max(x0, Math.floor(x + (c + 1 - MARGEN) * ancho)));
-      const y0 = Math.max(0, Math.floor(y + (f + MARGEN) * alto));
-      const y1 = Math.min(H - 1, Math.max(y0, Math.floor(y + (f + 1 - MARGEN) * alto)));
-      const m = [];
-      for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) m.push((yy * W + xx) * 4);
-      m.sort((a, b) => lum(a) - lum(b));
-      const p = m[Math.floor((m.length - 1) * 0.75)];
-      celdas.push(datos[p + 3] < ALFA_MIN ? null : [datos[p], datos[p + 1], datos[p + 2]]);
+      const rx = rango(xs[c], xs[c + 1], W);
+      const muestras = [];
+      let transparentes = 0;
+      for (const yy of ry) {
+        for (const xx of rx) {
+          const p = (yy * W + xx) * 4;
+          if (datos[p + 3] < ALFA_MIN) transparentes++;
+          else muestras.push([datos[p], datos[p + 1], datos[p + 2]]);
+        }
+      }
+      celdas.push(muestras.length <= transparentes ? null : dominante(muestras));
     }
   }
 

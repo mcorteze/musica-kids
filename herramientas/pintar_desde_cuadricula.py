@@ -14,18 +14,28 @@
 #   ffmpeg -i salida.png -c:v libaom-av1 -still-picture 1 -aom-params lossless=1 \
 #      -pix_fmt gbrp src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif
 #
-# Color de cada cuadro: percentil 75 por luminosidad de su zona central (las
-# líneas del patrón solo oscurecen; un cuadro negro es negro entero).
+# 1. Ajuste de líneas: cada línea INTERIOR de la cuadrícula se acerca (hasta
+#    AJUSTE de cuadro) a la línea real más marcada de la imagen (perfil de
+#    bordes); sin una línea clara ahí, se respeta la del usuario. Corrige el
+#    corrimiento de 1-2 px que traen las fotos/escalados. Los bordes no se mueven.
+# 2. Color de cada cuadro: el color DOMINANTE de su zona central (el pixel con
+#    más vecinos parecidos, promediado con ellos). Las líneas del patrón (claras
+#    u oscuras) y los agujeros de los beads son minoría y no ganan.
 # Paleta: los colores frecuentes son los reales y absorben a los parecidos
 # (distancia Lab < DELTA_E); los muy raros pasan al frecuente más cercano.
 import argparse
+import math
 from collections import Counter
 from PIL import Image
 
 DELTA_E = 12
 MAX_COLORES = 15
-MARGEN = 0.3
+MARGEN = 0.25
 RARO = 0.004
+AJUSTE = 0.25
+# Muestras por lado de la zona central y distancia RGB para "parecido".
+MUESTRAS = 8
+PARECIDO = 40
 
 ap = argparse.ArgumentParser()
 ap.add_argument('original')
@@ -40,17 +50,56 @@ a = ap.parse_args()
 im = Image.open(a.original).convert('RGB')
 W, H = im.size
 px = im.load()
-lum = lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+
+def ajustar(inicio, paso, n, largo, borde):
+    # borde(i) = fuerza del borde entre los pixeles i-1 e i, sumada a lo largo
+    # de toda la cuadrícula; suavizada en 3 (una línea de 1-2 px = 2 bordes).
+    perfil = [0] * (largo + 1)
+    for i in range(1, largo):
+        perfil[i] = borde(i)
+    suave = [perfil[i - 1] + perfil[i] + perfil[i + 1] if 0 < i < largo else 0 for i in range(largo + 1)]
+    lineas = [inicio + k * paso for k in range(n + 1)]
+    for k in range(1, n):
+        e = lineas[k]
+        r = range(max(1, redondear(e - AJUSTE * paso)), min(largo - 1, redondear(e + AJUSTE * paso)) + 1)
+        if not r:
+            continue
+        valores = sorted(suave[i] for i in r)
+        mejor = max(r, key=lambda i: suave[i])
+        if suave[mejor] > 1.5 * valores[len(valores) // 2] and mejor > lineas[k - 1] + paso / 2:
+            lineas[k] = float(mejor)
+    return lineas
+
+
+# Redondeo como Math.round de JS (round() de Python redondea .5 al par):
+# así la vista previa del editor da exactamente lo mismo.
+redondear = lambda v: math.floor(v + 0.5)
+dif = lambda p, q: abs(p[0] - q[0]) + abs(p[1] - q[1]) + abs(p[2] - q[2])
+fy = range(max(0, int(a.y)), min(H, int(a.y + a.filas * a.alto)))
+fx = range(max(0, int(a.x)), min(W, int(a.x + a.columnas * a.ancho)))
+xs = ajustar(a.x, a.ancho, a.columnas, W, lambda i: sum(dif(px[i, y], px[i - 1, y]) for y in fy))
+ys = ajustar(a.y, a.alto, a.filas, H, lambda i: sum(dif(px[x, i], px[x, i - 1]) for x in fx))
+
+
+def dominante(muestras):
+    t2 = PARECIDO * PARECIDO
+    d = lambda p, q: (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2
+    vecinos = [[q for q in muestras if d(p, q) <= t2] for p in muestras]
+    mejor = max(vecinos, key=len)
+    return tuple(redondear(sum(q[j] for q in mejor) / len(mejor)) for j in range(3))
+
+
+def rango(a0, a1, limite):
+    m = MARGEN * (a1 - a0)
+    i0, i1 = a0 + m, a1 - m
+    return sorted({min(limite - 1, max(0, int(i0 + (i1 - i0) * (k + 0.5) / MUESTRAS))) for k in range(MUESTRAS)})
+
 
 celdas = []
 for f in range(a.filas):
     for c in range(a.columnas):
-        x0 = max(0, int(a.x + (c + MARGEN) * a.ancho))
-        x1 = min(W - 1, int(a.x + (c + 1 - MARGEN) * a.ancho))
-        y0 = max(0, int(a.y + (f + MARGEN) * a.alto))
-        y1 = min(H - 1, int(a.y + (f + 1 - MARGEN) * a.alto))
-        m = sorted((px[x, y] for y in range(y0, y1 + 1) for x in range(x0, x1 + 1)), key=lum)
-        celdas.append(m[int((len(m) - 1) * 0.75)])
+        celdas.append(dominante([px[x, y] for y in rango(ys[f], ys[f + 1], H) for x in rango(xs[c], xs[c + 1], W)]))
 
 
 def lab(c):
@@ -82,7 +131,7 @@ def paleta(delta):
     asig = [min(range(len(reps)), key=lambda i: d2(L, reps[i])) for L in labs]
     # Raros → frecuente más cercano.
     cuenta = Counter(asig)
-    minimo = max(2, round(len(celdas) * RARO))
+    minimo = max(2, redondear(len(celdas) * RARO))
     frecuentes = [i for i, n in cuenta.items() if n >= minimo]
     return [g if cuenta[g] >= minimo else min(frecuentes, key=lambda i: d2(labs[k], reps[i])) for k, g in enumerate(asig)]
 

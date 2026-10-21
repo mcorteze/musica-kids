@@ -7,6 +7,61 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Pintar pixel art: proceso nuevo + láminas Paw Patrol (2026-10-20)
+- Recreación automática: ajuste de líneas a las reales + color dominante
+  (script y vista previa idénticos, 0 celdas distintas verificado).
+- Láminas creadas: paw-patrol/chase, rocky, ryder, skye (AVIF sin pérdida).
+- Establecer cuadrícula: tabs En preparación / Procesados + Descartar
+  (viaja en el texto de Copiar).
+- [ ] frozen/elsa-chibi quedó con el proceso viejo: recrearla si el usuario quiere.
+- Lote 2026-10-20 (26 cuadrículas): 16 láminas OK (incluida Rubble). 10 con
+  cuadrícula descalzada → lámina quitada, vuelven a En preparación con su
+  cuadrícula anotada: anna-cara, anna-chibi, elsa, olaf-cara, goofy-cara,
+  pluto-cara, marciano, senor-cara-de-papa, pikachu, chase-cuerpo.
+  Piglet: franja horizontal más clara a media altura (revisar).
+- Lote 2 (16): 10 OK; 6 con cuadrícula descalzada (lámina quitada): arcoiris,
+  mariposa, unicornio-pequeno, unicornio-perfil, dracula, fantasma-bruja.
+- Portadas de los 8 temas propios reemplazadas por logos de internet
+  (Commons, 1000logos; Halloween y Unicornios = emoji Noto). Regla en skill.
+- Descartados y borrados: chase-casco, jessie, logo-toy-story.
+- Sin commit.
+
+## Páginas del modo desarrollador compactas (2026-10-20)
+- Bloque "VERSION COMPACTA" en App.css acotado a .dif-dev / .romp-catalogo
+  (tabs, estado, botones, tarjetas). Editor de cuadrícula pixel: panel
+  sticky con scroll propio, controles small, previa 220. Arreglado
+  .dif-dev-acciones--fila (salía apilado). Verificado con capturas 1366x768
+  y 1280x650. Sin capturar: drawer "afinar" y modal de propuesta de
+  Rompecabezas (solo cambian sus botones). Sin commit.
+
+## Visibilidad de Actividades (2026-10-20)
+- Ya no depende del responsive: publicados en todas las vistas (móvil
+  incluido); no publicados (.memory-solo-dev / soloDev) y herramientas
+  (.dif-dev-btn, .romp-catalogo-btn) solo con modo desarrollador. Build OK,
+  sin captura. Sin commit.
+
+## Diferencias en vertical (2026-10-20)
+- DiferenciasJuego calcula lado a lado vs apiladas y usa la que da
+  imágenes más grandes (.dif-par--apiladas). Build OK, sin captura. Sin commit.
+
+## Pintar pixel art — carga masiva (2026-10-20)
+- 72 originales nuevos recortados en pintar-pixel/<tema>/originales/ desde
+  Downloads/"pixel art" (13 categorías). Temas nuevos en TEMAS_PIXEL_PROPIOS
+  con portada.avif: hello-kitty, kpop, winnie-pooh, bluey, halloween,
+  pokemon, sonic, unicornio. Frozen, Mickey, Moana, Paw Patrol y Toy Story
+  usan su dorso del Memorice.
+- Omitidos: Winnie "descarga (41)" (= 23), Mickey "descarga (30)" (= 24),
+  Frozen "Image recherchée…" (= elsa-chibi ya cargada). Collage Mickey
+  "descarga (6)" dividido en 6 (*-mini). Tapados íconos de Google Lens/flechas
+  en anna-cara, unicornio-pony, elsa, hello-kitty; texto "27 x 21" en
+  unicornio-arcoiris; firma en senor-cara-de-papa.
+- winnie-pooh/igor es FOTO de un papel en perspectiva: la cuadrícula no es
+  regular; probablemente no sirva.
+- Portadas solo se ven en el selector cuando el tema tenga ≥1 lámina; hoy
+  los temas nuevos aparecen únicamente en "Establecer cuadrícula".
+- [ ] Usuario establece cuadrículas → recrear láminas (pintar_desde_cuadricula.py).
+- [ ] Sin commit.
+
 ## Decisiones Pintar por números (2026-10-19)
 - Imágenes propias del juego (no se reusan las de Rompecabezas), en
   src/assets/pintar/<tema>/nivel-<n>/. Skill: skills/agregar-pintar.md.

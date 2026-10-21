@@ -16,7 +16,8 @@ const IMAGEN_MAX_W = 900;
 const FALLO_MS = 700;
 const COMPLETADO_MS = 800;
 
-// Encuentra las diferencias: dos imagenes lado a lado; se hace click en la
+// Encuentra las diferencias: dos imagenes lado a lado (o apiladas en
+// pantalla vertical); se hace click en la
 // SEGUNDA (la que tiene las diferencias) y, si el click cae dentro de la
 // ZONA de una diferencia anotada en src/data/diferencias.js (o del radio, si
 // esta anotada como punto; ver utils/zonasDiferencias.js), aparece un
@@ -46,8 +47,10 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
   }, [par]);
 
   // Mide el espacio disponible y calcula el ancho de cada imagen: la mas
-  // grande que entra con las dos lado a lado y la fila de progreso arriba,
-  // respetando la proporcion real (manda la de la segunda imagen).
+  // grande que entra con la fila de progreso arriba, respetando la
+  // proporcion real (manda la de la segunda imagen). Prueba las dos
+  // disposiciones (lado a lado o una arriba de la otra) y se queda con la
+  // que da imagenes mas grandes: en pantalla vertical gana la apilada.
   useLayoutEffect(() => {
     const el = areaRef.current;
     if (!el || !imagenes) return;
@@ -55,10 +58,12 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
     const recalcular = () => {
       const { width, height } = el.getBoundingClientRect();
       if (!width || !height) return;
-      const wPorAncho = (width - GAP_IMAGENES) / 2;
       const hLibre = height - ALTO_PUNTOS - GAP_VERTICAL;
-      const w = Math.max(0, Math.floor(Math.min(wPorAncho, hLibre * aspecto, IMAGEN_MAX_W)));
-      setTam({ w, h: Math.floor(w / aspecto) });
+      const wLado = Math.min((width - GAP_IMAGENES) / 2, hLibre * aspecto, IMAGEN_MAX_W);
+      const wApiladas = Math.min(width, ((hLibre - GAP_IMAGENES) / 2) * aspecto, IMAGEN_MAX_W);
+      const apiladas = wApiladas > wLado;
+      const w = Math.max(0, Math.floor(apiladas ? wApiladas : wLado));
+      setTam({ w, h: Math.floor(w / aspecto), apiladas });
     };
     recalcular();
     const ro = new ResizeObserver(recalcular);
@@ -150,7 +155,7 @@ export default function DiferenciasJuego({ par, radio, onCompletado }) {
       {!imagenes ? (
         <p className="memory-cargando">Preparando las imágenes...</p>
       ) : (
-        <div className="dif-par" style={{ visibility: tam.w ? 'visible' : 'hidden' }}>
+        <div className={`dif-par${tam.apiladas ? ' dif-par--apiladas' : ''}`} style={{ visibility: tam.w ? 'visible' : 'hidden' }}>
           <div className="dif-imagen" style={{ width: tam.w, height: tam.h }}>
             <img src={imagenes.a.src} alt="" draggable={false} />
           </div>

@@ -67,18 +67,46 @@ idéntico a lo publicado (commit 78c787d): niveles, "Asignar niveles", propuesta
 En el juego nuevo la CUADRÍCULA MANDA: no hay niveles ni tamaños distintos.
 Flujo (exactamente este, pedido del usuario):
 
-1. El usuario pasa una imagen (pixel art o patrón con cuadrícula) → guardarla
-   en `src/assets/pintar-pixel/<tema>/originales/<nombre>.avif` (crf 22).
+1. El usuario pasa una imagen (pixel art o patrón con cuadrícula) → RECORTAR
+   los márgenes muertos (fondo vacío, numeración, leyenda de colores, marcas
+   de agua) y guardarla en `src/assets/pintar-pixel/<tema>/originales/<nombre>.avif`
+   (`-crf 22 -pix_fmt yuv444p`: admite lados impares).
+   Recorte: `py -I -X utf8 herramientas/recortar_margenes.py <carpeta con subcarpetas
+   por tema> <salida> [ajustes.json]` → detecta fondo y color de línea, borra
+   la cuadrícula/aros de beads (apertura morfológica) y descarta franjas
+   separadas; genera hojas `hoja-<tema>.png` con la caja propuesta. REVISAR
+   cada hoja: falla con marcos gruesos, líneas mayores cada 10 cuadros y
+   fotos; ahí recorte manual. Íconos encima de la imagen (lupa de Google
+   Lens, flechas) se tapan con el color de fondo. Collages (varias figuras)
+   se dividen en una lámina por figura. Duplicados (mismo md5) se omiten.
+   Tema NUEVO (sin set de Memorice): agregarlo a `TEMAS_PIXEL_PROPIOS`
+   (MenuActividades.jsx) y crear `pintar-pixel/<tema>/portada.avif`
+   (512×512). NUNCA usar una imagen del juego (original ni lámina) como
+   portada (pedido explícito 2026-10-20): buscar en internet el LOGO del tema
+   (Wikimedia Commons, 1000logos…) o, si el tema no tiene logo (Halloween,
+   Unicornios), una ilustración limpia (emoji Noto de Google). Logo centrado
+   sobre un degradado suave del tema; AVIF crf 26. Script de composición:
+   scratchpad de la sesión 2026-10-20 (armar.py), reconstruirlo si hace falta.
+   Los temas del Memorice usan su dorso como card.
 2. El usuario abre el juego → "Modo desarrollador" → "Establecer cuadrícula"
    (PintarPixelDev + PintarCuadriculaEditor): marca esquinas + columnas/filas,
    ajusta, ve la vista previa (mismo cálculo que el script), Guardar →
-   "Copiar cuadrículas" (los borradores se limpian al copiar).
+   "Copiar" (los borradores y descartes se limpian al copiar). Tabs "En
+   preparación" (originales sin lámina, con casilla "Descartar") /
+   "Procesados" (muestra la lámina recreada).
 3. El usuario pega el texto → anotarlo en `src/data/pintarCuadriculas.js`
-   (registro; clave `<tema>/<nombre>`, valores sobre el ORIGINAL).
+   (registro; clave `<tema>/<nombre>`, valores sobre el ORIGINAL). Si trae un
+   bloque "Descartar en Pintar pixel art", borrar esos originales (y su
+   entrada en pintarCuadriculas.js si la hubiera).
 4. RECREAR la lámina desde cero con esa cuadrícula:
    `py herramientas/pintar_desde_cuadricula.py <original> <salida.png> --x .. --y .. --ancho .. --alto .. --columnas .. --filas .. --vista v.png`
-   → rescata el color de cada celda (percentil 75 del centro), consolida los
+   → (2026-10-20) ajusta cada línea interior de la cuadrícula a la línea real
+   más cercana (hasta ¼ de cuadro), toma el color DOMINANTE del centro de cada
+   celda (líneas claras/oscuras y agujeros de beads no ganan), consolida los
    parecidos (Lab ΔE 12, sube hasta dejar MÁXIMO 15 colores), 1 pixel = 1 celda.
+   utils/pintarPixel.js (vista previa) hace EXACTAMENTE lo mismo: si se cambia
+   uno, cambiar el otro (redondeo .5 hacia arriba en ambos) y comprobar 0
+   celdas distintas con los mismos pixeles.
    Mostrar al usuario original vs. lámina lado a lado.
 5. Guardar SIN pérdida en `src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif`:
    `ffmpeg -i salida.png -c:v libaom-av1 -still-picture 1 -aom-params lossless=1 -pix_fmt gbrp <destino>`

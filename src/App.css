@@ -1636,73 +1636,20 @@ body {
 }
 
 /* ========== MENU GENERAL / MEMORICE / IMPRIMIR ==========
-   El boton de entrada (abre el menu con Imprimir y Memorice) se ve en
-   cualquier pantalla: Imprimir funciona bien en movil. Memorice en
-   cambio sigue pensado para tablet/laptop/desktop — su tarjeta puntual
-   se oculta en movil con .memory-solo-tablet mas abajo, no el boton
-   de entrada entero. */
-
-/* Tarjetas de Memorice, Contar y Rompecabezas en el menu general: ocultas
-   en movil (regla del proyecto: todas las actividades salvo Imprimir se
-   restringen en movil), visibles de tablet para arriba. Imprimir no lleva
-   esta clase — queda disponible en cualquier pantalla. Ordena la secuencia
-   usa .memory-solo-laptop, que oculta ademas en tablet (solo laptop/desktop).
-   Selector compuesto (no ".memory-solo-tablet" sola):
-   tiene la MISMA especificidad que ".memory-picker-tile" (una sola
-   clase cada una), y esa regla esta declarada mas abajo en este archivo
-   — por orden de cascada le ganaba a "display:none" sin importar el
-   ancho de pantalla. El selector compuesto tiene mas especificidad y
-   gana siempre, sin depender del orden. */
-.memory-picker-tile.memory-solo-tablet {
+   Regla del proyecto (2026-10-20): los juegos publicados se ven en TODAS
+   las pantallas, movil incluido, sin clase extra. Los que no estan
+   publicados (en desarrollo o experimentales) llevan .memory-solo-dev y
+   solo aparecen con el MODO DESARROLLADOR activo (20 toques al titulo
+   "Actividades", ver TOQUES_MODO_DEV en MenuActividades.jsx), en cualquier
+   pantalla. Ninguna restriccion depende ya del responsive.
+   Selector compuesto: mas especificidad que ".memory-picker-tile" sola
+   (declarada mas abajo), asi gana sin depender del orden del archivo; el
+   de .memory-dev (3 clases) le gana a su vez. */
+.memory-picker-tile.memory-solo-dev {
   display: none;
 }
 
-@media screen and (min-width: 641px) {
-  .memory-picker-tile.memory-solo-tablet {
-    display: flex;
-  }
-}
-
-/* Accesos habilitados momentaneamente SOLO en laptop/desktop, mientras se
-   terminan de desarrollar — pedido explicito: los niños que usan la app
-   en tablet no deben poder verlos todavia. Hacen falta LAS DOS
-   condiciones a la vez (min-width Y hover/pointer), no una sola:
-   - Solo ancho (min-width:1025px) no alcanza: una tablet comun (hasta un
-     iPad chico) en horizontal ya supera ese ancho, asi que igual
-     mostraria el acceso en una tablet real.
-   - Solo tipo de puntero (hover:hover + pointer:fine) tampoco alcanza
-     para PROBAR esto achicando la ventana del navegador con mouse: el
-     mouse sigue siendo mouse sin importar cuanto se achique la ventana,
-     asi que angostarla a "tamaño tablet" no lo ocultaria en esa prueba.
-   Con las dos juntas: una tablet real (touch, cualquier ancho/orientacion)
-   nunca las cumple ambas, y achicar la ventana del navegador con mouse
-   tambien lo oculta (deja de cumplir el ancho). La tarjeta de Ordena la
-   secuencia en el menu general usa esta clase, y dentro de cada selector
-   de temas (Memorice en TEMAS_META, Rompecabezas en
-   TEMAS_ROMPECABEZAS_META) cualquier tema marcado con "soloLaptop" — hoy
-   ninguno: Frozen, Toy Story y Paw Patrol quedaron habilitados en todos
-   los responsives (pedido explicito). Selector compuesto (mismo motivo que
-   ".memory-picker-tile.memory-solo-tablet" arriba): mas especificidad
-   que ".memory-picker-tile" sola, gana sin depender del orden en el
-   archivo. */
-.memory-picker-tile.memory-solo-laptop {
-  display: none;
-}
-
-@media screen and (min-width: 1025px) and (hover: hover) and (pointer: fine) {
-  .memory-picker-tile.memory-solo-laptop {
-    display: flex;
-  }
-}
-
-/* MODO DESARROLLADOR oculto (ver TOQUES_MODO_DEV en MenuActividades.jsx):
-   con el drawer en modo dev, TODAS las tarjetas del menu se ven sin
-   importar el responsive — se pisa a proposito la restriccion de movil
-   (.memory-solo-tablet) y la de solo-laptop (.memory-solo-laptop), que
-   siguen intactas para todos los demas. Selector de 3 clases: le gana a
-   los compuestos de arriba (2 clases) sin depender del orden del archivo. */
-.memory-dev .memory-picker-tile.memory-solo-tablet,
-.memory-dev .memory-picker-tile.memory-solo-laptop {
+.memory-dev .memory-picker-tile.memory-solo-dev {
   display: flex;
 }
 
@@ -2943,11 +2890,9 @@ body {
 
 /* ========== CATALOGO DE ROMPECABEZAS ==========
    Boton del selector de temas + pagina "Todos los rompecabezas" (tabs por
-   tema, subtitulo por nivel, imagenes en miniatura). El boton es solo
-   para laptop, mismas dos condiciones que .memory-solo-laptop (ancho Y
-   puntero fino); la regla que lo muestra va en el MISMO selector que la
-   que lo oculta y despues de ella, asi no puede perder el empate de
-   especificidad contra otra regla mas abajo. */
+   tema, subtitulo por nivel, imagenes en miniatura). El boton es
+   herramienta de trabajo: solo con el modo desarrollador activo
+   (.memory-dev en el drawer), en cualquier pantalla. */
 .romp-catalogo-btn {
   display: none;
   appearance: none;
@@ -2967,10 +2912,8 @@ body {
   transition: box-shadow 0.18s ease;
 }
 
-@media screen and (min-width: 1025px) and (hover: hover) and (pointer: fine) {
-  .romp-catalogo-btn {
-    display: inline-flex;
-  }
+.memory-dev .romp-catalogo-btn {
+  display: inline-flex;
 }
 
 .romp-catalogo-btn:hover {
@@ -3455,7 +3398,7 @@ body {
 }
 
 /* ========== ENCUENTRA LAS DIFERENCIAS ==========
-   Dos imagenes lado a lado (DiferenciasJuego.jsx): se hace click en la
+   Dos imagenes lado a lado, o apiladas en vertical (DiferenciasJuego.jsx): se hace click en la
    segunda y aparecen circulos verdes de acierto solo en ella. El tamaño de
    cada imagen lo calcula el componente; los gaps de aqui tienen que
    coincidir con GAP_IMAGENES / ALTO_PUNTOS / GAP_VERTICAL de ese archivo.
@@ -3503,6 +3446,11 @@ body {
 .dif-par {
   display: flex;
   gap: 16px;
+}
+
+/* Pantalla vertical: una imagen arriba (la referencia) y la otra abajo. */
+.dif-par--apiladas {
+  flex-direction: column;
 }
 
 .dif-imagen {
@@ -3603,9 +3551,9 @@ body {
 }
 
 /* ---------- Modo desarrollador (solo para preparar niveles) ----------
-   Encuentra las diferencias se abre de tablet para arriba, pero este boton
-   es herramienta de trabajo: solo laptop, mismas dos condiciones que
-   .romp-catalogo-btn (ancho Y puntero fino). */
+   Herramienta de trabajo (Diferencias, Pintar por numeros y Pintar pixel
+   art): solo con el modo desarrollador activo (.memory-dev en el drawer),
+   en cualquier pantalla, igual que .romp-catalogo-btn. */
 .dif-dev-btn {
   appearance: none;
   border: none;
@@ -3613,10 +3561,8 @@ body {
   display: none;
 }
 
-@media screen and (min-width: 1025px) and (hover: hover) and (pointer: fine) {
-  .dif-dev-btn {
-    display: inline-flex;
-  }
+.memory-dev .dif-dev-btn {
+  display: inline-flex;
 }
 
 .dif-dev-btn {
@@ -3912,10 +3858,16 @@ body {
   gap: 14px;
 }
 
+.pintar-grilla-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Tarjeta = boton que abre el editor (miniatura + nombre) + marca de estado
+   + casilla "Descartar" (solo en "En preparacion"). */
 .pintar-grilla-tarjeta {
-  appearance: none;
   border: 2px solid transparent;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -3925,8 +3877,6 @@ body {
   border-radius: 14px;
   background: #ffffff;
   color: #0B4F73;
-  font-family: inherit;
-  text-align: left;
   transition: border-color 0.18s ease;
 }
 
@@ -3934,10 +3884,40 @@ body {
   border-color: #C026D3;
 }
 
+.pintar-grilla-abrir {
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+}
+
 .pintar-grilla-tarjeta img {
   width: 100%;
   height: 160px;
   object-fit: contain;
+}
+
+/* Lamina recreada (pocos pixeles): ampliada sin suavizar. */
+.pintar-grilla-tarjeta img.pixel-nitida {
+  image-rendering: pixelated;
+}
+
+/* Marcada para descartar: se atenua (sigue clickeable para desmarcar). */
+.pintar-grilla-tarjeta.descartada .pintar-grilla-abrir {
+  opacity: 0.4;
+}
+
+.pintar-grilla-tarjeta .ant-checkbox-wrapper {
+  font-size: 12px;
 }
 
 .pintar-grilla-tarjeta-nombre {
@@ -3979,40 +3959,43 @@ body {
 
 .pintar-editor-panel {
   flex: none;
-  width: 330px;
+  width: 290px;
+  position: sticky;
+  top: 0;
+  max-height: calc(100dvh - 70px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 14px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.85);
   color: #0B4F73;
 }
 
 .pintar-editor-panel h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
 }
 
 .pintar-editor-instruccion {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .pintar-editor-campos {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
+  gap: 4px 8px;
 }
 
-.pintar-editor-campos label,
-.pintar-editor-zoom {
+.pintar-editor-campos label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
+  gap: 1px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -4020,10 +4003,39 @@ body {
   width: 100%;
 }
 
+/* Zoom en una sola fila: rotulo a la izquierda, slider al lado. */
+.pintar-editor-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pintar-editor-zoom span {
+  flex: none;
+  width: 52px;
+}
+
+.pintar-editor-zoom .ant-slider {
+  flex: 1;
+  margin: 6px 4px;
+}
+
+.pintar-editor-previa {
+  padding: 6px;
+  gap: 4px;
+}
+
+.pintar-editor-previa .pintar-dev-canvas {
+  max-width: 220px;
+  max-height: 220px;
+}
+
 .pintar-editor-acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .pintar-color.actual {
@@ -4313,7 +4325,9 @@ body {
   background: #C026D3;
 }
 
-.dif-dev-acciones--fila {
+/* Selector compuesto: .dif-dev-acciones (column) esta declarada mas abajo y
+   con una sola clase le ganaba por orden, y los botones salian apilados. */
+.dif-dev-acciones.dif-dev-acciones--fila {
   flex-direction: row;
   flex-wrap: wrap;
 }
@@ -4493,6 +4507,189 @@ body {
   font-size: 12px;
   overflow-x: auto;
   user-select: all;
+}
+
+/* ========== PAGINAS DEL MODO DESARROLLADOR: VERSION COMPACTA ==========
+   Las usa un adulto trabajando, no los niños: se achican las piezas que
+   heredan el tamaño "infantil" (tabs de tema, selector de estado, botones,
+   tarjetas) para que entre mas contenido en pantalla. Todo va acotado a los
+   contenedores de esas paginas (.dif-dev: Diferencias, Pintar por numeros,
+   Pintar pixel art; .romp-catalogo: Todos los rompecabezas), asi el juego
+   no cambia. */
+:is(.dif-dev, .romp-catalogo) {
+  gap: 10px;
+}
+
+:is(.dif-dev, .romp-catalogo) .romp-tabs {
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom-width: 1px;
+}
+
+:is(.dif-dev, .romp-catalogo) .romp-tab {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  font-size: 13px;
+}
+
+:is(.dif-dev, .romp-catalogo) .romp-tab.activo {
+  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.2);
+}
+
+:is(.dif-dev, .romp-catalogo, .romp-afinar-panel) .dev-estado {
+  padding: 2px;
+  border-radius: 16px;
+}
+
+:is(.dif-dev, .romp-catalogo, .romp-afinar-panel) .dev-estado-btn {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+:is(.dif-dev, .romp-afinar-panel, .romp-propuesta-modal) .dif-dev-boton {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 12px;
+}
+
+.dif-dev .dif-dev-niveles {
+  gap: 6px;
+}
+
+.dif-dev .dif-dev-nivel {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.dif-dev .dif-dev-barra {
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.dif-dev .dif-dev-lectura {
+  width: 150px;
+  font-size: 14px;
+}
+
+.dif-dev .dif-dev-acciones {
+  gap: 6px;
+}
+
+.dif-dev .dif-dev-marcas {
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.dif-dev .dif-dev-marcas h3 {
+  font-size: 14px;
+}
+
+.dif-dev .dif-dev-vacio,
+.dif-dev .dif-dev-lista li {
+  font-size: 13px;
+}
+
+.dif-dev .dif-dev-lista li {
+  padding: 2px 8px;
+}
+
+.dif-dev .dif-dev-panel figcaption {
+  font-size: 13px;
+}
+
+.dif-dev .dif-dev-par {
+  gap: 12px;
+}
+
+/* Pintar por numeros: una fila por lamina. */
+.dif-dev .pintar-dev-fila {
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.dif-dev .pintar-dev-fila h3 {
+  font-size: 14px;
+}
+
+.dif-dev .pintar-dev-fila-header {
+  gap: 12px;
+}
+
+.dif-dev .pintar-dev-vistas {
+  gap: 8px;
+}
+
+.dif-dev .pintar-dev-vista {
+  gap: 4px;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.dif-dev .pintar-dev-vista figcaption {
+  font-size: 12px;
+}
+
+.dif-dev .pintar-dev-original,
+.dif-dev .pintar-dev-canvas {
+  max-width: 170px;
+  max-height: 170px;
+}
+
+.dif-dev .pintar-dev-datos {
+  font-size: 11px;
+}
+
+/* Pintar pixel art: "Establecer cuadricula". */
+.dif-dev .pintar-grilla-titulo {
+  font-size: 15px;
+}
+
+.dif-dev .pintar-grilla-lista {
+  gap: 8px;
+}
+
+.dif-dev .pintar-grilla-tarjeta {
+  width: 140px;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.dif-dev .pintar-grilla-tarjeta img {
+  height: 110px;
+}
+
+.dif-dev .pintar-grilla-tarjeta-nombre {
+  font-size: 12px;
+}
+
+/* Todos los rompecabezas: misma miniatura, menos aire entre piezas. */
+.romp-catalogo .romp-tab-panel {
+  gap: 14px;
+}
+
+.romp-catalogo .romp-nivel-seccion {
+  gap: 6px;
+}
+
+.romp-catalogo .romp-nivel-titulo {
+  font-size: 15px;
+}
+
+.romp-catalogo .romp-miniaturas {
+  gap: 10px;
+}
+
+.romp-catalogo .romp-miniatura-item {
+  gap: 4px;
 }
 
 /* ========== CHILD LOCK ========== */
@@ -4727,80 +4924,6 @@ body {
    cualquier tamano por si queda abierta al girar o agrandar la ventana. */
 .driving-trigger-btn {
   display: none;
-}
-
-/* ---------- Confirmacion ---------- */
-.driving-confirm-overlay {
-  position: fixed;
-  inset: 0;
-  /* Por encima del reproductor flotante (10000): toma total de pantalla. */
-  z-index: 10001;
-  background: rgba(10, 8, 16, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-.driving-confirm-modal {
-  width: min(400px, 100%);
-  background: #ffffff;
-  border-radius: 28px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
-  padding: 32px 28px 28px;
-  text-align: center;
-  animation: modalSlide 0.25s ease;
-}
-
-.driving-confirm-icon {
-  display: block;
-  font-size: 40px;
-  line-height: 1;
-  margin-bottom: 12px;
-  color: #1a1a2e;
-}
-
-.driving-confirm-modal h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: #1a1a2e;
-}
-
-.driving-confirm-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 24px;
-}
-
-.driving-confirm-btn {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  flex: 1;
-  height: 48px;
-  border-radius: 16px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: inherit;
-  transition: transform 0.15s ease;
-}
-
-.driving-confirm-btn:active {
-  transform: scale(0.96);
-}
-
-.driving-confirm-btn.ghost {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1a1a2e;
-}
-
-.driving-confirm-btn.solid {
-  background: var(--accent-color, #1a1a2e);
-  color: var(--accent-ink, #ffffff);
 }
 
 /* ---------- Pantalla de conduccion ---------- */

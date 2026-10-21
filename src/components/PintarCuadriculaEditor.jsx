@@ -5,7 +5,7 @@ import { recrearConGrilla } from '../utils/pintarPixel';
 // Lado máximo (px) del lienzo ampliado: más grande, el navegador sufre.
 const LIENZO_MAX = 6000;
 // Tamaño de la vista previa del resultado.
-const PREVIA_MAX = 300;
+const PREVIA_MAX = 220;
 
 function grillaInicialDe(img) {
   // Sin ajuste previo: una cuadrícula de 20x20 sobre toda la imagen, para
@@ -164,6 +164,7 @@ export default function PintarCuadriculaEditor({ img, nombre, grillaGuardada, on
         <p className="pintar-editor-instruccion">{instruccion}</p>
 
         <Button
+          size="small"
           type={modo === 'mover' ? 'primary' : 'default'}
           onClick={() => {
             setEsquina1(null);
@@ -174,20 +175,20 @@ export default function PintarCuadriculaEditor({ img, nombre, grillaGuardada, on
         </Button>
 
         <div className="pintar-editor-campos">
-          <label>Columnas<InputNumber min={1} max={200} value={grilla.columnas} onChange={cambiarColumnas} /></label>
-          <label>Filas<InputNumber min={1} max={200} value={grilla.filas} onChange={cambiarFilas} /></label>
-          <label>Origen X<InputNumber step={0.5} precision={2} value={grilla.x} onChange={cambiar('x')} /></label>
-          <label>Origen Y<InputNumber step={0.5} precision={2} value={grilla.y} onChange={cambiar('y')} /></label>
-          <label>Ancho cuadro<InputNumber min={0.5} step={0.05} precision={2} value={grilla.ancho} onChange={cambiar('ancho')} /></label>
-          <label>Alto cuadro<InputNumber min={0.5} step={0.05} precision={2} value={grilla.alto} onChange={cambiar('alto')} /></label>
+          <label>Columnas<InputNumber size="small" min={1} max={200} value={grilla.columnas} onChange={cambiarColumnas} /></label>
+          <label>Filas<InputNumber size="small" min={1} max={200} value={grilla.filas} onChange={cambiarFilas} /></label>
+          <label>Origen X<InputNumber size="small" step={0.5} precision={2} value={grilla.x} onChange={cambiar('x')} /></label>
+          <label>Origen Y<InputNumber size="small" step={0.5} precision={2} value={grilla.y} onChange={cambiar('y')} /></label>
+          <label>Ancho cuadro<InputNumber size="small" min={0.5} step={0.05} precision={2} value={grilla.ancho} onChange={cambiar('ancho')} /></label>
+          <label>Alto cuadro<InputNumber size="small" min={0.5} step={0.05} precision={2} value={grilla.alto} onChange={cambiar('alto')} /></label>
         </div>
 
         <label className="pintar-editor-zoom">
-          Zoom {zoom}x
+          <span>Zoom {zoom}x</span>
           <Slider min={1} max={zoomMax} value={zoom} onChange={setZoom} />
         </label>
 
-        <figure className="pintar-dev-vista">
+        <figure className="pintar-dev-vista pintar-editor-previa">
           <figcaption>Así queda en el juego</figcaption>
           <canvas ref={previaRef} className="pintar-dev-canvas" />
           <div className="pintar-dev-datos">
@@ -196,9 +197,9 @@ export default function PintarCuadriculaEditor({ img, nombre, grillaGuardada, on
         </figure>
 
         <div className="pintar-editor-acciones">
-          <Button type="primary" onClick={() => onGuardar(grilla)}>Guardar</Button>
-          {grillaGuardada && <Button danger onClick={onQuitar}>Quitar cuadrícula</Button>}
-          <Button onClick={onVolver}>Volver</Button>
+          <Button size="small" type="primary" onClick={() => onGuardar(grilla)}>Guardar</Button>
+          {grillaGuardada && <Button size="small" danger onClick={onQuitar}>Quitar cuadrícula</Button>}
+          <Button size="small" onClick={onVolver}>Volver</Button>
         </div>
       </aside>
     </div>

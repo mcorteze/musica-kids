@@ -26,14 +26,39 @@ export function guardarBorradoresCuadricula(borradores) {
 
 const r2 = (n) => Math.round(n * 100) / 100;
 
-// Texto listo para pegar en src/data/pintarCuadriculas.js.
-export function textoCuadriculas(borradores) {
+// Imágenes originales marcadas para DESCARTAR (no sirven para el juego): se
+// guardan en este navegador hasta copiarlas; Claude borra el original.
+// Lista de "<tema>/<nombre>".
+const DESCARTES_KEY = 'musica-kids-pintar-pixel-descartes';
+
+export function leerDescartesPixel() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(DESCARTES_KEY));
+    return Array.isArray(guardado) ? guardado.filter((c) => typeof c === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function guardarDescartesPixel(descartes) {
+  try {
+    localStorage.setItem(DESCARTES_KEY, JSON.stringify(descartes));
+  } catch {
+    // Sin localStorage los descartes duran lo que dure la pagina.
+  }
+}
+
+// Texto para pegarle a Claude: cuadrículas (van a src/data/pintarCuadriculas.js)
+// y originales a descartar.
+export function textoCuadriculas(borradores, descartes = []) {
+  const bloques = [];
   const filas = Object.keys(borradores)
     .sort()
     .map((clave) => {
       const g = borradores[clave];
       return `  '${clave}': { x: ${r2(g.x)}, y: ${r2(g.y)}, ancho: ${r2(g.ancho)}, alto: ${r2(g.alto)}, columnas: ${g.columnas}, filas: ${g.filas} },`;
     });
-  if (filas.length === 0) return '';
-  return `Cuadrículas de Pintar por números (src/data/pintarCuadriculas.js):\n${filas.join('\n')}`;
+  if (filas.length > 0) bloques.push(`Cuadrículas de Pintar pixel art (src/data/pintarCuadriculas.js):\n${filas.join('\n')}`);
+  if (descartes.length > 0) bloques.push(`Descartar en Pintar pixel art (borrar el original):\n${[...descartes].sort().map((c) => `  ${c}`).join('\n')}`);
+  return bloques.join('\n\n');
 }

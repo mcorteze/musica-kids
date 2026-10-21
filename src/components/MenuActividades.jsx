@@ -135,7 +135,7 @@ function etiquetaDesdeArchivo(nombreArchivo) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, fondoPosicion, oculto, soloLaptop }) => {
+const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, fondoPosicion, oculto, soloDev }) => {
   const info = grupo ? gruposReproductor.find((g) => g.id === grupo) : null;
   const nombre = nombreFijo ?? info?.name ?? id;
 
@@ -167,7 +167,7 @@ const TEMAS = TEMAS_META.map(({ id, grupo, nombre: nombreFijo, header, fondoPosi
     // cartas = 2 parejas). El fondo es opcional (ver fondoAlterno).
     listo: Boolean(back && caras.length >= 2),
     oculto: Boolean(oculto),
-    soloLaptop: Boolean(soloLaptop),
+    soloDev: Boolean(soloDev),
   };
 });
 
@@ -280,14 +280,14 @@ for (const carpeta in LOADERS_GALERIA) {
 const Z_PREVIEW_GALERIA = 10002;
 
 // ========== MODO DESARROLLADOR (oculto) ==========
-// Las actividades del drawer estan restringidas en movil (y varias solo en
-// laptop) y eso sigue igual para los ninos. Para poder verlas en el celular
-// mientras se desarrollan hay un interruptor OCULTO: tocar TOQUES_MODO_DEV
+// Los juegos publicados se ven en todas las pantallas; los no publicados y
+// las herramientas de trabajo (botones "Modo desarrollador", "Ver todos los
+// rompecabezas") quedan ocultos para los ninos en CUALQUIER pantalla, laptop
+// incluida. Para verlos hay un interruptor OCULTO: tocar TOQUES_MODO_DEV
 // veces seguidas el titulo "Actividades" del menu principal del drawer (solo
 // ahi, en ningun otro lugar del sitio) lo activa; repetirlo lo desactiva.
 // Se guarda en localStorage, asi que vale solo para ESE dispositivo. Activo,
-// el drawer muestra todas las tarjetas sin importar el responsive (ver
-// .memory-dev en App.css). Cada toque debe llegar antes de VENTANA_TOQUES_MS
+// el drawer muestra todo (ver .memory-dev en App.css). Cada toque debe llegar antes de VENTANA_TOQUES_MS
 // desde el anterior o la cuenta vuelve a empezar.
 const TOQUES_MODO_DEV = 20;
 const VENTANA_TOQUES_MS = 1200;
@@ -800,7 +800,7 @@ function elegirAlAzarPendiente(items, excluirId, completados) {
 // ("Procesados"), con un selector de piezas para ver como quedaria el corte en
 // cada nivel. Cuando se decide su nivel, se mueven de "porAfinar" a ese
 // nivel y pasan solos al juego.
-const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, porAfinar = [], soloLaptop }) => {
+const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, niveles, porAfinar = [], soloDev }) => {
   // Solo quedan los rompecabezas cuya imagen existe, y solo los niveles que
   // conservan al menos uno.
   const conCarga = (lista) => lista
@@ -825,7 +825,7 @@ const TEMAS_ROMPECABEZAS = TEMAS_ROMPECABEZAS_META.map(({ id, nombre, header, ni
     // Listo con al menos el primer nivel disponible — los siguientes
     // pueden ir llegando despues sin que el tema deje de jugarse.
     listo: nivelesConCarga.length > 0,
-    soloLaptop: Boolean(soloLaptop),
+    soloDev: Boolean(soloDev),
   };
 });
 
@@ -1056,9 +1056,7 @@ function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
 }
 
 // ========== CONTAR ==========
-// Disponible de tablet para arriba, oculto en movil (pedido explicito:
-// todas las actividades salvo Imprimir se restringen en movil; su card usa
-// .memory-solo-tablet). Reutiliza los MISMOS temas y fotos de personajes ya
+// Publicado: visible en todas las pantallas. Reutiliza los MISMOS temas y fotos de personajes ya
 // convertidas para el Memorice (TEMAS, arriba) — no hace falta ningun
 // asset nuevo, solo la cantidad de fotos que ya tiene cada tema.
 // Cada ronda: se elige una foto al azar del tema y se muestra repetida
@@ -1164,8 +1162,7 @@ function reubicarPieza(tablero, piezaId, destinoSlot) {
 }
 
 // ========== ORDENA LA SECUENCIA ==========
-// Habilitado momentaneamente solo en laptop/desktop (pedido explicito,
-// misma clase .memory-solo-laptop que usa Frozen dentro de Rompecabezas).
+// En desarrollo: solo con el modo desarrollador activo (.memory-solo-dev).
 // Cada NIVEL es
 // una secuencia de cuadros (3 a 12) que hay que ordenar arrastrandolos de
 // un carrousel a casilleros numerados. Cada secuencia vive en
@@ -1300,9 +1297,9 @@ function PiezaSecuencia({ id, cuadros, ancho, alto }) {
 }
 
 // ========== ENCUENTRA LAS DIFERENCIAS ==========
-// Habilitado de tablet para arriba (.memory-solo-tablet, igual que
-// Rompecabezas), con todos sus temas; el boton "Modo desarrollador" de su
-// selector queda solo en laptop. Cada JUEGO es un PAR de imagenes en
+// Publicado (todas las pantallas), con todos sus temas; el boton "Modo
+// desarrollador" de su selector solo aparece con el modo desarrollador
+// activo (.dif-dev-btn). Cada JUEGO es un PAR de imagenes en
 // src/assets/diferencias/<tema>/<par>/{original,modificada}.avif (la
 // "imagen a" es la original, correcta; la "imagen b" es la modificada, la
 // que lleva las diferencias) y las coordenadas de cada diferencia se anotan
@@ -1397,9 +1394,9 @@ function guardarCompletadosDiferencias(temaId, lista) {
 }
 
 // ========== PINTAR POR NÚMEROS ==========
-// Habilitado de tablet para arriba (.memory-solo-tablet, igual que
-// Diferencias); el boton "Modo desarrollador" de su selector queda solo en
-// laptop (.dif-dev-btn). Cada lámina es UNA imagen en
+// Publicado (todas las pantallas, igual que Diferencias); el boton "Modo
+// desarrollador" de su selector solo aparece con el modo desarrollador
+// activo (.dif-dev-btn). Cada lámina es UNA imagen en
 // src/assets/pintar/<tema>/nivel-<n>/<archivo>; la cuadrícula numerada la
 // arma sola PintarJuego al abrirla (utils/pintarNumeros.js), así que no hay
 // nada que anotar: basta con dejar el archivo en la carpeta del nivel (ver
@@ -1491,8 +1488,8 @@ function guardarCompletadosPintar(temaId, lista) {
 }
 
 // ========== PINTAR PIXEL ART (EXPERIMENTAL) ==========
-// Juego aparte de "Pintar por números", solo laptop (.memory-solo-laptop)
-// mientras se desarrolla; después se decide si se unifican. La cuadrícula la
+// Juego aparte de "Pintar por números", solo con el modo desarrollador
+// activo (.memory-solo-dev) mientras se desarrolla; después se decide si se unifican. La cuadrícula la
 // establece el usuario sobre cada imagen original y MANDA: no hay niveles.
 // - src/assets/pintar-pixel/<tema>/originales/<nombre>.avif: la imagen tal
 //   como la trajo el usuario (solo la ve el Modo desarrollador, PintarPixelDev).
@@ -1507,7 +1504,24 @@ for (const [ruta, cargar] of Object.entries(ENTRADAS_PIXEL)) {
   if (!m) continue;
   ((ARCHIVOS_PIXEL[m[1]] ??= { originales: [], laminas: [] })[m[2]]).push({ id: m[3], nombre: m[3], cargar });
 }
-const TEMAS_PIXEL = TEMAS
+// Temas que solo existen en este juego (no tienen set de Memorice, así que
+// tampoco dorso): su card del selector es src/assets/pintar-pixel/<tema>/portada.avif
+// (cuadrada). Los temas del Memorice siguen usando su dorso.
+const TEMAS_PIXEL_PROPIOS = [
+  { id: 'hello-kitty', nombre: 'Hello Kitty', header: 'linear-gradient(120deg, #F78FB3 0%, #E8457A 55%, #D7263D 100%)' },
+  { id: 'kpop', nombre: 'Guerreras K-pop', header: 'linear-gradient(120deg, #9B5DE5 0%, #E0388F 55%, #1F3A93 100%)' },
+  { id: 'winnie-pooh', nombre: 'Winnie Pooh', header: 'linear-gradient(120deg, #F6B93B 0%, #E58E26 55%, #C0392B 100%)' },
+  { id: 'bluey', nombre: 'Bluey', header: 'linear-gradient(120deg, #7FB3E8 0%, #3D5A98 55%, #F28C38 100%)' },
+  { id: 'halloween', nombre: 'Halloween', header: 'linear-gradient(120deg, #F28C28 0%, #7A3FA0 55%, #2B2B2B 100%)' },
+  { id: 'pokemon', nombre: 'Pokémon', header: 'linear-gradient(120deg, #FFD93B 0%, #F2A007 55%, #E3350D 100%)' },
+  { id: 'sonic', nombre: 'Sonic', header: 'linear-gradient(120deg, #3A7BD5 0%, #1E3C9E 55%, #E0262E 100%)' },
+  { id: 'unicornio', nombre: 'Unicornios', header: 'linear-gradient(120deg, #F7A8D8 0%, #B57EDC 55%, #6EC6F0 100%)' },
+];
+const PORTADAS_PIXEL = Object.fromEntries(
+  Object.entries(import.meta.glob('../assets/pintar-pixel/*/portada.avif', { eager: true, import: 'default' }))
+    .map(([ruta, url]) => [ruta.match(/pintar-pixel\/([^/]+)\//)[1], url]),
+);
+const TEMAS_PIXEL = [...TEMAS, ...TEMAS_PIXEL_PROPIOS]
   .filter((t) => ARCHIVOS_PIXEL[t.id])
   .map((t) => {
     const orden = (a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true });
@@ -1515,6 +1529,7 @@ const TEMAS_PIXEL = TEMAS
       id: t.id,
       nombre: t.nombre,
       header: t.header,
+      portada: PORTADAS_PIXEL[t.id] ?? null,
       originales: ARCHIVOS_PIXEL[t.id].originales.sort(orden),
       laminas: ARCHIVOS_PIXEL[t.id].laminas.sort(orden),
     };
@@ -1629,8 +1644,8 @@ export default function MenuActividades({ onOpenChange }) {
   // header) — util sobre todo del nivel 2 en adelante, donde ya no hay
   // guia transparente de fondo.
   const [mostrarPreviaRomp, setMostrarPreviaRomp] = useState(false);
-  // Pagina "Todos los rompecabezas" (boton del selector de temas, solo
-  // laptop): un tab por tema, con todos sus niveles en miniatura.
+  // Pagina "Todos los rompecabezas" (boton del selector de temas, solo con
+  // el modo desarrollador): un tab por tema, con todos sus niveles en miniatura.
   const [catalogoRomp, setCatalogoRomp] = useState(false);
   const [tabCatalogoRomp, setTabCatalogoRomp] = useState(null);
   // 'afinar' | 'listos' | null (null = el que corresponda, ver elegirEstadoDev).
@@ -3211,7 +3226,7 @@ export default function MenuActividades({ onOpenChange }) {
                   <div className="memory-picker-grid">
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-tablet"
+                      className="memory-picker-tile"
                       onClick={irAMemorice}
                       aria-label="Jugar Memorice"
                     >
@@ -3234,7 +3249,7 @@ export default function MenuActividades({ onOpenChange }) {
                     {ROMPECABEZAS_HABILITADO && (
                       <button
                         type="button"
-                        className="memory-picker-tile memory-solo-tablet"
+                        className="memory-picker-tile"
                         onClick={irARompecabezas}
                         aria-label="Rompecabezas"
                       >
@@ -3246,7 +3261,7 @@ export default function MenuActividades({ onOpenChange }) {
                     )}
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-tablet"
+                      className="memory-picker-tile"
                       onClick={irAContar}
                       aria-label="Contar"
                     >
@@ -3257,7 +3272,7 @@ export default function MenuActividades({ onOpenChange }) {
                     </button>
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-laptop"
+                      className="memory-picker-tile memory-solo-dev"
                       onClick={irASecuencias}
                       aria-label="Ordena la secuencia"
                     >
@@ -3268,7 +3283,7 @@ export default function MenuActividades({ onOpenChange }) {
                     </button>
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-tablet"
+                      className="memory-picker-tile"
                       onClick={irADiferencias}
                       aria-label="Encuentra las diferencias"
                     >
@@ -3279,7 +3294,7 @@ export default function MenuActividades({ onOpenChange }) {
                     </button>
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-tablet"
+                      className="memory-picker-tile"
                       onClick={irAPintar}
                       aria-label="Pintar por números"
                     >
@@ -3290,7 +3305,7 @@ export default function MenuActividades({ onOpenChange }) {
                     </button>
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-laptop"
+                      className="memory-picker-tile memory-solo-dev"
                       onClick={irAPixel}
                       aria-label="Pintar pixel art"
                     >
@@ -3392,7 +3407,7 @@ export default function MenuActividades({ onOpenChange }) {
                       <button
                         type="button"
                         key={t.id}
-                        className={`memory-picker-tile${t.soloLaptop ? ' memory-solo-laptop' : ''}`}
+                        className={`memory-picker-tile${t.soloDev ? ' memory-solo-dev' : ''}`}
                         onClick={() => elegirTema(t.id)}
                         disabled={!t.listo}
                         aria-label={t.listo ? `Jugar con ${t.nombre}` : `${t.nombre} (muy pronto)`}
@@ -3621,7 +3636,7 @@ export default function MenuActividades({ onOpenChange }) {
                       <button
                         type="button"
                         key={t.id}
-                        className={`memory-picker-tile${t.soloLaptop ? ' memory-solo-laptop' : ''}`}
+                        className={`memory-picker-tile${t.soloDev ? ' memory-solo-dev' : ''}`}
                         onClick={() => elegirTemaRomp(t.id)}
                         disabled={!t.listo}
                         aria-label={t.listo ? `Armar ${t.nombre}` : `${t.nombre} (muy pronto)`}
@@ -4447,8 +4462,8 @@ export default function MenuActividades({ onOpenChange }) {
                           aria-label={`Pintar con ${t.nombre}`}
                         >
                           <span className="memory-picker-img-wrap">
-                            {dorsosSelector[t.id] ? (
-                              <img src={dorsosSelector[t.id]} alt="" className="memory-picker-img" />
+                            {t.portada || dorsosSelector[t.id] ? (
+                              <img src={t.portada ?? dorsosSelector[t.id]} alt="" className="memory-picker-img" />
                             ) : (
                               <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
                             )}
