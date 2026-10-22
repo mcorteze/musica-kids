@@ -1,0 +1,957 @@
+/* ========== SIMÓN DICE (SimonJuego.jsx) ==========
+   Los colores de los 4 botones son fijos (van inline desde SIMON_COLORES).
+   Todo lo demás sale del grupo de música elegido, por variables puestas
+   inline en .simon-juego (tema + ESTILOS_GRUPO de SimonJuego.jsx):
+   --simon-carcasa    playerBg (la tarjeta oscura de la página del grupo)
+   --simon-aro        borde del equipo con los colores del personaje
+   --simon-primario   colorPrimary (resplandor, brillos) / -rgb
+   --simon-acento     "detalle" del grupo: dial, anillos, puntos / -rgb
+   --simon-boton      buttonPrimary (turno y botones de los modales)
+   --simon-tarjeta / --simon-borde  cardBg y cardStyle (las píldoras)
+   --simon-sombra-rgb playerOverlayRgb
+   --simon-texto      colorText
+   El fondo de la página (gradient del tema) lo pone MenuActividades en el
+   drawer, igual que la página del grupo en el reproductor. */
+
+.simon-juego {
+  /* Sin position propia: el texto de nivel y los modales se posicionan
+     contra .memory-body y cubren el cuerpo entero del drawer. */
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding-bottom: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* El resplandor (.simon-halo) sobresale del equipo a propósito: que eso no
+   le dé scroll al cuerpo del drawer en pantallas bajas. */
+.memory-body:has(> .simon-juego) {
+  overflow: hidden;
+}
+
+/* ----- Barra superior: corazones y récord ----- */
+.simon-barra {
+  flex: none;
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.simon-vidas,
+.simon-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  background: var(--simon-tarjeta);
+  border: 2px solid var(--simon-borde);
+  box-shadow: 0 2px 10px rgba(var(--simon-sombra-rgb), 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.simon-vida {
+  font-size: 24px;
+  color: #FF3D68;
+  filter: drop-shadow(0 0 4px rgba(255, 61, 104, 0.55));
+  transition: color 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+}
+
+.simon-vida.perdida {
+  color: rgba(0, 0, 0, 0.18);
+  filter: none;
+  animation: simonVidaPerdida 0.5s ease;
+}
+
+@keyframes simonVidaPerdida {
+  0% { transform: scale(1.35); color: #FF3D68; }
+  100% { transform: scale(1); }
+}
+
+.simon-record {
+  color: var(--simon-texto);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.simon-record svg {
+  font-size: 20px;
+  color: #E6A700;
+}
+
+/* ----- Área del equipo (el lado se mide en JS: el cuadrado más grande que entra) ----- */
+.simon-area {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Resplandor del color del grupo detrás del equipo: separa el equipo
+   oscuro del fondo pastel sin un borde duro. */
+.simon-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  --simon-halo: var(--simon-primario);
+  background: radial-gradient(
+    circle closest-side,
+    color-mix(in srgb, var(--simon-halo) 62%, transparent) 55%,
+    color-mix(in srgb, var(--simon-halo) 20%, transparent) 78%,
+    transparent 100%
+  );
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.fase-muestra .simon-halo {
+  animation: simonHaloPulso 1.6s ease-in-out infinite;
+}
+
+@keyframes simonHaloPulso {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+/* Carcasa: la tarjeta oscura de la página del grupo, rodeada por el aro
+   con los colores del personaje (el grosor va inline, según el tamaño). */
+.simon-equipo {
+  position: relative;
+  flex: none;
+  border-radius: 50%;
+  border: 10px solid transparent;
+  background: var(--simon-carcasa) padding-box, var(--simon-aro) border-box;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.7),
+    0 0 34px 6px rgba(var(--simon-primario-rgb), 0.45),
+    0 26px 50px rgba(var(--simon-sombra-rgb), 0.55),
+    inset 0 3px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.45);
+  transition: box-shadow 0.35s ease;
+}
+
+/* Brillo interior de la carcasa (vidrio): por encima del fondo, por
+   debajo de los botones. */
+.simon-equipo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.16), transparent 52%);
+  pointer-events: none;
+}
+
+.fase-turno .simon-equipo {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 50px 14px rgba(var(--simon-primario-rgb), 0.6),
+    0 26px 50px rgba(var(--simon-sombra-rgb), 0.55),
+    inset 0 3px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.fase-error .simon-equipo {
+  animation: simonSacudida 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  box-shadow:
+    0 0 0 5px #FF3D68,
+    0 0 46px 12px rgba(255, 61, 104, 0.6),
+    0 26px 50px rgba(var(--simon-sombra-rgb), 0.55),
+    inset 0 3px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes simonSacudida {
+  10%, 90% { translate: -2px 0; }
+  20%, 80% { translate: 4px 0; }
+  30%, 50%, 70% { translate: -8px 0; }
+  40%, 60% { translate: 8px 0; }
+}
+
+.simon-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  touch-action: none;
+}
+
+.simon-marcas line {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.simon-marcas line.larga {
+  stroke: rgba(var(--simon-acento-rgb), 0.85);
+  stroke-width: 2.2;
+}
+
+/* Mientras el equipo muestra la secuencia, el dial gira lento: señal de
+   "está pensando, mira". */
+.simon-marcas {
+  transform-origin: 200px 200px;
+}
+
+.fase-muestra .simon-marcas {
+  animation: simonDial 6s linear infinite;
+}
+
+@keyframes simonDial {
+  to { transform: rotate(360deg); }
+}
+
+.simon-boton {
+  stroke-width: 7;
+  stroke-linejoin: round;
+  transition: fill 0.12s ease, stroke 0.12s ease;
+}
+
+.fase-turno .simon-boton {
+  cursor: pointer;
+}
+
+.simon-boton-reflejo {
+  pointer-events: none;
+}
+
+.simon-led {
+  transition: fill 0.12s ease;
+}
+
+/* Motivo del grupo grabado en cada botón (copo, huellita, ola, estrella). */
+.simon-motivo {
+  color: #FFFFFF;
+  opacity: 0.17;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.simon-motivo.on {
+  opacity: 0.95;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
+}
+
+/* Onda de luz: un anillo del color encendido que se expande desde el
+   borde del equipo y se desvanece. */
+.simon-onda {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 4px solid var(--onda);
+  box-shadow: 0 0 18px var(--onda), inset 0 0 18px var(--onda);
+  pointer-events: none;
+  animation: simonOnda 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes simonOnda {
+  from { opacity: 0.85; scale: 0.98; }
+  to { opacity: 0; scale: 1.22; }
+}
+
+/* Chispas con el motivo del grupo: salen del botón tocado (o del centro al
+   pasar de nivel), giran y se apagan. Posición y destino van inline. */
+.simon-chispas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.simon-chispa {
+  position: absolute;
+  translate: -50% -50%;
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 2px #FFFFFF);
+  animation: simonChispa 1s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+}
+
+@keyframes simonChispa {
+  0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+
+.simon-anillo-interno {
+  fill: none;
+  stroke: rgba(var(--simon-acento-rgb), 0.55);
+  stroke-width: 2;
+  stroke-dasharray: 3 7;
+}
+
+/* ----- Centro del equipo: Jugar / icono de lo que toca hacer ----- */
+.simon-centro {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 33%;
+  height: 33%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.22), transparent 58%),
+    var(--simon-carcasa);
+  box-shadow:
+    0 0 0 3px var(--simon-acento),
+    0 0 18px rgba(var(--simon-acento-rgb), 0.55),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.45);
+  color: #FFFFFF;
+  overflow: hidden;
+}
+
+/* Con la carátula del grupo de fondo (backgroundImage inline): un velo del
+   color de la carcasa encima para que el icono se lea; antes de jugar, el
+   velo solo oscurece abajo y deja ver a los personajes. */
+.simon-centro.con-portada {
+  background-size: cover;
+  background-position: center;
+}
+
+.simon-centro.con-portada::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(var(--simon-sombra-rgb), 0.66);
+  pointer-events: none;
+}
+
+.fase-listo .simon-centro.con-portada::after {
+  background: linear-gradient(180deg, transparent 38%, rgba(var(--simon-sombra-rgb), 0.92) 100%);
+}
+
+.simon-centro > * {
+  position: relative;
+  z-index: 1;
+}
+
+.simon-centro.con-portada .simon-jugar {
+  /* "▶ Jugar" en una fila abajo: la cara del personaje queda libre. */
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding-top: 58%;
+  gap: 0.3em;
+  /* En fila no cabe el mínimo de 18 px en el equipo del celular. */
+  font-size: clamp(13px, 4.2cqi, 26px);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+.simon-centro.con-portada .simon-jugar .anticon {
+  /* Sobre la carátula, el "play" va en un círculo propio para no perderse
+     entre los personajes. */
+  font-size: 1.1em;
+  padding: 0.3em 0.24em 0.3em 0.36em;
+  border-radius: 50%;
+  background: var(--simon-boton);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 3px 10px rgba(0, 0, 0, 0.45);
+  filter: none;
+}
+
+/* Disney sin carátula: un pedacito de cielo estrellado en el centro. */
+.simon-centro.centro-estrellas {
+  background:
+    radial-gradient(1.5px 1.5px at 22% 30%, #FFFFFF, transparent),
+    radial-gradient(1px 1px at 70% 22%, #FFFFFF, transparent),
+    radial-gradient(2px 2px at 78% 64%, #FFE08A, transparent),
+    radial-gradient(1px 1px at 34% 74%, #FFFFFF, transparent),
+    radial-gradient(1.5px 1.5px at 52% 14%, #FFE08A, transparent),
+    radial-gradient(1px 1px at 14% 58%, #FFFFFF, transparent),
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.18), transparent 58%),
+    var(--simon-carcasa);
+}
+
+.simon-jugar {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: clamp(18px, 4.2cqi, 26px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  animation: simonJugarPulso 1.8s ease-in-out infinite;
+}
+
+.simon-jugar .anticon {
+  font-size: 2em;
+  color: var(--simon-acento);
+  filter: drop-shadow(0 0 8px rgba(var(--simon-acento-rgb), 0.9));
+}
+
+@keyframes simonJugarPulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--simon-acento-rgb), 0.55); }
+  50% { box-shadow: 0 0 0 10px rgba(var(--simon-acento-rgb), 0); }
+}
+
+.simon-equipo {
+  container-type: inline-size;
+}
+
+.simon-centro-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15cqi;
+  line-height: 1;
+  animation: simonIconoEntra 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.simon-centro-icono svg {
+  filter: drop-shadow(0 0 10px rgba(var(--simon-acento-rgb), 0.85));
+}
+
+/* Aclarado con blanco: hay acentos oscuros (el rojo de 31 Minutos) que
+   sobre la carcasa café casi no se veían. */
+.fase-turno .simon-centro-icono { color: color-mix(in srgb, var(--simon-acento) 60%, #FFFFFF); }
+.fase-acierto .simon-centro-icono { color: #3DFF8F; }
+.fase-error .simon-centro-icono { color: #FF4D6D; }
+.fase-victoria .simon-centro-icono { color: #FFD24A; }
+
+.simon-centro-nivel {
+  font-size: 0.85em;
+  font-weight: 700;
+  text-shadow: 0 0 14px rgba(var(--simon-acento-rgb), 0.9);
+}
+
+@keyframes simonIconoEntra {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ----- Pie: qué pasa ahora + puntos de la secuencia ----- */
+.simon-pie {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 92px;
+}
+
+.simon-estado {
+  margin: 0;
+  min-width: 220px;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--simon-tarjeta);
+  border: 2px solid var(--simon-borde);
+  box-shadow: 0 4px 14px rgba(var(--simon-sombra-rgb), 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--simon-texto);
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.simon-estado span {
+  display: inline-block;
+  animation: simonEstadoEntra 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes simonEstadoEntra {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fase-anuncio .simon-estado {
+  opacity: 0;
+}
+
+.fase-turno .simon-estado {
+  /* El mismo botón principal de la página del grupo. */
+  background: var(--simon-boton);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #FFFFFF;
+  box-shadow: var(--simon-boton-sombra), 0 0 24px rgba(var(--simon-primario-rgb), 0.55);
+}
+
+.fase-error .simon-estado {
+  background: #FF3D68;
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #FFFFFF;
+}
+
+.fase-acierto .simon-estado {
+  background: #19B865;
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #FFFFFF;
+}
+
+.fase-victoria .simon-estado {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, #FFE27A, #F5B91E);
+  color: #5A3B00;
+  box-shadow: 0 0 22px rgba(245, 185, 30, 0.6);
+}
+
+.simon-pasos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.simon-paso {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 2px rgba(var(--simon-sombra-rgb), 0.35);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fase-muestra .simon-paso.hecho {
+  background: var(--simon-acento);
+  box-shadow: 0 0 10px rgba(var(--simon-acento-rgb), 0.8);
+}
+
+/* ----- Texto grande de nivel (Nivel 3, ¡Prepárate!, ¡Otra vez!) -----
+   Entra con zoom y desenfoque, se sostiene y sale hacia arriba; dura lo
+   mismo que la espera en JS (--simon-banner-ms). */
+.simon-banner {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+  background: radial-gradient(circle closest-side at 50% 50%, rgba(var(--simon-sombra-rgb), 0.5) 0%, rgba(var(--simon-sombra-rgb), 0.22) 55%, transparent 100%);
+  animation: simonBannerFondo var(--simon-banner-ms) ease both;
+}
+
+.simon-banner-titulo {
+  font-size: clamp(56px, 13vmin, 120px);
+  font-weight: 700;
+  line-height: 1.1;
+  padding: 0 0.08em;
+  letter-spacing: 0.01em;
+  text-align: center;
+  /* Relleno con el degradado del aro del grupo y contorno blanco, como un
+     logo de dibujo animado. La sombra va como filter: con background-clip
+     text, un text-shadow se pintaría encima del degradado. */
+  background: var(--simon-aro);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 3px #FFFFFF;
+  filter:
+    drop-shadow(0 4px 0 rgba(var(--simon-sombra-rgb), 0.85))
+    drop-shadow(0 0 22px rgba(var(--simon-primario-rgb), 0.75));
+  animation: simonBannerTitulo var(--simon-banner-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.simon-banner-sub {
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--simon-texto);
+  font-size: clamp(18px, 3.4vmin, 26px);
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(var(--simon-sombra-rgb), 0.3);
+  animation: simonBannerSub var(--simon-banner-ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes simonBannerFondo {
+  0% { opacity: 0; }
+  14% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes simonBannerTitulo {
+  0% { opacity: 0; transform: scale(0.55); letter-spacing: 0.25em; }
+  20% { opacity: 1; transform: scale(1.06); letter-spacing: 0.01em; }
+  30% { transform: scale(1); }
+  80% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-24px) scale(0.96); }
+}
+
+@keyframes simonBannerSub {
+  0%, 18% { opacity: 0; transform: translateY(14px); }
+  34% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* ----- Modales (victoria y fin) con los colores del grupo ----- */
+.simon-juego .memory-victoria-overlay {
+  background: var(--simon-velo);
+}
+
+.simon-juego .memory-victoria {
+  border: 2px solid var(--simon-borde);
+}
+
+.simon-juego .memory-victoria p {
+  color: var(--simon-texto);
+}
+
+.simon-juego .memory-victoria-btn.simon-btn {
+  background: var(--simon-boton);
+  box-shadow: var(--simon-boton-sombra);
+}
+
+/* ----- Fin de partida (sin el retardo de la victoria) ----- */
+.memory-victoria-icono.simon-fin-icono {
+  color: #FF3D68;
+}
+
+.simon-nuevo-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 16px;
+  background: #FFF4CC;
+  color: #8A5A00;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ----- Motivo animado de fondo de cada grupo (Decoracion en el JSX) -----
+   Cubre todo el cuerpo del drawer, detrás del juego. */
+.simon-decoracion {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.simon-barra,
+.simon-pie {
+  position: relative;
+  z-index: 1;
+}
+
+.simon-area {
+  z-index: 1;
+}
+
+/* Frozen: nieve que cae con vaivén y escarcha en las esquinas. */
+.simon-copo {
+  position: absolute;
+  top: -48px;
+  color: #FFFFFF;
+  filter: drop-shadow(0 0 5px rgba(111, 184, 232, 0.9));
+  animation-name: simonCae, simonVaiven;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: normal, alternate;
+}
+
+@keyframes simonCae {
+  to { transform: translateY(calc(100vh + 96px)) rotate(240deg); }
+}
+
+@keyframes simonVaiven {
+  from { translate: -18px 0; }
+  to { translate: 18px 0; }
+}
+
+.simon-escarcha {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.8), transparent 24%),
+    radial-gradient(circle at 100% 0, rgba(255, 255, 255, 0.55), transparent 20%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 12%);
+}
+
+/* Paw Patrol: dos rastros de huellitas que aparecen paso a paso. */
+.simon-huella {
+  position: absolute;
+  font-size: 38px;
+  color: var(--simon-primario);
+  opacity: 0;
+  animation: simonPisada 6.4s ease-in-out infinite;
+}
+
+@keyframes simonPisada {
+  0% { opacity: 0; scale: 0.6; }
+  8% { opacity: 0.3; scale: 1; }
+  55% { opacity: 0.22; }
+  72%, 100% { opacity: 0; }
+}
+
+/* Moana: sol que respira y tres capas de olas a distinto ritmo. */
+.simon-sol {
+  position: absolute;
+  right: 5%;
+  top: 4%;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFF8D6 0%, #FFE08A 34%, rgba(255, 217, 138, 0.45) 52%, rgba(255, 217, 138, 0) 70%);
+  animation: simonSol 5s ease-in-out infinite alternate;
+}
+
+@keyframes simonSol {
+  to { scale: 1.12; }
+}
+
+.simon-ola {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  animation: simonOla linear infinite;
+}
+
+.simon-ola.ola-0 { height: 17%; fill: rgba(127, 214, 232, 0.55); animation-duration: 19s; }
+.simon-ola.ola-1 { height: 12%; fill: rgba(47, 181, 176, 0.5); animation-duration: 13s; animation-direction: reverse; }
+.simon-ola.ola-2 { height: 7%; fill: rgba(14, 140, 147, 0.5); animation-duration: 9s; }
+
+@keyframes simonOla {
+  to { transform: translateX(-50%); }
+}
+
+/* Toy Story: las nubes del papel mural del cuarto de Andy. */
+.simon-nube {
+  position: absolute;
+  left: 0;
+  fill: #FFFFFF;
+  filter: drop-shadow(0 7px 0 rgba(120, 175, 215, 0.35));
+  animation: simonNube linear infinite;
+}
+
+@keyframes simonNube {
+  from { transform: translateX(-35vw); }
+  to { transform: translateX(110vw); }
+}
+
+/* Disney: destellos que titilan (algunos dorados) y una estrella fugaz. */
+.simon-destello {
+  position: absolute;
+  fill: #FFFFFF;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95));
+  animation: simonTitila 2.8s ease-in-out infinite;
+}
+
+.simon-destello.dorado {
+  fill: #FFD24A;
+  filter: drop-shadow(0 0 7px rgba(255, 176, 32, 0.95));
+}
+
+@keyframes simonTitila {
+  0%, 100% { opacity: 0.2; transform: scale(0.55) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(25deg); }
+}
+
+.simon-fugaz {
+  position: absolute;
+  top: 8%;
+  left: 78%;
+  width: 160px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #FFFFFF, rgba(255, 230, 160, 0.6) 30%, transparent);
+  rotate: -28deg;
+  opacity: 0;
+  animation: simonFugaz 7s ease-in infinite 1.5s;
+}
+
+@keyframes simonFugaz {
+  0% { opacity: 0; transform: translate(0, 0); }
+  3% { opacity: 1; }
+  14% { opacity: 0; transform: translate(-46vw, 0); }
+  100% { opacity: 0; transform: translate(-46vw, 0); }
+}
+
+/* ----- Selector de grupo (MenuActividades) -----
+   Portadas tipo logo (fit: 'contain'): la misma imagen difuminada rellena
+   el cuadrado, igual que en GroupCard del reproductor. */
+.simon-grupo-tile .memory-picker-img-wrap {
+  position: relative;
+}
+
+.simon-grupo-blur {
+  position: absolute;
+  inset: -10%;
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  filter: blur(14px) saturate(1.2);
+  opacity: 0.7;
+}
+
+/* ----- Miniatura para la tarjeta del menú de Actividades ----- */
+.simon-miniatura {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #3A2C6E 0%, #1B1438 70%);
+}
+
+.simon-miniatura-equipo {
+  position: relative;
+  width: 82%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: linear-gradient(165deg, #2A2350 0%, #120E26 100%);
+  box-shadow: 0 0 0 3px #FFB4D8, 0 0 18px rgba(255, 180, 216, 0.45);
+  --simon-acento-rgb: 255, 180, 216;
+}
+
+.simon-miniatura-centro {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 33%;
+  height: 33%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #120E26;
+  box-shadow: 0 0 0 2px #FFB4D8;
+}
+
+/* ----- Celular acostado (clase puesta en JS al medir): equipo a la
+   izquierda, corazones/récord y estado en una columna a su derecha. ----- */
+.simon-juego.apaisado {
+  display: grid;
+  grid-template-columns: auto 300px;
+  grid-template-areas:
+    'area barra'
+    'area pie';
+  align-content: center;
+  justify-content: center;
+  column-gap: 28px;
+  row-gap: 14px;
+}
+
+.simon-juego.apaisado .simon-area { grid-area: area; }
+
+.simon-juego.apaisado .simon-barra {
+  grid-area: barra;
+  align-self: end;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.simon-juego.apaisado .simon-pie {
+  grid-area: pie;
+  align-self: start;
+  min-height: 0;
+}
+
+.simon-juego.apaisado .simon-estado {
+  min-width: 0;
+  width: 100%;
+}
+
+/* El título y el nivel del header toman el color de texto del grupo
+   (--simon-header-texto, puesto en el drawer por MenuActividades). */
+.simon-tema .memory-drawer-title h2,
+.simon-tema .memory-nivel-badge {
+  color: var(--simon-header-texto);
+}
+
+/* Nombres largos ("Paw Patrol") en una sola línea en el celular. */
+.simon-tema .memory-drawer-title h2 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(16px, 4.6vw, 20px);
+}
+
+.simon-tema .memory-drawer-title,
+.simon-tema .memory-titulo-fila {
+  min-width: 0;
+}
+
+/* Grupos de fondo oscuro (Disney): el título y el nivel del header,
+   pensados para fondos claros, pasan a texto claro. */
+.simon-fondo-oscuro .memory-drawer-title h2,
+.simon-fondo-oscuro .memory-nivel-badge {
+  color: #FFFFFF;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+/* ----- Pantallas bajas (laptop/tablet horizontal, celular acostado) ----- */
+@media (max-height: 620px) {
+  .simon-juego { gap: 6px; }
+  .simon-vidas, .simon-record { height: 34px; }
+  .simon-vida { font-size: 20px; }
+  .simon-pie { min-height: 76px; gap: 8px; }
+  .simon-estado { height: 44px; font-size: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simon-copo,
+  .simon-nube,
+  .simon-fugaz {
+    display: none;
+  }
+
+  .simon-huella,
+  .simon-sol,
+  .simon-ola,
+  .simon-destello {
+    animation: none !important;
+  }
+
+  .simon-huella { opacity: 0.2; }
+
+  .simon-halo,
+  .simon-marcas,
+  .simon-jugar,
+  .simon-equipo,
+  .simon-centro-icono,
+  .simon-estado span,
+  .simon-vida.perdida {
+    animation: none !important;
+  }
+
+  .simon-banner-titulo,
+  .simon-banner-sub {
+    animation-name: simonBannerFondo !important;
+  }
+
+  .simon-onda,
+  .simon-chispas {
+    display: none;
+  }
+}

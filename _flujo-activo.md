@@ -7,6 +7,36 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Simón dice — nuevo, solo modo desarrollador (2026-10-21)
+- src/components/SimonJuego.jsx + SimonJuego.css (CSS propio, no en App.css).
+  Tarjeta `.memory-solo-dev` en Actividades; vista 'simon' en MenuActividades.
+- Se elige un grupo de música: el fondo = gradient del tema, carcasa y centro =
+  playerBg, anillo/brillos = accentColor. Los 4 botones (verde, rojo, azul,
+  amarillo) son fijos. Grupos de fondo oscuro (listTextColor, Disney) ponen el
+  header en blanco (.simon-fondo-oscuro).
+- 10 niveles, 3 corazones (un error resta uno y repite la MISMA secuencia),
+  récord por grupo en localStorage. Textos grandes animados: ¡Prepárate!,
+  Nivel N, ¡Otra vez!, ¡Se acabó!. Sonido Web Audio (notas del Simon original).
+- Verificado con capturas del build (file://, sin servidor) en laptop, tablet,
+  tablet vertical, celular y celular acostado; partida completa hasta victoria.
+- Commit + push 2026-10-21. Pendiente: que el usuario lo pruebe y decida publicarlo.
+- 2026-10-21 (pedido): solo 5 grupos (SIMON_GRUPOS: Disney, Frozen, Moana, Paw
+  Patrol, Toy Story) y "traje" por grupo en ESTILOS_GRUPO: aro con colores del
+  personaje, carátula en el centro (Disney: cielo estrellado), píldoras/botones
+  = cardBg/buttonPrimary, fondo animado (nieve, huellitas, olas+sol, nubes de
+  Andy, destellos+estrella fugaz), motivo grabado en los botones (copo,
+  huellita, ola, estrella de sheriff, destellos), chispas del motivo al acertar
+  y al pasar de nivel, onda de luz al encender, "Nivel N" con el degradado del
+  aro. Verificado con capturas en laptop, celular y celular acostado.
+- Alerta (no tocado): en MenuActividades, rama `vista === 'pixel'` del título,
+  la línea `colorHeader = devPin ? undefined : temaPin?.header;` pisa el header
+  de pixel (parece pertenecer a la rama 'pintar').
+
+## Tarjetas nuevas y título (2026-10-21)
+- menu-general/pintar-numeros.avif y simon.avif (Skye, desde Gemini) convertidas,
+  640 px, SIN conectar todavía a las tarjetas. Título del tab sin emoji.
+  Commit + push 2026-10-21.
+
 ## Pintar: zoom, ayuda, progreso, stepper (2026-10-21)
 - Celdas 52–80 px (antes 64–96), números sin 0, stepper en el header (celular:
   solo los cercanos), ayuda a los 15 s sin pintar, avance guardado por tema.

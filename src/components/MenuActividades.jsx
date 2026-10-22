@@ -10,6 +10,7 @@ import DiferenciasDev from './DiferenciasDev';
 import PintarJuego from './PintarJuego';
 import PintarDev from './PintarDev';
 import PintarPixelDev from './PintarPixelDev';
+import SimonJuego, { SimonMiniatura, SIMON_GRUPOS } from './SimonJuego';
 import { laminaDePixelArt } from '../utils/pintarPixel';
 import cuadriculasPintar from '../data/pintarCuadriculas';
 import EstadoDevTabs from './EstadoDevTabs';
@@ -340,6 +341,10 @@ function imprimirImagen(url) {
 // musica correspondiente (pedido explicito — "cards con las mismas
 // imagenes de los grupos de musica"), mas el gradiente de su tema para
 // pintar el header al ver esa galeria puntual.
+// Simón dice se juega "vestido" de un grupo de música (pedido explícito:
+// solo los que tienen traje propio, ver SIMON_GRUPOS en SimonJuego.jsx).
+const GRUPOS_SIMON = gruposReproductor.filter((g) => SIMON_GRUPOS.includes(g.id) && themes[g.theme]);
+
 const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) => {
   const info = gruposReproductor.find((g) => g.id === id);
   return {
@@ -1779,6 +1784,13 @@ export default function MenuActividades({ onOpenChange }) {
   const [ganoPix, setGanoPix] = useState(false);
   const [completadasPix, setCompletadasPix] = useState([]);
   const [devPix, setDevPix] = useState(false);
+
+  // ===== Simón dice: grupo de música elegido (define los colores de la
+  // página y de la carcasa), nivel en curso para el header (null = antes de
+  // tocar Jugar) y partida (cambia con "Reiniciar" para remontar el juego).
+  const [grupoSimonId, setGrupoSimonId] = useState(null);
+  const [nivelSimon, setNivelSimon] = useState(null);
+  const [partidaSimon, setPartidaSimon] = useState(0);
   // Avance guardado con el que se retoma la lámina al entrar al tema (null =
   // lámina desde cero) y número en curso / total para el stepper del header.
   const [progresoPix, setProgresoPix] = useState(null);
@@ -1815,6 +1827,7 @@ export default function MenuActividades({ onOpenChange }) {
   const irADiferencias = useCallback(() => setVista('diferencias'), []);
   const irAPintar = useCallback(() => setVista('pintar'), []);
   const irAPixel = useCallback(() => setVista('pixel'), []);
+  const irASimon = useCallback(() => setVista('simon'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -2838,6 +2851,8 @@ export default function MenuActividades({ onOpenChange }) {
     setLaminaPixId(null);
     setGanoPix(false);
     setDevPix(false);
+    setGrupoSimonId(null);
+    setNivelSimon(null);
   }, [open]);
 
   // Volver desde donde sea: dentro de Memorice, si hay tema elegido vuelve
@@ -2865,6 +2880,11 @@ export default function MenuActividades({ onOpenChange }) {
       if (devPin) setDevPin(false);
       else if (temaPinId) volverAlSelectorPin();
       else volverAlMenu();
+    } else if (vista === 'simon') {
+      if (grupoSimonId) {
+        setGrupoSimonId(null);
+        setNivelSimon(null);
+      } else volverAlMenu();
     } else if (vista === 'pixel') {
       if (devPix) setDevPix(false);
       else if (temaPixId) {
@@ -2877,7 +2897,7 @@ export default function MenuActividades({ onOpenChange }) {
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, grupoSimonId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
 
   // ===== Pintar pixel art: lógica del drawer =====
   const temaPix = temaPixId ? TEMAS_PIXEL.find((t) => t.id === temaPixId) : null;
@@ -3089,6 +3109,8 @@ export default function MenuActividades({ onOpenChange }) {
   const grupoImprimirInfo = grupoImprimir
     ? GRUPOS_IMPRIMIBLES.find((g) => g.id === grupoImprimir)
     : null;
+  const grupoSimon = grupoSimonId ? GRUPOS_SIMON.find((g) => g.id === grupoSimonId) : null;
+  const temaSimon = grupoSimon ? themes[grupoSimon.theme] : null;
   let tituloHeader = 'Actividades';
   let mostrarVolver = false;
   let colorHeader;
@@ -3124,6 +3146,10 @@ export default function MenuActividades({ onOpenChange }) {
     tituloHeader = devPix ? 'Modo desarrollador' : temaPixId ? temaPix.nombre : 'Pintar por números';
     colorHeader = devPix ? undefined : temaPix?.header;
     colorHeader = devPin ? undefined : temaPin?.header;
+  } else if (vista === 'simon') {
+    mostrarVolver = true;
+    tituloHeader = grupoSimon ? grupoSimon.name : 'Simón dice';
+    colorHeader = temaSimon?.headerStyle?.background;
   }
   const esMenu = !colorHeader;
 
@@ -3132,6 +3158,9 @@ export default function MenuActividades({ onOpenChange }) {
     estiloDrawer = fotosTema.fondo
       ? { backgroundImage: `url(${fotosTema.fondo})`, ...(tema.fondoPosicion && { backgroundPosition: tema.fondoPosicion }) }
       : { background: tema.fondoAlterno };
+  } else if (vista === 'simon' && temaSimon) {
+    // Mismo fondo que la página del grupo en el reproductor.
+    estiloDrawer = { background: temaSimon.gradient, '--simon-header-texto': temaSimon.token.colorText };
   } else if (esMenu) {
     estiloDrawer = { background: themes.munecas.gradient };
   }
@@ -3150,7 +3179,7 @@ export default function MenuActividades({ onOpenChange }) {
       {open && createPortal(
         <div className="memory-overlay" onClick={() => setOpen(false)}>
           <div
-            className={`memory-drawer${modoDev ? ' memory-dev' : ''}`}
+            className={`memory-drawer${modoDev ? ' memory-dev' : ''}${vista === 'simon' && temaSimon ? ` simon-tema${temaSimon.listTextColor ? ' simon-fondo-oscuro' : ''}` : ''}`}
             onClick={(e) => e.stopPropagation()}
             style={estiloDrawer}
           >
@@ -3217,6 +3246,9 @@ export default function MenuActividades({ onOpenChange }) {
                 {vista === 'pintar' && temaPinId && (
                   <span className="memory-nivel-badge">Nivel {nivelActualPin?.numero}</span>
                 )}
+                {vista === 'simon' && grupoSimon && nivelSimon && (
+                  <span className="memory-nivel-badge">Nivel {nivelSimon}</span>
+                )}
               </div>
               <div className="memory-header-actions">
                 {vista === 'memorice' && temaId && !cargando && !gano && (
@@ -3270,6 +3302,15 @@ export default function MenuActividades({ onOpenChange }) {
                     type="button"
                     className="memory-reiniciar-btn"
                     onClick={() => setMostrarNivelesDif(true)}
+                  >
+                    <ReloadOutlined /> Reiniciar
+                  </button>
+                )}
+                {vista === 'simon' && grupoSimon && nivelSimon && (
+                  <button
+                    type="button"
+                    className="memory-reiniciar-btn"
+                    onClick={() => setPartidaSimon((p) => p + 1)}
                   >
                     <ReloadOutlined /> Reiniciar
                   </button>
@@ -3390,6 +3431,17 @@ export default function MenuActividades({ onOpenChange }) {
                         <img src={imagenPintar} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Pintar por números (descontinuado)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-dev"
+                      onClick={irASimon}
+                      aria-label="Simón dice"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <SimonMiniatura />
+                      </span>
+                      <span className="memory-picker-nombre">Simón dice</span>
                     </button>
                   </div>
                 </div>
@@ -4518,6 +4570,50 @@ export default function MenuActividades({ onOpenChange }) {
                   )}
                 </>
               ))}
+
+              {vista === 'simon' && !grupoSimon && (
+                <div className="memory-picker">
+                  <p className="memory-picker-intro">¿Con qué grupo juegas?</p>
+                  <div className="memory-picker-grid">
+                    {GRUPOS_SIMON.map((g) => (
+                      <button
+                        type="button"
+                        key={g.id}
+                        className="memory-picker-tile simon-grupo-tile"
+                        onClick={() => {
+                          setGrupoSimonId(g.id);
+                          setPartidaSimon(0);
+                        }}
+                        aria-label={`Jugar con ${g.name}`}
+                      >
+                        <span className="memory-picker-img-wrap" style={{ background: themes[g.theme].gradient }}>
+                          {g.fit === 'contain' && (
+                            <img src={g.cover} alt="" className="simon-grupo-blur" aria-hidden="true" />
+                          )}
+                          <img
+                            src={g.cover}
+                            alt=""
+                            className="memory-picker-img"
+                            style={g.fit === 'contain' ? { objectFit: 'contain', position: 'relative' } : undefined}
+                          />
+                        </span>
+                        <span className="memory-picker-nombre">{g.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {vista === 'simon' && grupoSimon && (
+                <SimonJuego
+                  key={`${grupoSimon.id}-${partidaSimon}`}
+                  tema={temaSimon}
+                  grupoId={grupoSimon.id}
+                  portada={grupoSimon.cover}
+                  autoIniciar={partidaSimon > 0}
+                  onNivel={setNivelSimon}
+                />
+              )}
 
               {vista === 'pixel' && devPix && (
                 <PintarPixelDev temas={TEMAS_PIXEL} cuadriculas={cuadriculasPintar} />
