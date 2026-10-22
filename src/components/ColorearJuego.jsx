@@ -7,6 +7,7 @@ import { borrarDibujo, guardarDibujo, leerDibujo, VIGENCIA_MS } from '../utils/d
 import {
   COLORES,
   ESPECTRO,
+  FORMAS_SELLO,
   HERRAMIENTAS,
   capaDe,
   css,
@@ -14,7 +15,7 @@ import {
   fundirCapa,
   pintarTramo,
 } from '../utils/pincelesColorear';
-import IconoHerramienta, { PUNTAS } from './ColorearIconos';
+import IconoHerramienta, { IconoSello, PUNTAS } from './ColorearIconos';
 import './ColorearJuego.css';
 
 // ========== COLOREAR (pintar a mano sobre las laminas de Imprimir) ==========
@@ -56,6 +57,10 @@ const CURSOR = 44;
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
 const NOMBRE_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.nombre]));
+const GRUPO_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.grupo]));
+// Panel de lapices: sin sello ni goma (tienen boton propio en la barra).
+const LAPICES = HERRAMIENTAS.filter((h) => h.grupo === 'lapiz');
+const NOMBRE_FORMA = { surtido: 'Surtido', ...Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f.nombre])) };
 
 function cargarImagen(src) {
   return new Promise((resolve, reject) => {
@@ -254,13 +259,17 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [dimensiones, setDimensiones] = useState(null);
   const [caja, setCaja] = useState(null);
   const [herramienta, setHerramienta] = useState('crayon');
+  // Ultimo lapiz elegido (lo muestra su boton aunque se este usando el
+  // sello o la goma) y forma del sello ('surtido' = va alternando todas).
+  const [ultimoLapiz, setUltimoLapiz] = useState('crayon');
+  const [formaSello, setFormaSello] = useState('surtido');
   // colorId: uno de COLORES o 'propio' (elegido en "Mas colores").
   const [colorId, setColorId] = useState('rojo');
   const [colorPropio, setColorPropio] = useState(null);
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
-  // Panel desplegado de la barra: 'lapices' | 'colores' | 'espectro' | 'tamano' | null.
+  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'colores' | 'espectro' | 'tamano' | null.
   const [menu, setMenu] = useState(null);
   // Toque en la hoja que solo retrajo un panel: no debe pintar. (React
   // puede re-renderizar entre el listener que cierra y el del canvas, asi
@@ -451,7 +460,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     recordarParaDeshacer();
     const canvas = canvasRef.current;
     const escala = canvas.width / canvas.getBoundingClientRect().width;
-    const trazo = empezarTrazo(herramienta, rgb, tamano * escala);
+    const trazo = empezarTrazo(herramienta, rgb, tamano * escala, formaSello);
     const capa = capaDe(herramienta);
     const destino = capa ? canvasTrazoRef.current : canvas;
     if (capa) {
@@ -522,17 +531,39 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (nombre === 'colores' && m === 'espectro') ? null : nombre));
 
-  // Elegir un color con la goma en la mano vuelve a la ultima herramienta
-  // de pintar (la goma no usa color).
+  // Ultima herramienta de pintar (lapiz o sello): a ella vuelve la goma al
+  // tocarla de nuevo o al elegir un color (la goma no usa color).
   const ultimaPintarRef = useRef('crayon');
-  const elegirHerramienta = (h) => {
+  const usarHerramienta = (h) => {
     if (h !== 'goma') ultimaPintarRef.current = h;
+    if (GRUPO_HERRAMIENTA[h] === 'lapiz') setUltimoLapiz(h);
     setHerramienta(h);
+  };
+  const elegirHerramienta = (h) => {
+    usarHerramienta(h);
     setMenu(null);
+  };
+  // Botones de lapiz y sello: se activan al tocarlos y despliegan su panel.
+  const tocarLapiz = () => {
+    usarHerramienta(ultimoLapiz);
+    alternarMenu('lapices');
+  };
+  const tocarSello = () => {
+    usarHerramienta('sellos');
+    alternarMenu('sellos');
+  };
+  const elegirForma = (forma) => {
+    setFormaSello(forma);
+    usarHerramienta('sellos');
+    setMenu(null);
+  };
+  const alternarGoma = () => {
+    setMenu(null);
+    usarHerramienta(esGoma ? ultimaPintarRef.current : 'goma');
   };
   const elegirColor = (cid) => {
     setColorId(cid);
-    if (esGoma) setHerramienta(ultimaPintarRef.current);
+    if (esGoma) usarHerramienta(ultimaPintarRef.current);
     setMenu(null);
   };
   const elegirColorPropio = (valor) => {
@@ -574,21 +605,47 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           <img src={src} alt="" className="colorear-lamina" draggable={false} />
         </div>
 
-        {/* Barra: tres selectores (muestran lo elegido y despliegan su
-            panel) + acciones. Los paneles cuelgan de la barra. */}
+        {/* Barra: herramientas (lapiz, sello, goma), estilo (color,
+            tamaño) y acciones. Lapiz, sello, color y tamaño muestran lo
+            elegido y despliegan su panel; los paneles cuelgan de la barra.
+            --en-uso marca cual de las tres herramientas esta pintando. */}
         <div className="colorear-barra" ref={barraRef}>
           <div className="colorear-barra-grupo">
             <button
               type="button"
-              className={`colorear-selector${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
-              onClick={() => alternarMenu('lapices')}
+              className={`colorear-selector${GRUPO_HERRAMIENTA[herramienta] === 'lapiz' ? ' colorear-selector--en-uso' : ''}${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
+              onClick={tocarLapiz}
               aria-haspopup="true"
               aria-expanded={menu === 'lapices'}
-              aria-label={`Lápiz: ${NOMBRE_HERRAMIENTA[herramienta]}`}
-              title="Elegir lápiz"
+              aria-label={`Lápiz: ${NOMBRE_HERRAMIENTA[ultimoLapiz]}`}
+              title="Lápices"
             >
-              <IconoHerramienta herramienta={herramienta} color={colorIcono} size={44} />
+              <IconoHerramienta herramienta={ultimoLapiz} color={colorIcono} size={44} />
             </button>
+            <button
+              type="button"
+              className={`colorear-selector${herramienta === 'sellos' ? ' colorear-selector--en-uso' : ''}${menu === 'sellos' ? ' colorear-selector--abierto' : ''}`}
+              onClick={tocarSello}
+              aria-haspopup="true"
+              aria-expanded={menu === 'sellos'}
+              aria-label={`Sello: ${NOMBRE_FORMA[formaSello]}`}
+              title="Sellos"
+            >
+              <IconoSello forma={formaSello} color={colorIcono} size={38} />
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector colorear-selector--simple${esGoma ? ' colorear-selector--en-uso' : ''}`}
+              onClick={alternarGoma}
+              aria-pressed={esGoma}
+              aria-label="Goma"
+              title="Goma"
+            >
+              <IconoHerramienta herramienta="goma" color={colorIcono} size={44} />
+            </button>
+          </div>
+
+          <div className="colorear-barra-grupo colorear-barra-grupo--separado">
             <button
               type="button"
               className={`colorear-selector${menu === 'colores' || menu === 'espectro' ? ' colorear-selector--abierto' : ''}`}
@@ -645,7 +702,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
           </div>
 
-          <div className="colorear-barra-grupo colorear-barra-grupo--acciones">
+          <div className="colorear-barra-grupo colorear-barra-grupo--separado colorear-barra-grupo--acciones">
             <button type="button" className="colorear-accion" onClick={deshacer} disabled={!puedeDeshacer} aria-label="Deshacer" title="Deshacer">
               <LuUndo2 />
             </button>
@@ -663,7 +720,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           {menu === 'lapices' && (
             <div className="colorear-desplegable colorear-desplegable--lapices" role="menu" aria-label="Lápices">
               <div className="colorear-lapices">
-                {HERRAMIENTAS.map((h) => (
+                {LAPICES.map((h) => (
                   <button
                     type="button"
                     key={h.id}
@@ -674,6 +731,26 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                   >
                     <IconoHerramienta herramienta={h.id} color={colorIcono} size={48} />
                     <span className="colorear-util-nombre">{h.nombre}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {menu === 'sellos' && (
+            <div className="colorear-desplegable colorear-desplegable--sellos" role="menu" aria-label="Sellos">
+              <div className="colorear-lapices">
+                {['surtido', ...FORMAS_SELLO.map((f) => f.id)].map((forma) => (
+                  <button
+                    type="button"
+                    key={forma}
+                    role="menuitemradio"
+                    aria-checked={formaSello === forma}
+                    className={`colorear-util${formaSello === forma ? ' colorear-util--activo' : ''}`}
+                    onClick={() => elegirForma(forma)}
+                  >
+                    <IconoSello forma={forma} color={colorIcono} size={42} />
+                    <span className="colorear-util-nombre">{NOMBRE_FORMA[forma]}</span>
                   </button>
                 ))}
               </div>

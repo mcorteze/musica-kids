@@ -32,6 +32,14 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   utils/pincelesColorear.js. Horizontal: herramientas izq., colores der.;
   vertical: ambas bajo la hoja. Cursor en laptop (solo mouse): la
   herramienta dibujada con el color + anillo del grosor real.
+- v5 (2026-10-22): goma y sello con botón propio en la barra (grupo
+  herramientas: lápiz · sello · goma | estilo: color · tamaño | acciones).
+  Panel de lápices = 10 lápices. Sello: panel de formas (Surtido = estado
+  anterior, alterna todas; corazón, estrella, flor, huellita, círculo,
+  nube, luna). Formas = trazados SVG 100×100 en FORMAS_SELLO, mismos para
+  estampar (Path2D) e íconos. "En uso" (fondo + rayita) ≠ "abierto" (aro).
+  Goma: 2º toque o elegir color vuelve a la última herramienta. Icono de
+  tamaño = 3 trazos de grosor (el actual en color).
 - v4 (2026-10-21, reclamo: tablet "atorado"): UNA barra compacta con 3
   selectores que muestran lo elegido (lápiz, color, tamaño) + deshacer/
   rehacer/borrar/imprimir. Cada selector despliega su panel sobre la hoja

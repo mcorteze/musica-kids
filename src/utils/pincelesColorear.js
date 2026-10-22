@@ -11,23 +11,55 @@
 // El color llega como [r, g, b], o null = arcoiris (cambia de tono a lo
 // largo del trazo, con cualquier herramienta).
 
+// grupo: a que boton de la barra pertenece ('lapiz' = panel de lapices;
+// 'sello' y 'goma' tienen boton propio, pedido explicito).
 export const HERRAMIENTAS = [
-  { id: 'crayon', nombre: 'Crayón', escala: 1 },
-  { id: 'lapiz', nombre: 'Lápiz de color', escala: 0.45 },
-  { id: 'plumon', nombre: 'Plumón', escala: 0.8 },
-  { id: 'pincel', nombre: 'Pincel', escala: 1 },
-  { id: 'acuarela', nombre: 'Acuarela', escala: 1.15, capa: { alfa: 0.42, modo: 'source-over' } },
-  { id: 'destacador', nombre: 'Destacador', escala: 1.2, capa: { alfa: 0.5, modo: 'multiply' } },
-  { id: 'tiza', nombre: 'Tiza', escala: 1 },
-  { id: 'spray', nombre: 'Spray', escala: 1.5 },
+  { id: 'crayon', nombre: 'Crayón', escala: 1, grupo: 'lapiz' },
+  { id: 'lapiz', nombre: 'Lápiz de color', escala: 0.45, grupo: 'lapiz' },
+  { id: 'plumon', nombre: 'Plumón', escala: 0.8, grupo: 'lapiz' },
+  { id: 'pincel', nombre: 'Pincel', escala: 1, grupo: 'lapiz' },
+  { id: 'acuarela', nombre: 'Acuarela', escala: 1.15, grupo: 'lapiz', capa: { alfa: 0.42, modo: 'source-over' } },
+  { id: 'destacador', nombre: 'Destacador', escala: 1.2, grupo: 'lapiz', capa: { alfa: 0.5, modo: 'multiply' } },
+  { id: 'tiza', nombre: 'Tiza', escala: 1, grupo: 'lapiz' },
+  { id: 'spray', nombre: 'Spray', escala: 1.5, grupo: 'lapiz' },
   // Neon: en su capa se redibuja el trazo ENTERO en cada tramo (halo y
   // centro claro); por tramos, cada halo nuevo tapaba el centro del anterior
   // y la linea salia cortada.
-  { id: 'neon', nombre: 'Neón', escala: 0.7, capa: { alfa: 1, modo: 'source-over' } },
-  { id: 'brillos', nombre: 'Brillos', escala: 1.2 },
-  { id: 'sellos', nombre: 'Sellos', escala: 1.1 },
-  { id: 'goma', nombre: 'Goma', escala: 1 },
+  { id: 'neon', nombre: 'Neón', escala: 0.7, grupo: 'lapiz', capa: { alfa: 1, modo: 'source-over' } },
+  { id: 'brillos', nombre: 'Brillos', escala: 1.2, grupo: 'lapiz' },
+  { id: 'sellos', nombre: 'Sellos', escala: 1.1, grupo: 'sello' },
+  { id: 'goma', nombre: 'Goma', escala: 1, grupo: 'goma' },
 ];
+
+// ---------- Formas de los sellos ----------
+// Cada forma es un trazado SVG en una caja de 100x100 centrada en (50, 50):
+// el MISMO trazado se estampa en el canvas (Path2D) y dibuja los iconos del
+// panel, asi lo que se elige es exactamente lo que se estampa. "centro" =
+// circulo mas claro encima (el centro de la flor). Todos los circulos van
+// en el mismo sentido: con la regla nonzero, sentidos opuestos dejarian
+// huecos donde se superponen.
+const circulo = (cx, cy, r) => `M${cx - r} ${cy} a${r} ${r} 0 1 1 ${2 * r} 0 a${r} ${r} 0 1 1 ${-2 * r} 0 Z`;
+const elipse = (cx, cy, rx, ry) => `M${cx - rx} ${cy} a${rx} ${ry} 0 1 1 ${2 * rx} 0 a${rx} ${ry} 0 1 1 ${-2 * rx} 0 Z`;
+const petalos = Array.from({ length: 5 }, (_, i) => {
+  const ang = (-90 + i * 72) * (Math.PI / 180);
+  return circulo(+(50 + Math.cos(ang) * 24).toFixed(1), +(50 + Math.sin(ang) * 24).toFixed(1), 17);
+}).join(' ');
+
+export const FORMAS_SELLO = [
+  { id: 'corazon', nombre: 'Corazón', d: 'M50 88 C20 68 6 50 6 32 C6 17 18 8 30 8 C40 8 47 14 50 21 C53 14 60 8 70 8 C82 8 94 17 94 32 C94 50 80 68 50 88 Z' },
+  { id: 'estrella', nombre: 'Estrella', d: 'M50 4 L61.5 36 L95 37 L68.5 57.5 L78 90 L50 71 L22 90 L31.5 57.5 L5 37 L38.5 36 Z' },
+  { id: 'flor', nombre: 'Flor', d: petalos, centro: circulo(50, 50, 12) },
+  { id: 'huella', nombre: 'Huellita', d: [elipse(50, 66, 23, 19), circulo(23, 40, 10), circulo(39, 23, 10), circulo(61, 23, 10), circulo(77, 40, 10)].join(' ') },
+  { id: 'circulo', nombre: 'Círculo', d: circulo(50, 50, 42) },
+  { id: 'nube', nombre: 'Nube', d: [circulo(28, 60, 18), circulo(50, 46, 24), circulo(73, 60, 17), 'M28 60 H73 V78 H28 Z'].join(' ') },
+  { id: 'luna', nombre: 'Luna', d: 'M60 6 A44 44 0 1 0 94 72 A36 36 0 1 1 60 6 Z' },
+];
+const FORMA_POR_ID = Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f]));
+const trazados = new Map();
+const trazado = (d) => {
+  if (!trazados.has(d)) trazados.set(d, new Path2D(d));
+  return trazados.get(d);
+};
 
 const HERRAMIENTA_POR_ID = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h]));
 export const capaDe = (herramienta) => HERRAMIENTA_POR_ID[herramienta]?.capa ?? null;
@@ -130,10 +162,12 @@ function textura(tipo, rgb) {
 
 // ---------- Trazo ----------
 // ancho: tamaño elegido en px internos; cada herramienta aplica su escala.
-export function empezarTrazo(herramienta, rgb, ancho) {
+// forma: la del sello ('surtido' = va alternando todas).
+export function empezarTrazo(herramienta, rgb, ancho, forma = 'surtido') {
   return {
     herramienta,
     rgb,
+    forma,
     ancho: ancho * (HERRAMIENTA_POR_ID[herramienta]?.escala ?? 1),
     tono: Math.random() * 360,
     resto: 0,
@@ -231,34 +265,23 @@ function rocio(ctx, p, ancho, rgb) {
   ctx.globalAlpha = 1;
 }
 
-function corazon(ctx, s) {
-  ctx.beginPath();
-  ctx.moveTo(0, s * 0.35);
-  ctx.bezierCurveTo(-s * 1.1, -s * 0.35, -s * 0.5, -s * 1.05, 0, -s * 0.45);
-  ctx.bezierCurveTo(s * 0.5, -s * 1.05, s * 1.1, -s * 0.35, 0, s * 0.35);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function estrella(ctx, s) {
-  ctx.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-    const r = i % 2 === 0 ? s : s * 0.45;
-    ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
 function sello(ctx, trazo, p, rgb) {
-  const s = trazo.ancho * 0.5;
+  const forma = trazo.forma === 'surtido'
+    ? FORMAS_SELLO[trazo.sello % FORMAS_SELLO.length]
+    : FORMA_POR_ID[trazo.forma] ?? FORMAS_SELLO[0];
+  const tono = mezclar(rgb, Math.random() < 0.5 ? [255, 255, 255] : [0, 0, 0], Math.random() * 0.2);
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate((Math.random() - 0.5) * 0.7);
-  ctx.fillStyle = css(mezclar(rgb, Math.random() < 0.5 ? [255, 255, 255] : [0, 0, 0], Math.random() * 0.2));
-  if (trazo.sello % 2 === 0) corazon(ctx, s);
-  else estrella(ctx, s);
+  // La forma mide trazo.ancho de lado (caja de 100 escalada).
+  ctx.scale(trazo.ancho / 100, trazo.ancho / 100);
+  ctx.translate(-50, -50);
+  ctx.fillStyle = css(tono);
+  ctx.fill(trazado(forma.d));
+  if (forma.centro) {
+    ctx.fillStyle = css(mezclar(tono, [255, 255, 255], 0.6));
+    ctx.fill(trazado(forma.centro));
+  }
   ctx.restore();
   trazo.sello += 1;
 }

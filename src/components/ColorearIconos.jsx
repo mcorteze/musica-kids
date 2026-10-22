@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { FORMAS_SELLO } from '../utils/pincelesColorear';
 
 // Herramientas ilustradas de "Colorear": se dibujan horizontales con la
 // punta a la izquierda y se giran 45° (punta abajo a la izquierda, como un
@@ -179,6 +180,54 @@ export default function IconoHerramienta({ herramienta, color, size = 48 }) {
       <g transform="rotate(-45 24 24)">
         <Dibujo herramienta={herramienta} c={c} />
       </g>
+    </svg>
+  );
+}
+
+// Forma de sello (mismo trazado que se estampa, ver FORMAS_SELLO) o
+// 'surtido': tres formas chicas mezcladas. color: 'rgb(...)' o 'arcoiris'.
+const SURTIDO = [
+  { id: 'corazon', x: 2, y: 4, s: 0.5 },
+  { id: 'estrella', x: 48, y: 10, s: 0.48 },
+  { id: 'flor', x: 22, y: 50, s: 0.48 },
+];
+const FORMA = Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f]));
+
+// Contorno abajo y relleno encima: las formas hechas de varios circulos
+// (nube, huellita, flor) muestran solo el borde de afuera, sin lineas
+// internas. El contorno tambien deja ver el sello blanco sobre el panel.
+function Forma({ forma, c }) {
+  return (
+    <>
+      <path d={forma.d} fill="none" stroke={TRAZO} strokeWidth="6" strokeOpacity="0.3" strokeLinejoin="round" />
+      <path d={forma.d} fill={c} />
+      {forma.centro && <path d={forma.centro} fill="#fff" opacity="0.6" />}
+    </>
+  );
+}
+
+export function IconoSello({ forma, color, size = 40 }) {
+  const idArcoiris = useId();
+  const c = color === 'arcoiris' ? `url(#${idArcoiris})` : color;
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+      {color === 'arcoiris' && (
+        <defs>
+          <linearGradient id={idArcoiris} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#E53935" />
+            <stop offset="0.33" stopColor="#FDD835" />
+            <stop offset="0.66" stopColor="#43A047" />
+            <stop offset="1" stopColor="#1E88E5" />
+          </linearGradient>
+        </defs>
+      )}
+      {forma === 'surtido'
+        ? SURTIDO.map((f) => (
+          <g key={f.id} transform={`translate(${f.x} ${f.y}) scale(${f.s})`}>
+            <Forma forma={FORMA[f.id]} c={c} />
+          </g>
+        ))
+        : <Forma forma={FORMA[forma]} c={c} />}
     </svg>
   );
 }
