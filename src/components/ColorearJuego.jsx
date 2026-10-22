@@ -1135,14 +1135,20 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // Brillos que titilan: los de los trazos de varita desde el ultimo "borrar
-  // todo" (los ultimos MAX_TITILAN), sacados de la historia.
+  // todo" (los ultimos MAX_TITILAN), sacados de la historia. Solo los que
+  // tienen pintura debajo: si la goma borro ese lugar, el destello se va
+  // (y vuelve si se deshace la goma). Se mira el respaldo, no la hoja: el
+  // respaldo ya se lee siempre; leer la hoja la volveria mas lenta al pintar.
   const titilan = useMemo(() => {
     const lista = historiaRef.current ?? [];
     let desde = 0;
     lista.forEach((h, i) => {
       if (h.t === 'borrar') desde = i + 1;
     });
-    return lista.slice(desde).flatMap((h) => h.ti ?? []).slice(-MAX_TITILAN);
+    const ctx = respaldoRef.current?.getContext('2d');
+    const conPintura = ([x, y]) => !ctx || ctx.getImageData(x, y, 1, 1).data[3] > 0;
+    // Se revisan solo los mas recientes (con mucha varita serian miles).
+    return lista.slice(desde).flatMap((h) => h.ti ?? []).slice(-MAX_TITILAN * 4).filter(conPintura).slice(-MAX_TITILAN);
     // versionHistoria avisa cada cambio de la historia (vive en un ref).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versionHistoria]);

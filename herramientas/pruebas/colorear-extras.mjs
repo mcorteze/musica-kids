@@ -67,6 +67,30 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   chequear('la varita deja estela al moverse', estela > 0, `${estela} partículas`);
   chequear('quedan brillos que titilan', (await page.$$('.colorear-titilan svg')).length > 0, `${(await page.$$('.colorear-titilan svg')).length}`);
 
+  // La goma tambien se lleva los brillos que titilan (y deshacer los devuelve).
+  const contarTitilan = () => page.$$eval('.colorear-titilan svg', (els) => els.length);
+  const antesGoma = await contarTitilan();
+  await page.click('.colorear-selector[aria-label="Goma"]');
+  await page.click('.colorear-selector[aria-label="Tamaño"]');
+  await espera(150);
+  await page.click('.colorear-tamano-rapido:nth-child(5)');
+  await page.keyboard.press('Escape');
+  await espera(150);
+  for (let i = 0; i <= 14; i++) await linea(0.03, 0.3 + i * 0.016, 0.97, 0.3 + i * 0.016, 20);
+  await espera(300);
+  const conGoma = await contarTitilan();
+  chequear('la goma borra los brillos que titilan', antesGoma > 0 && conGoma === 0, `${antesGoma} -> ${conGoma}`);
+  // Fueron 15 pasadas de goma: deshacer las 15 deja todo como antes.
+  for (let i = 0; i < 15; i++) await page.click('[aria-label="Deshacer"]');
+  await espera(300);
+  chequear('deshacer la goma devuelve los brillos que titilan', (await contarTitilan()) === antesGoma, `${await contarTitilan()} de ${antesGoma}`);
+  await page.click('.colorear-selector[aria-label="Goma"]');
+  await page.click('.colorear-selector[aria-label="Tamaño"]');
+  await espera(150);
+  await page.click('.colorear-tamano-rapido:nth-child(3)');
+  await page.keyboard.press('Escape');
+  await espera(150);
+
   // ---------- Lapices con patron ----------
   await page.click('.colorear-selector[aria-label^="Lápiz"]');
   await espera(200);
