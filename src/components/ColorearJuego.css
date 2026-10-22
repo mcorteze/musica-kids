@@ -1,0 +1,715 @@
+/* ========== COLOREAR (ColorearJuego.jsx) ==========
+   Mismos colores que el resto del drawer (texto #0B4F73, bandejas
+   blancas como .memory-picker-tile). Pensado para dedos chicos: nada
+   tocable bajo 40 px en tablet. */
+
+/* Tarjeta de "Mis dibujos" en el menu de Colorear: la lamina entera sobre blanco. */
+.colorear-portada {
+  background: #fff;
+}
+
+.colorear-portada .memory-picker-img {
+  object-fit: contain;
+}
+
+/* ----- Grillas: laminas de un grupo y "Mis dibujos" ----- */
+.colorear-grilla {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 16px;
+  padding: 6px 2px 8px;
+}
+
+.colorear-tarjeta {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  padding: 8px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(8, 40, 66, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.colorear-tarjeta img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.colorear-tarjeta-marca {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0B4F73;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.colorear-mio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorear-mio-vence {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0B4F73;
+  text-align: center;
+}
+
+.colorear-mio-acciones {
+  display: flex;
+  gap: 10px;
+}
+
+/* ----- Lienzo -----
+   .colorear-lienzo es el espacio disponible (lo mide el JSX); adentro,
+   hoja y bandejas van juntas y centradas. El gap de .colorear-centro debe
+   coincidir con SEPARACION en ColorearJuego.jsx. */
+.memory-body:has(> .colorear-lienzo) {
+  overflow: hidden;
+}
+
+.colorear-lienzo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.colorear-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.colorear-hoja {
+  position: relative;
+  flex: none;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(8, 40, 66, 0.22);
+}
+
+.colorear-canvas,
+.colorear-canvas-trazo,
+.colorear-lamina {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.colorear-canvas {
+  touch-action: none;
+  /* Con mouse se ve .colorear-cursor en su lugar; en tactil no hay cursor. */
+  cursor: none;
+}
+
+/* Trazo en curso de acuarela/destacador: opacidad y modo los pone el JSX. */
+.colorear-canvas-trazo,
+.colorear-lamina {
+  pointer-events: none;
+}
+
+/* La linea de la lamina queda encima del color sin taparlo. */
+.colorear-lamina {
+  mix-blend-mode: multiply;
+}
+
+/* ----- Bandejas ----- */
+.colorear-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 22px rgba(8, 40, 66, 0.18);
+}
+
+/* Herramientas ilustradas */
+.colorear-utiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.colorear-util {
+  appearance: none;
+  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.colorear-util svg {
+  transition: transform 0.15s ease;
+}
+
+.colorear-util--activo {
+  background: rgba(11, 79, 115, 0.1);
+  box-shadow: inset 0 0 0 3px #0B4F73;
+}
+
+.colorear-util--activo svg {
+  transform: scale(1.12);
+}
+
+/* Acciones: aparte de las herramientas (separador) y mas discretas. */
+.colorear-acciones {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(8, 40, 66, 0.1);
+  align-self: stretch;
+}
+
+.colorear-accion {
+  appearance: none;
+  cursor: pointer;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 10px;
+  border-radius: 23px;
+  border: none;
+  background: #EEF3F7;
+  color: #0B4F73;
+  font-family: inherit;
+  font-size: 21px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-accion:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Tamaño: muestra del trazo real + deslizador en cuña (de fino a grueso). */
+.colorear-tamano {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: stretch;
+}
+
+.colorear-tamano-muestra {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #F4F7FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-tamano-punto {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(8, 40, 66, 0.25);
+}
+
+.colorear-tamano-pista {
+  position: relative;
+  flex: 1;
+  min-width: 90px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.colorear-tamano-pista::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 22px;
+  transform: translateY(-50%);
+  background: #CFD9E3;
+  clip-path: polygon(0 44%, 100% 0, 100% 100%, 0 56%);
+}
+
+.colorear-tamano-pista input {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.colorear-tamano-pista input::-webkit-slider-runnable-track {
+  height: 40px;
+  background: transparent;
+}
+
+.colorear-tamano-pista input::-moz-range-track {
+  height: 40px;
+  background: transparent;
+}
+
+.colorear-tamano-pista input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #0B4F73;
+  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
+}
+
+.colorear-tamano-pista input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #0B4F73;
+  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
+}
+
+/* Colores: gotas de pintura con brillo. Vertical: 2 filas de 10;
+   horizontal: columnas (ver mas abajo). */
+.colorear-colores {
+  display: grid;
+  grid-template-columns: repeat(10, 40px);
+  justify-content: center;
+  gap: 8px;
+}
+
+.colorear-color {
+  appearance: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.6) 0 16%, transparent 17%),
+    var(--gota);
+  box-shadow: 0 0 0 1.5px rgba(8, 40, 66, 0.2), 0 2px 5px rgba(8, 40, 66, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.colorear-color--activo {
+  transform: scale(1.14);
+  box-shadow: 0 0 0 3.5px #0B4F73, 0 3px 8px rgba(8, 40, 66, 0.3);
+}
+
+.colorear-arcoiris {
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.6) 0 16%, transparent 17%),
+    conic-gradient(#E53935, #FB8C00, #FDD835, #43A047, #1E88E5, #8E24AA, #E53935);
+}
+
+/* "Mas colores": un + sobre un aro de espectro. */
+.colorear-mas {
+  background: #fff;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(#E53935, #FDD835, #43A047, #1E88E5, #8E24AA, #E53935) border-box;
+  color: #0B4F73;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ----- Dialogos (confirmar borrado, mas colores) -----
+   Base: .memory-victoria-overlay + .memory-niveles-modal (App.css). Fijo a
+   la pantalla: en "Mis dibujos" la lista tiene scroll y un overlay absoluto
+   podria quedar fuera de la vista. */
+.colorear-dialogo-overlay {
+  position: fixed;
+  z-index: 30;
+}
+
+.colorear-dialogo {
+  width: min(92%, 380px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.colorear-dialogo h3 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.colorear-dialogo p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #35607A;
+}
+
+.colorear-dialogo-miniatura {
+  width: 120px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(8, 40, 66, 0.2);
+}
+
+.colorear-dialogo-icono {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #FDECEC;
+  color: #D32F2F;
+  font-size: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-dialogo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.colorear-dialogo-btn {
+  appearance: none;
+  cursor: pointer;
+  min-width: 130px;
+  height: 50px;
+  padding: 0 22px;
+  border-radius: 25px;
+  border: 2px solid rgba(8, 40, 66, 0.15);
+  background: #fff;
+  color: #0B4F73;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.colorear-dialogo-btn--peligro {
+  border-color: #D32F2F;
+  background: #D32F2F;
+  color: #fff;
+}
+
+.colorear-espectro-modal {
+  width: min(94%, 520px);
+}
+
+.colorear-espectro-modal .memory-cerrar-x {
+  background: #EEF3F7;
+  color: #0B4F73;
+}
+
+.colorear-espectro {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 5px;
+}
+
+.colorear-espectro-celda {
+  appearance: none;
+  cursor: pointer;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(8, 40, 66, 0.12);
+}
+
+.colorear-espectro-celda--activo {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5.5px #0B4F73;
+}
+
+/* ----- Cursor de laptop (solo con mouse; lo mueve el JSX) ----- */
+.colorear-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.colorear-cursor-anillo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(11, 79, 115, 0.9);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.colorear-cursor-anillo--goma {
+  border-style: dashed;
+}
+
+.colorear-cursor-icono {
+  position: absolute;
+  display: block;
+  line-height: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* ----- Celular vertical: todo un poco mas chico para que quepa ----- */
+@media screen and (max-width: 520px) {
+  .colorear-centro {
+    gap: 10px;
+  }
+
+  .colorear-panel {
+    padding: 8px 10px;
+    gap: 8px;
+    border-radius: 20px;
+  }
+
+  .colorear-utiles {
+    gap: 4px;
+  }
+
+  .colorear-util {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .colorear-util svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .colorear-acciones {
+    padding-top: 8px;
+  }
+
+  .colorear-accion {
+    min-width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .colorear-tamano-muestra {
+    width: 44px;
+    height: 44px;
+  }
+
+  .colorear-colores {
+    grid-template-columns: repeat(10, 28px);
+    gap: 4px;
+  }
+
+  .colorear-color {
+    width: 28px;
+    height: 28px;
+    border-width: 2px;
+  }
+}
+
+/* ----- Horizontal (laptop, tablet acostada, celular acostado):
+   herramientas a la izquierda de la hoja, tamaño y colores a la derecha. ----- */
+@media screen and (orientation: landscape) and (min-width: 700px) {
+  .colorear-centro {
+    flex-direction: row;
+  }
+
+  .colorear-panel--herramientas {
+    order: -1;
+    padding: 12px 10px;
+  }
+
+  .colorear-utiles {
+    display: grid;
+    grid-template-columns: repeat(2, 56px);
+  }
+
+  .colorear-acciones {
+    display: grid;
+    grid-template-columns: repeat(2, 46px);
+    justify-content: center;
+  }
+
+  .colorear-panel--colores {
+    padding: 12px;
+  }
+
+  .colorear-tamano {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .colorear-tamano-pista {
+    align-self: stretch;
+  }
+
+  .colorear-colores {
+    grid-template-columns: repeat(4, 38px);
+    gap: 7px;
+  }
+
+  .colorear-color {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* Laptop baja: herramientas mas chicas. */
+@media screen and (orientation: landscape) and (min-width: 700px) and (max-height: 640px) {
+  .colorear-utiles {
+    grid-template-columns: repeat(2, 46px);
+    gap: 4px;
+  }
+
+  .colorear-util {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .colorear-util svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .colorear-acciones {
+    grid-template-columns: repeat(2, 40px);
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  .colorear-accion {
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    font-size: 18px;
+  }
+
+  .colorear-panel {
+    gap: 8px;
+  }
+
+  .colorear-panel--herramientas,
+  .colorear-panel--colores {
+    padding: 8px;
+  }
+
+  .colorear-tamano-muestra {
+    width: 44px;
+    height: 44px;
+  }
+
+  .colorear-colores {
+    grid-template-columns: repeat(4, 30px);
+    gap: 5px;
+  }
+
+  .colorear-color {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+  }
+}
+
+/* Celular acostado: herramientas en 3 columnas, sin muestra de tamaño. */
+@media screen and (orientation: landscape) and (min-width: 700px) and (max-height: 460px) {
+  .colorear-utiles {
+    grid-template-columns: repeat(3, 40px);
+    gap: 3px;
+  }
+
+  .colorear-util {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .colorear-util svg {
+    width: 34px;
+    height: 34px;
+  }
+
+  .colorear-acciones {
+    grid-template-columns: repeat(4, 30px);
+    gap: 4px;
+    padding-top: 6px;
+  }
+
+  .colorear-accion {
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+  }
+
+  .colorear-tamano-muestra {
+    display: none;
+  }
+
+  .colorear-tamano-pista {
+    height: 32px;
+  }
+
+  .colorear-colores {
+    grid-template-columns: repeat(5, 26px);
+    gap: 4px;
+  }
+
+  .colorear-color {
+    width: 26px;
+    height: 26px;
+  }
+}

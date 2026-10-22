@@ -10,7 +10,10 @@ import DiferenciasDev from './DiferenciasDev';
 import PintarJuego from './PintarJuego';
 import PintarDev from './PintarDev';
 import PintarPixelDev from './PintarPixelDev';
-import SimonJuego, { SimonMiniatura, SIMON_GRUPOS } from './SimonJuego';
+import SimonJuego, { SIMON_GRUPOS } from './SimonJuego';
+import ColorearLienzo, { ColorearGaleria, MisDibujos, imprimirDibujo } from './ColorearJuego';
+import { borrarDibujo, leerDibujos, limpiarDibujosVencidos } from '../utils/dibujosColorear';
+import imagenColorear from '../assets/menu-general/colorear.avif';
 import { laminaDePixelArt } from '../utils/pintarPixel';
 import cuadriculasPintar from '../data/pintarCuadriculas';
 import EstadoDevTabs from './EstadoDevTabs';
@@ -51,6 +54,8 @@ import imagenContar from '../assets/menu-general/contar.avif';
 import imagenDiferencias from '../assets/menu-general/diferencias.avif';
 import imagenSecuencias from '../assets/menu-general/secuencias.avif';
 import imagenPintar from '../assets/menu-general/pintar.avif';
+import imagenPintarNumeros from '../assets/menu-general/pintar-numeros.avif';
+import imagenSimon from '../assets/menu-general/simon.avif';
 
 // ========== MENU GENERAL ==========
 // El icono del header abre este drawer con un menu de tarjetas (Imprimir,
@@ -355,6 +360,16 @@ const GRUPOS_IMPRIMIBLES = Object.entries(GALLERY_FOLDERS).map(([id, folder]) =>
     folder,
   };
 });
+
+// ========== COLOREAR ==========
+// Las mismas laminas de Imprimir (pedido explicito), pintadas con pincel en
+// ColorearJuego.jsx. Id de cada lamina = su ruta dentro de src/assets (es la
+// llave de lo guardado en el dispositivo, utils/dibujosColorear.js).
+const idLaminaColorear = (ruta) => ruta.replace(/^.*\/assets\//, '');
+const CARGAR_LAMINA_COLOREAR = Object.fromEntries(
+  Object.entries(ENTRADAS_GALERIAS).map(([ruta, cargar]) => [idLaminaColorear(ruta), cargar]),
+);
+const cargarLaminaColorear = (id) => CARGAR_LAMINA_COLOREAR[id]?.().then((m) => m.default) ?? Promise.resolve(null);
 
 // ========== ROMPECABEZAS ==========
 // Un NIVEL define la dificultad (la cantidad de piezas) y agrupa VARIOS
@@ -1621,6 +1636,14 @@ export default function MenuActividades({ onOpenChange }) {
   // en el selector de grupos).
   const [grupoImprimir, setGrupoImprimir] = useState(null);
   const [imagenesGaleria, setImagenesGaleria] = useState(null);
+  // Colorear: grupo elegido (id de GRUPOS_IMPRIMIBLES, 'mios' = "Mis
+  // dibujos", null = selector), lamina abierta en el lienzo y lo guardado.
+  const [grupoColorear, setGrupoColorear] = useState(null);
+  const [laminaColorear, setLaminaColorear] = useState(null);
+  const [laminasColorear, setLaminasColorear] = useState(null);
+  const [dibujosColorear, setDibujosColorear] = useState(null);
+  const [miniaturasColorear, setMiniaturasColorear] = useState({});
+  const [versionDibujos, setVersionDibujos] = useState(0);
   const [open, setOpen] = useState(false);
   // true mientras la vista previa de una foto (Imprimir) esta abierta: el
   // Escape debe cerrar SOLO la vista previa, no todo el drawer.
@@ -1827,6 +1850,72 @@ export default function MenuActividades({ onOpenChange }) {
   const irADiferencias = useCallback(() => setVista('diferencias'), []);
   const irAPintar = useCallback(() => setVista('pintar'), []);
   const irAPixel = useCallback(() => setVista('pixel'), []);
+  const irAColorear = useCallback(() => setVista('colorear'), []);
+
+  // ===== Colorear =====
+  // Lo vencido (48 h) se borra apenas abre la app, no solo al entrar a Colorear.
+  useEffect(() => {
+    limpiarDibujosVencidos();
+  }, []);
+
+  // Laminas del grupo elegido (perezoso, como la galeria de Imprimir).
+  useEffect(() => {
+    if (!grupoColorear || grupoColorear === 'mios') {
+      setLaminasColorear(null);
+      return;
+    }
+    let vivo = true;
+    const entradas = LOADERS_GALERIA[GALLERY_FOLDERS[grupoColorear]] ?? [];
+    Promise.all(entradas.map(([ruta, cargar]) => cargar().then((m) => ({ id: idLaminaColorear(ruta), src: m.default }))))
+      .then((laminas) => {
+        if (vivo) setLaminasColorear(laminas);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [grupoColorear]);
+
+  // Lo pintado en este dispositivo (miniaturas para las grillas). Se relee
+  // cada vez que el lienzo guarda o se borra algo (versionDibujos).
+  // Las URLs anteriores se liberan recien cuando llegan las nuevas (si no,
+  // las miniaturas parpadean rotas mientras se relee).
+  const miniaturasColorearRef = useRef({});
+  useEffect(() => {
+    if (vista !== 'colorear') return;
+    let vivo = true;
+    leerDibujos().then((dibujos) => {
+      if (!vivo) return;
+      const urls = Object.fromEntries(dibujos.map((d) => [d.id, URL.createObjectURL(d.miniatura)]));
+      Object.values(miniaturasColorearRef.current).forEach((u) => URL.revokeObjectURL(u));
+      miniaturasColorearRef.current = urls;
+      setDibujosColorear(dibujos);
+      setMiniaturasColorear(urls);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [vista, versionDibujos]);
+
+  // Lamina abierta: { id, src } (src se pide recien al abrirla).
+  const abrirLaminaColorear = useCallback((id) => {
+    cargarLaminaColorear(id).then((src) => {
+      if (src) setLaminaColorear({ id, src });
+    });
+  }, []);
+  const avisarGuardadoColorear = useCallback(() => setVersionDibujos((v) => v + 1), []);
+  const imprimirDibujoGuardado = useCallback((d) => {
+    cargarLaminaColorear(d.id).then((src) => {
+      if (src) imprimirDibujo(d.capa, src, imprimirImagen);
+    });
+  }, []);
+  const borrarDibujoGuardado = useCallback((id) => {
+    borrarDibujo(id).then(() => setVersionDibujos((v) => v + 1));
+  }, []);
+  const volverColorear = useCallback(() => {
+    if (laminaColorear) setLaminaColorear(null);
+    else if (grupoColorear) setGrupoColorear(null);
+    else setVista('menu');
+  }, [laminaColorear, grupoColorear]);
   const irASimon = useCallback(() => setVista('simon'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
@@ -2851,6 +2940,8 @@ export default function MenuActividades({ onOpenChange }) {
     setLaminaPixId(null);
     setGanoPix(false);
     setDevPix(false);
+    setGrupoColorear(null);
+    setLaminaColorear(null);
     setGrupoSimonId(null);
     setNivelSimon(null);
   }, [open]);
@@ -3151,6 +3242,12 @@ export default function MenuActividades({ onOpenChange }) {
     tituloHeader = grupoSimon ? grupoSimon.name : 'Simón dice';
     colorHeader = temaSimon?.headerStyle?.background;
   }
+  if (vista === 'colorear') {
+    const grupoInfo = GRUPOS_IMPRIMIBLES.find((g) => g.id === grupoColorear);
+    mostrarVolver = true;
+    tituloHeader = grupoColorear === 'mios' ? 'Mis dibujos' : grupoInfo?.nombre ?? 'Colorear';
+    colorHeader = grupoInfo?.header;
+  }
   const esMenu = !colorHeader;
 
   let estiloDrawer;
@@ -3194,7 +3291,7 @@ export default function MenuActividades({ onOpenChange }) {
                     <button
                       type="button"
                       className="memory-volver-btn"
-                      onClick={manejarVolver}
+                      onClick={vista === 'colorear' ? volverColorear : manejarVolver}
                       aria-label="Volver"
                     >
                       <LeftOutlined />
@@ -3407,6 +3504,17 @@ export default function MenuActividades({ onOpenChange }) {
                       </span>
                       <span className="memory-picker-nombre">Encuentra las diferencias</span>
                     </button>
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-dev"
+                      onClick={irAColorear}
+                      aria-label="Colorear"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <img src={imagenColorear} alt="" className="memory-picker-img" />
+                      </span>
+                      <span className="memory-picker-nombre">Colorear</span>
+                    </button>
                     {/* Juego oficial de pintar desde 2026-10-21 (internamente
                         "pixel": láminas recreadas con cuadrícula). El anterior
                         queda descontinuado, solo con el modo desarrollador. */}
@@ -3417,7 +3525,7 @@ export default function MenuActividades({ onOpenChange }) {
                       aria-label="Pintar por números"
                     >
                       <span className="memory-picker-img-wrap">
-                        <img src={imagenPintar} alt="" className="memory-picker-img" />
+                        <img src={imagenPintarNumeros} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Pintar por números</span>
                     </button>
@@ -3439,7 +3547,7 @@ export default function MenuActividades({ onOpenChange }) {
                       aria-label="Simón dice"
                     >
                       <span className="memory-picker-img-wrap">
-                        <SimonMiniatura />
+                        <img src={imagenSimon} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Simón dice</span>
                     </button>
@@ -4612,6 +4720,72 @@ export default function MenuActividades({ onOpenChange }) {
                   portada={grupoSimon.cover}
                   autoIniciar={partidaSimon > 0}
                   onNivel={setNivelSimon}
+                />
+              )}
+
+              {vista === 'colorear' && !laminaColorear && !grupoColorear && (
+                <div className="memory-picker">
+                  <div className="memory-picker-grid">
+                    {dibujosColorear?.length > 0 && (
+                      <button
+                        type="button"
+                        className="memory-picker-tile"
+                        onClick={() => setGrupoColorear('mios')}
+                        aria-label="Mis dibujos"
+                      >
+                        <span className="memory-picker-img-wrap colorear-portada">
+                          <img src={miniaturasColorear[dibujosColorear[0].id]} alt="" className="memory-picker-img" />
+                        </span>
+                        <span className="memory-picker-nombre">Mis dibujos</span>
+                      </button>
+                    )}
+                    {GRUPOS_IMPRIMIBLES.map((g) => (
+                      <button
+                        type="button"
+                        key={g.id}
+                        className="memory-picker-tile"
+                        onClick={() => setGrupoColorear(g.id)}
+                        aria-label={`Colorear ${g.nombre}`}
+                      >
+                        <span className="memory-picker-img-wrap">
+                          {g.cover ? (
+                            <img src={g.cover} alt="" className="memory-picker-img" />
+                          ) : (
+                            <PictureOutlined className="memory-picker-placeholder" aria-hidden="true" />
+                          )}
+                        </span>
+                        <span className="memory-picker-nombre">{g.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {vista === 'colorear' && !laminaColorear && grupoColorear === 'mios' && (
+                <MisDibujos
+                  dibujos={dibujosColorear}
+                  miniaturas={miniaturasColorear}
+                  onElegir={abrirLaminaColorear}
+                  onImprimir={imprimirDibujoGuardado}
+                  onBorrar={borrarDibujoGuardado}
+                />
+              )}
+
+              {vista === 'colorear' && !laminaColorear && grupoColorear && grupoColorear !== 'mios' && (
+                <ColorearGaleria
+                  laminas={laminasColorear}
+                  miniaturas={miniaturasColorear}
+                  onElegir={abrirLaminaColorear}
+                />
+              )}
+
+              {vista === 'colorear' && laminaColorear && (
+                <ColorearLienzo
+                  key={laminaColorear.id}
+                  id={laminaColorear.id}
+                  src={laminaColorear.src}
+                  onGuardado={avisarGuardadoColorear}
+                  onImprimir={imprimirImagen}
                 />
               )}
 

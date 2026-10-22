@@ -284,25 +284,6 @@ function EquipoSvg({ encendido, onTocar, interactivo, Motivo }) {
   );
 }
 
-// Versión chica, sin interacción, para la tarjeta del menú de Actividades:
-// las luces se van encendiendo en ronda.
-export function SimonMiniatura() {
-  const [encendido, setEncendido] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
-    const id = setInterval(() => setEncendido((n) => (n + 1) % SIMON_COLORES.length), 700);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="simon-miniatura" aria-hidden="true">
-      <span className="simon-miniatura-equipo">
-        <EquipoSvg encendido={encendido} interactivo={false} />
-        <span className="simon-miniatura-centro" />
-      </span>
-    </span>
-  );
-}
-
 // ===== Traje de cada grupo =====
 // Grupos con los que se juega (los ids de src/data/groups.js). Del tema
 // sale lo general (fondo, carcasa, color principal, botones, tarjetas); aquí

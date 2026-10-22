@@ -7,6 +7,53 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Colorear — nuevo, solo modo desarrollador (2026-10-21)
+- Pintar con PINCEL libre sobre las láminas de Imprimir (pedido explícito:
+  sin balde, sin cerrar bordes, sin vectorizar). Lámina encima con
+  mix-blend-mode multiply → la línea negra nunca se tapa.
+- src/components/ColorearJuego.jsx + .css; utils/dibujosColorear.js
+  (IndexedDB 'musica-kids-colorear'). Vista 'colorear' en MenuActividades,
+  volver propio (volverColorear) para no tocar manejarVolver.
+- Herramientas: 12 colores, 3 grosores, pincel/borrador, deshacer (12
+  pasos), borrar todo, imprimir (lámina + color). "Mis dibujos": continuar,
+  imprimir, borrar (doble toque), texto "Se borra en…".
+- Guardado automático (0,8 s tras cada trazo y al salir). Cada dibujo se
+  borra a las 48 h de EMPEZADO (no se renueva al seguir pintando); limpieza
+  al abrir la app. Medido: ~53 KB capa + 23 KB miniatura por dibujo.
+- Verificado con capturas del build (file://): laptop, tablet, tablet
+  acostada, celular, celular acostado; recarga conserva; 49 h → se borra.
+- Sin commit: otra sesión tenía cambios de Simón sin commitear en los mismos
+  archivos (MenuActividades.jsx, este flujo).
+- Rediseño preescolar (2026-10-21): bandeja de herramientas ilustradas
+  (ColorearIconos.jsx: crayón con grano, plumón, pincel de borde suave,
+  brillos, goma) + acciones aparte (deshacer, borrar todo con 2º toque en
+  3 s, imprimir); bandeja de grosores + 17 colores en gotas (pieles, gris,
+  blanco, arcoíris que cambia de tono en el trazo). Motor de trazos en
+  utils/pincelesColorear.js. Horizontal: herramientas izq., colores der.;
+  vertical: ambas bajo la hoja. Cursor en laptop (solo mouse): la
+  herramienta dibujada con el color + anillo del grosor real.
+- v3 (2026-10-21, tras reclamo por falta de patrones): 12 herramientas
+  (crayón, lápiz de color, plumón, pincel, acuarela, destacador, tiza,
+  spray, neón, brillos, sellos corazón/estrella, goma). Acuarela, destacador
+  y neón pintan en un canvas de trazo aparte y se funden al soltar (no se
+  oscurecen sobre sí mismos). Tamaño = UN deslizador en cuña (6–60 px) para
+  todas, con muestra del trazo real. "Más colores": diálogo con espectro
+  12×6 + grises; el elegido queda como "Mi color" en la paleta. Borrar todo y
+  borrar en Mis dibujos: diálogo de confirmación con miniatura (overlay
+  .memory-victoria-overlay + .memory-niveles-modal, position fixed).
+- Deshacer + Rehacer con flechas en gancho (LuUndo2/LuRedo2): la flecha
+  circular parecía "recargar" (pedido). Trazo nuevo vacía Rehacer. 12 pasos.
+- Simón: quitado el anillo blanco de 3 px por fuera del aro (pedido).
+- Tarjeta: menu-general/colorear.avif (Skye pintando, Gemini), 640 px,
+  16 KB, convertida con ffmpeg libaom-av1 crf 30 (PIL del sistema no trae AVIF).
+- [ ] Usuario lo prueba en tablet (dedo real) y decide publicarlo.
+- [x] Limpieza de 1 semana (2026-10-21): src/utils/caducidad.js, llamado en
+  main.jsx antes de montar y al volver a primer plano. Todo "musica-kids-*"
+  vence a 7 días de visto por primera vez, SALVO lista PERMANENTES: marcas
+  de canciones (liked/loved/starred/unicorn) y modo desarrollador + sus
+  borradores. Clave nueva que sea trabajo dev → agregarla a PERMANENTES.
+  Verificado en Chrome (file://) simulando 8 días.
+
 ## Simón dice — nuevo, solo modo desarrollador (2026-10-21)
 - src/components/SimonJuego.jsx + SimonJuego.css (CSS propio, no en App.css).
   Tarjeta `.memory-solo-dev` en Actividades; vista 'simon' en MenuActividades.
@@ -33,9 +80,10 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   de pixel (parece pertenecer a la rama 'pintar').
 
 ## Tarjetas nuevas y título (2026-10-21)
-- menu-general/pintar-numeros.avif y simon.avif (Skye, desde Gemini) convertidas,
-  640 px, SIN conectar todavía a las tarjetas. Título del tab sin emoji.
-  Commit + push 2026-10-21.
+- menu-general/pintar-numeros.avif y simon.avif (Skye, desde Gemini), 640 px.
+  Conectadas: tarjeta oficial "Pintar por números" y "Simón dice" (se borró
+  SimonMiniatura y su CSS, sin uso). El descontinuado sigue con pintar.avif.
+  Título del tab sin emoji. Conexión de tarjetas: sin commit.
 
 ## Pintar: zoom, ayuda, progreso, stepper (2026-10-21)
 - Celdas 52–80 px (antes 64–96), números sin 0, stepper en el header (celular:
