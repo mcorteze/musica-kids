@@ -2120,14 +2120,15 @@ body {
 /* Modal de victoria (clase .victoria; no el de "Elige un nivel", que usa el
    mismo overlay y debe salir al instante): aparece RETARDO segundos despues
    de completar el juego, para alcanzar a ver lo armado/pintado/encontrado
-   sin nada encima (pedido explicito). Mientras espera queda invisible y sin
-   recibir toques (visibility:hidden por el fill "both"). */
+   sin nada encima (pedido explicito; 3 s al principio, 5 s desde el
+   2026-10-22). Mientras espera queda invisible y sin recibir toques
+   (visibility:hidden por el fill "both"). */
 .memory-victoria-overlay.victoria {
-  animation: victoriaAparece 0.35s ease 3s both;
+  animation: victoriaAparece 0.35s ease 5s both;
 }
 
 .memory-victoria-overlay.victoria .memory-victoria {
-  animation: memoryModalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) 3s both;
+  animation: memoryModalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) 5s both;
 }
 
 @keyframes victoriaAparece {

@@ -669,7 +669,7 @@ export default function SimonJuego({ tema, grupoId, portada, autoIniciar = false
 
     const niv = nivelRef.current;
     if (niv >= SIMON_NIVEL_META) {
-      // Ronda final de luces mientras el modal de victoria espera sus 3 s.
+      // Ronda final de luces mientras el modal de victoria espera sus 5 s.
       cambiarFase('victoria');
       terminar(SIMON_NIVEL_META);
       sonidoVictoria();

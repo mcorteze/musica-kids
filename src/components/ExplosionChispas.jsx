@@ -5,7 +5,7 @@ import './ExplosionChispas.css';
 // Destellos de festejo al completar un juego (pedido explicito: los mismos
 // de Simon dice al pasar de nivel, ahora en todos los juegos). Se monta
 // cuando el juego se gana y lanza tres rafagas sobre la pantalla; los
-// modales de victoria aparecen despues (a los 3 s), asi no se tapan.
+// modales de victoria aparecen despues (a los 5 s), asi no se tapan.
 
 const COLORES = ['#FFD54F', '#FF8A65', '#F06292', '#BA68C8', '#4FC3F7', '#81C784', '#FFFFFF'];
 // Destello de 4 puntas (el mismo de Simon, version Disney).
