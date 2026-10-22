@@ -121,7 +121,8 @@ Flujo (exactamente este, pedido del usuario):
 5. Guardar SIN pérdida en `src/assets/pintar-pixel/<tema>/laminas/<nombre>.avif`:
    `ffmpeg -i salida.png -c:v libaom-av1 -still-picture 1 -aom-params lossless=1 -pix_fmt gbrp <destino>`
    y verificar decodificando (0 pixeles distintos). El juego la lee con
-   `laminaDePixelArt` (utils/pintarPixel.js): colores exactos, sin fusionar.
+   `laminaDePixelArt` (utils/pintarPixel.js): un número por color; los que se ven
+   iguales (ΔE Lab < DISTINTOS_MIN = 9) van en uno solo, igual que en la herramienta.
 
 Juego: tema (dorso del Memorice / portada) → parte DIRECTO con una lámina al
 azar entre las pendientes (como los demás juegos: nunca una lista que muestre

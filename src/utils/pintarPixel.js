@@ -7,12 +7,19 @@
 //   la vista previa del editor y hace exactamente lo mismo que
 //   herramientas/pintar_desde_cuadricula.py, que crea la lámina definitiva.
 // - laminaDePixelArt(img): lee una lámina YA RECREADA (1 pixel = 1 celda,
-//   AVIF sin pérdida): cada color exacto es un número, sin fusionar nada.
+//   AVIF sin pérdida): cada color es un número; solo se juntan los que se
+//   ven iguales (DISTINTOS_MIN).
 // Ambas devuelven { columnas, filas, paleta: ['#rrggbb'], celdas: [n|null] }
 // (números desde 1, de más a menos celdas), lo mismo que usa PintarJuego.
 
 const DELTA_E = 12;
 const MAX_COLORES = 15;
+// Colores FINALES a menos de esto (Lab) se ven iguales: van en un solo
+// número. Sin esto, dos grupos separados por sus representantes podían
+// terminar con colores finales casi idénticos y el niño pintaba "el mismo
+// color" con dos números (2026-10-22: 8 láminas, p. ej. Rubble n4/n5).
+// En 9 se juntan los que se ven iguales y no blanco/crema o celeste/blanco.
+const DISTINTOS_MIN = 9;
 // Zona central de cada celda que se mira, lejos de las líneas del patrón.
 const MARGEN = 0.25;
 // Cuánto (fracción de cuadro) puede moverse una línea interior para calzar
@@ -50,6 +57,26 @@ function leerPixeles(img) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+}
+
+// Junta los grupos cuyo color final esté a menos de DISTINTOS_MIN del de un
+// grupo con más celdas (gana el de más celdas y su color). Devuelve el
+// nuevo grupo de cada celda.
+function juntarParecidos(grupoDeCelda, colorDeGrupo) {
+  const cuenta = new Map();
+  grupoDeCelda.forEach((g) => {
+    if (g >= 0) cuenta.set(g, (cuenta.get(g) ?? 0) + 1);
+  });
+  const orden = [...cuenta.keys()].sort((a, b) => cuenta.get(b) - cuenta.get(a));
+  const quedan = [];
+  const destino = new Map();
+  for (const g of orden) {
+    const L = lab(colorDeGrupo(g));
+    const igual = quedan.find((q) => d2(L, q.L) < DISTINTOS_MIN * DISTINTOS_MIN);
+    if (igual) destino.set(g, igual.g);
+    else quedan.push({ g, L });
+  }
+  return grupoDeCelda.map((g) => (destino.has(g) ? destino.get(g) : g));
 }
 
 // Numera grupos (índice por celda, -1 = vacía) de más a menos celdas.
@@ -202,10 +229,9 @@ export function recrearConGrilla(img, { x, y, ancho, alto, columnas, filas }) {
     m.set(k, (m.get(k) ?? 0) + 1);
     colorDe.set(g, m);
   });
-  return numerar(columnas, filas, asig, (g) => {
-    const [k] = [...colorDe.get(g).entries()].sort((a, b) => b[1] - a[1])[0];
-    return aHex(k.split(',').map(Number));
-  });
+  const rgbDe = new Map([...colorDe].map(([g, m]) => [g, [...m.entries()].sort((a, b) => b[1] - a[1])[0][0].split(',').map(Number)]));
+  const finales = juntarParecidos(asig, (g) => rgbDe.get(g));
+  return numerar(columnas, filas, finales, (g) => aHex(rgbDe.get(g)));
 }
 
 export function laminaDePixelArt(img) {
@@ -225,5 +251,8 @@ export function laminaDePixelArt(img) {
     grupoDeCelda.push(grupos.get(k));
   }
   const colores = [...grupos.keys()];
-  return numerar(columnas, filas, grupoDeCelda, (g) => colores[g]);
+  const rgb = colores.map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
+  // Láminas ya creadas con tonos casi iguales: se juntan al leerlas.
+  const finales = juntarParecidos(grupoDeCelda, (g) => rgb[g]);
+  return numerar(columnas, filas, finales, (g) => colores[g]);
 }

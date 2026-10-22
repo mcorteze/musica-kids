@@ -30,6 +30,9 @@ from PIL import Image
 
 DELTA_E = 12
 MAX_COLORES = 15
+# Colores FINALES a menos de esto (Lab) se ven iguales: un solo número (igual
+# que DISTINTOS_MIN en src/utils/pintarPixel.js).
+DISTINTOS_MIN = 9
 MARGEN = 0.25
 RARO = 0.004
 AJUSTE = 0.25
@@ -150,6 +153,19 @@ grupos = {}
 for c, g in zip(celdas, asig):
     grupos.setdefault(g, []).append(c)
 color = {g: Counter(l).most_common(1)[0][0] for g, l in grupos.items()}
+
+# Dos grupos pueden terminar con colores finales casi iguales: el de menos
+# cuadros pasa al de más (gana su color).
+quedan = []
+destino = {}
+for g, _ in Counter(asig).most_common():
+    L = lab(color[g])
+    igual = next((q for q, Lq in quedan if d2(L, Lq) < DISTINTOS_MIN ** 2), None)
+    if igual is None:
+        quedan.append((g, L))
+    else:
+        destino[g] = igual
+asig = [destino.get(g, g) for g in asig]
 
 out = Image.new('RGB', (a.columnas, a.filas))
 out.putdata([color[g] for g in asig])

@@ -7,6 +7,17 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Pintar por números: colores repetidos (2026-10-22)
+- Causa: los grupos se separaban por representantes (ΔE ≥ 12) pero el color
+  final de cada grupo (el más común de sus celdas) no se volvía a comparar:
+  8 láminas tenían dos números con el mismo tono (p. ej. Rubble n4/n5).
+- Arreglo: DISTINTOS_MIN = 9 (Lab) en pintarPixel.js (juntarParecidos: al
+  leer láminas y en la vista previa) y en pintar_desde_cuadricula.py. Gana
+  el grupo con más celdas. Verificado con el lector real en Chrome sobre las
+  37 láminas: ΔE mínimo ≥ 9 en todas; 8 láminas con un número menos. El
+  avance guardado (índices de celdas) sigue sirviendo.
+- Mensaje de victoria: 5 s (antes 3 s), pedido del usuario.
+
 ## Colorear — nuevo, solo modo desarrollador (2026-10-21)
 - Pintar con PINCEL libre sobre las láminas de Imprimir (pedido explícito:
   sin balde, sin cerrar bordes, sin vectorizar). Lámina encima con
