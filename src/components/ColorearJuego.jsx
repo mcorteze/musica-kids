@@ -514,8 +514,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     reiniciarVista();
   }, [caja?.ancho, caja?.alto, reiniciarVista]);
 
+  // Al cancelar el cuadro pendiente hay que soltar tambien la referencia:
+  // en desarrollo (StrictMode) los efectos se montan, desmontan y vuelven a
+  // montar, y con el id viejo guardado aplicarVista creia que ya habia un
+  // cuadro en camino y no programaba nunca otro (el zoom no se movia).
   useEffect(() => () => {
     cancelAnimationFrame(cuadroRef.current);
+    cuadroRef.current = null;
     clearTimeout(ruedaFinRef.current);
   }, []);
 
