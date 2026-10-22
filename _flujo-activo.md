@@ -1,5 +1,42 @@
 # Flujo activo — musica-kids
-Actualizado: 2026-10-20
+Actualizado: 2026-10-22
+
+## PLANIFICADO — reestructuración (NO se hace por ahora, pedido 2026-10-22)
+Dos cambios ligados; el 1 es requisito del 2.
+
+### 1. Dividir MenuActividades.jsx
+- Hoy: 4.895 líneas, 89 useState, 46 efectos, 53 useCallback; panel,
+  menú, modo dev y el estado de 10 juegos (Memorice, Imprimir,
+  Rompecabezas, Contar, Secuencias, Diferencias, Pintar descontinuado,
+  Pintar por números, Simón, Colorear). Título/color/Volver salen de una
+  cadena `if (vista === ...)` compartida (de ahí el bug del encabezado de
+  Pintar por números, 2026-10-22). Cada cambio re-renderiza todo y choca
+  con otras sesiones.
+- Meta: un archivo por juego con su propio estado (juegos/XJuego.jsx, como
+  SimonJuego/ColorearJuego); MenuActividades ~300-500 líneas (panel, menú,
+  modo dev, qué juego mostrar). Cada juego informa título, color y acción
+  de Volver con un mecanismo chico y común (sin la cadena de if).
+- Cómo: un juego por paso y un commit por juego; primero los aislados
+  (Imprimir, Colorear, Simón), al final los grandes (Rompecabezas, Pintar
+  por números). Antes de mover cada juego, sumarle una prueba básica a
+  herramientas/pruebas y correr `npm run pruebas` después de cada paso.
+  Sin cambios visibles. Hacerlo sin otra sesión editando el archivo.
+
+### 2. La app parte en el menú de aplicaciones; la música es una app más
+- Al abrir, se ve directo el menú de aplicaciones (hoy: reproductor y el
+  menú de Actividades en un drawer). La música aparece ahí como una
+  aplicación más, junto a los juegos.
+- La música se abre como drawer: se puede entrar a ella estando en un
+  juego, sin cerrar ni reiniciar el juego.
+- El reproductor flotante en miniatura (MiniPlayerFab):
+  - se puede arrastrar a otra posición de la pantalla;
+  - al tocarlo abre el drawer de música en el grupo exacto de la canción
+    que suena, para cambiarla sin afectar el juego en curso.
+- Implica: el estado del juego activo debe sobrevivir a abrir/cerrar la
+  música (hoy cerrar el drawer de Actividades reinicia todo a 'menu');
+  por eso va después de dividir MenuActividades.
+- Por definir al retomar: qué pasa con el modo auto (DrivingMode) y la
+  página de grupos (GroupMenuPage) en el nuevo arranque.
 
 ## Tarea actual
 Juego "Pintar por números" publicado (commit + push 2026-10-20): 4 temas
