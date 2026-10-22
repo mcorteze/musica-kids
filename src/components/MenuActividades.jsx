@@ -1719,6 +1719,12 @@ export default function MenuActividades({ onOpenChange }) {
   const marcarPanelAfinarRomp = useCallback((abierto) => {
     panelAfinarRompAbiertoRef.current = abierto;
   }, []);
+  // Igual para Colorear: con un panel de la barra (lapices, colores,
+  // tamaño) o un dialogo de borrado abierto, el Escape cierra solo eso.
+  const capaColorearAbiertaRef = useRef(false);
+  const marcarCapaColorear = useCallback((abierta) => {
+    capaColorearAbiertaRef.current = abierta;
+  }, []);
   // Propuesta de asignacion por piezas ({ codigo: piezas }), armada en los
   // dos tabs; el boton del centro del header la cuenta y abre su modal con
   // "Copiar" (ver utils/propuestaRompecabezas.js).
@@ -3113,7 +3119,7 @@ export default function MenuActividades({ onOpenChange }) {
       if (e.key !== 'Escape') return;
       // Con la vista previa de una foto abierta, el Escape lo maneja ella
       // (se cierra sola) y el drawer se queda como esta.
-      if (previewGaleriaAbiertaRef.current || panelAfinarRompAbiertoRef.current) return;
+      if (previewGaleriaAbiertaRef.current || panelAfinarRompAbiertoRef.current || capaColorearAbiertaRef.current) return;
       // Igual con un modal del juego: Escape cierra solo ese modal, nunca
       // la partida que esta debajo.
       if (subModalAbierto) {
@@ -4768,6 +4774,7 @@ export default function MenuActividades({ onOpenChange }) {
                   onElegir={abrirLaminaColorear}
                   onImprimir={imprimirDibujoGuardado}
                   onBorrar={borrarDibujoGuardado}
+                  onCapaAbierta={marcarCapaColorear}
                 />
               )}
 
@@ -4786,6 +4793,7 @@ export default function MenuActividades({ onOpenChange }) {
                   src={laminaColorear.src}
                   onGuardado={avisarGuardadoColorear}
                   onImprimir={imprimirImagen}
+                  onCapaAbierta={marcarCapaColorear}
                 />
               )}
 

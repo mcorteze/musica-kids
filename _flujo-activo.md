@@ -32,6 +32,15 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   utils/pincelesColorear.js. Horizontal: herramientas izq., colores der.;
   vertical: ambas bajo la hoja. Cursor en laptop (solo mouse): la
   herramienta dibujada con el color + anillo del grosor real.
+- v4 (2026-10-21, reclamo: tablet "atorado"): UNA barra compacta con 3
+  selectores que muestran lo elegido (lápiz, color, tamaño) + deshacer/
+  rehacer/borrar/imprimir. Cada selector despliega su panel sobre la hoja
+  y se retrae al elegir, tocar fuera (ese toque no pinta) o Escape. "Más
+  colores" vive dentro del panel de colores (con volver). Tamaño: vista,
+  deslizador y 5 tamaños rápidos. Barra abajo en vertical, a la izquierda
+  en horizontal. Hoja en tablet: 554×775 → 737×1032. Escape con panel o
+  diálogo abierto ya no cierra el drawer (capaColorearAbiertaRef en
+  MenuActividades, mismo patrón que panelAfinarRompAbiertoRef).
 - v3 (2026-10-21, tras reclamo por falta de patrones): 12 herramientas
   (crayón, lápiz de color, plumón, pincel, acuarela, destacador, tiza,
   spray, neón, brillos, sellos corazón/estrella, goma). Acuarela, destacador

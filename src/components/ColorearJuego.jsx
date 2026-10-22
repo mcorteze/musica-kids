@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloseOutlined, DeleteOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
+import { DeleteOutlined, LeftOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 // Flechas en gancho para deshacer/rehacer: la flecha circular de antd
 // (UndoOutlined) se confundia con "recargar" (pedido explicito).
 import { LuBrush, LuRedo2, LuUndo2 } from 'react-icons/lu';
@@ -20,25 +20,27 @@ import './ColorearJuego.css';
 // ========== COLOREAR (pintar a mano sobre las laminas de Imprimir) ==========
 // Pedido explicito: trazo libre, sin balde ni cierre de bordes. Capas, de
 // abajo hacia arriba: el <canvas> de color; un <canvas> de "trazo en curso"
-// (solo acuarela y destacador, que se funden con transparencia al soltar);
-// y la lamina original con mix-blend-mode: multiply — el blanco deja ver el
-// color y la linea negra queda SIEMPRE encima, nunca se tapa al pintar.
+// (acuarela, destacador y neon, que se funden al soltar); y la lamina
+// original con mix-blend-mode: multiply — el blanco deja ver el color y la
+// linea negra queda SIEMPRE encima, nunca se tapa al pintar.
 // Herramientas y colores: utils/pincelesColorear.js. Dibujos de las
-// herramientas (bandeja y cursor): ColorearIconos.jsx.
+// herramientas (barra, paneles y cursor): ColorearIconos.jsx.
 // Lo pintado se guarda solo en el dispositivo (utils/dibujosColorear.js) y
 // se borra a las 48 h de empezado.
 //
-// Distribucion (patron de las apps de pintar infantiles): a un lado la
-// bandeja de herramientas, con deshacer/rehacer/borrar/imprimir aparte; al
-// otro, el tamaño (uno para todas las herramientas) y los colores, con
-// "Mas colores" para elegir cualquier tono. En pantallas verticales las dos
-// bandejas pasan abajo de la hoja. Lo destructivo (borrar todo, borrar un
-// dibujo guardado) siempre pide confirmacion en un dialogo.
+// Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
+// compacta con tres selectores que muestran lo elegido — lapiz, color y
+// tamaño — mas deshacer/rehacer/borrar/imprimir. Cada selector despliega su
+// panel encima de la hoja y se retrae al elegir, al tocar fuera o al tocar
+// el mismo boton. Asi la hoja usa todo el resto de la pantalla. Barra a la
+// izquierda en horizontal, abajo en vertical. Lo destructivo (borrar todo,
+// borrar un dibujo guardado) siempre pide confirmacion en un dialogo.
 
 // Tamaño en px de pantalla (cada herramienta lo ajusta con su escala).
 const TAMANO_MIN = 6;
 const TAMANO_MAX = 60;
 const TAMANO_INICIAL = 22;
+const TAMANOS_RAPIDOS = [8, 16, 26, 40, 56];
 
 // Resolucion interna del lienzo: lado largo fijo, sin importar el tamaño de
 // la lamina (las hay de 236 px y de 2048 px). Alcanza para imprimir y no
@@ -53,6 +55,7 @@ const SEPARACION = 14;
 const CURSOR = 44;
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
+const NOMBRE_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.nombre]));
 
 function cargarImagen(src) {
   return new Promise((resolve, reject) => {
@@ -103,6 +106,13 @@ export function imprimirDibujo(capaBlob, src, imprimir) {
 // ---------- Dialogo de confirmacion (mismo overlay y tarjeta que "Elige un
 // nivel" de los otros juegos) ----------
 function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar }) {
+  useEffect(() => {
+    const escape = (e) => {
+      if (e.key === 'Escape') onCancelar();
+    };
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [onCancelar]);
   return (
     <div className="memory-victoria-overlay colorear-dialogo-overlay" onClick={onCancelar}>
       <div
@@ -157,8 +167,13 @@ export function ColorearGaleria({ laminas, miniaturas, onElegir }) {
 }
 
 // ---------- Mis dibujos: lo pintado en este dispositivo ----------
-export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onBorrar }) {
+export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onBorrar, onCapaAbierta }) {
   const [porBorrar, setPorBorrar] = useState(null);
+  // Con el dialogo abierto, el Escape del drawer no debe cerrar todo.
+  useEffect(() => {
+    onCapaAbierta?.(Boolean(porBorrar));
+    return () => onCapaAbierta?.(false);
+  }, [porBorrar, onCapaAbierta]);
   if (dibujos === null) return <p className="gallery-empty">Cargando dibujos...</p>;
   if (dibujos.length === 0) return <p className="gallery-empty">Todavía no hay dibujos pintados.</p>;
   return (
@@ -202,11 +217,25 @@ export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onBorrar
   );
 }
 
+// Gota de color (paleta, selector y "Mi color").
+function Gota({ rgb, activo, onClick, etiqueta, className = '' }) {
+  return (
+    <button
+      type="button"
+      className={`colorear-color${rgb ? '' : ' colorear-arcoiris'}${activo ? ' colorear-color--activo' : ''} ${className}`}
+      style={rgb ? { '--gota': css(rgb) } : undefined}
+      onClick={onClick}
+      aria-label={etiqueta}
+      aria-pressed={activo}
+      title={etiqueta}
+    />
+  );
+}
+
 // ---------- Lienzo ----------
-export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
+export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapaAbierta }) {
   const zonaRef = useRef(null);
-  const panelHerramientasRef = useRef(null);
-  const panelColoresRef = useRef(null);
+  const barraRef = useRef(null);
   const cursorRef = useRef(null);
   const canvasRef = useRef(null);
   const canvasTrazoRef = useRef(null);
@@ -231,8 +260,21 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
-  const [dialogo, setDialogo] = useState(null);
+  // Panel desplegado de la barra: 'lapices' | 'colores' | 'espectro' | 'tamano' | null.
+  const [menu, setMenu] = useState(null);
+  // Toque en la hoja que solo retrajo un panel: no debe pintar. (React
+  // puede re-renderizar entre el listener que cierra y el del canvas, asi
+  // que no basta con mirar "menu").
+  const ignorarToqueRef = useRef(false);
+  const [confirmarBorrar, setConfirmarBorrar] = useState(false);
   const [miniaturaBorrar, setMiniaturaBorrar] = useState(null);
+
+  // Con un panel o el dialogo abierto, el Escape del drawer no cierra todo
+  // (lo cierra este componente).
+  useEffect(() => {
+    onCapaAbierta?.(Boolean(menu || confirmarBorrar));
+    return () => onCapaAbierta?.(false);
+  }, [menu, confirmarBorrar, onCapaAbierta]);
 
   const esGoma = herramienta === 'goma';
   const rgb = colorId === 'propio' ? colorPropio : COLORES.find((c) => c.id === colorId).rgb;
@@ -266,28 +308,48 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
     };
   }, [id, src]);
 
-  // La lamina ocupa el mayor tamaño posible sin deformarse, descontando lo
-  // que usan las dos bandejas (al costado o abajo, segun la pantalla: lo
-  // decide el CSS con flex-direction de .colorear-centro).
+  // La lamina ocupa el mayor tamaño posible sin deformarse, descontando
+  // solo la barra (al costado o abajo, segun la pantalla: lo decide el CSS
+  // con flex-direction de .colorear-centro). Los paneles flotan encima.
   useEffect(() => {
     const zona = zonaRef.current;
-    const paneles = [panelHerramientasRef.current, panelColoresRef.current];
-    if (!zona || paneles.some((p) => !p) || !dimensiones) return;
+    const barra = barraRef.current;
+    if (!zona || !barra || !dimensiones) return;
     const ajustar = () => {
       const { width, height } = zona.getBoundingClientRect();
       const enFila = getComputedStyle(zona.firstElementChild).flexDirection === 'row';
-      const medidas = paneles.map((p) => p.getBoundingClientRect());
-      const libreAncho = enFila ? width - medidas.reduce((s, m) => s + m.width + SEPARACION, 0) : width;
-      const libreAlto = enFila ? height : height - medidas.reduce((s, m) => s + m.height + SEPARACION, 0);
+      const b = barra.getBoundingClientRect();
+      const libreAncho = enFila ? width - b.width - SEPARACION : width;
+      const libreAlto = enFila ? height : height - b.height - SEPARACION;
       const escala = Math.max(0, Math.min(libreAncho / dimensiones.ancho, libreAlto / dimensiones.alto));
       setCaja({ ancho: Math.floor(dimensiones.ancho * escala), alto: Math.floor(dimensiones.alto * escala) });
     };
     ajustar();
     const observador = new ResizeObserver(ajustar);
     observador.observe(zona);
-    paneles.forEach((p) => observador.observe(p));
+    observador.observe(barra);
     return () => observador.disconnect();
   }, [dimensiones]);
+
+  // El panel abierto se retrae al tocar fuera de la barra (incluida la hoja:
+  // ese toque solo cierra, no pinta — ver alApoyar) o con Escape.
+  useEffect(() => {
+    if (!menu) return undefined;
+    const fuera = (e) => {
+      if (barraRef.current?.contains(e.target)) return;
+      if (e.target === canvasRef.current) ignorarToqueRef.current = true;
+      setMenu(null);
+    };
+    const escape = (e) => {
+      if (e.key === 'Escape') setMenu(null);
+    };
+    document.addEventListener('pointerdown', fuera, true);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', fuera, true);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [menu]);
 
   const guardar = useCallback(async () => {
     clearTimeout(temporizadorRef.current);
@@ -316,7 +378,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
 
   // Miniatura del dialogo de "Borrar todo": lo que se va a borrar.
   useEffect(() => {
-    if (dialogo !== 'borrar' || !laminaRef.current) return undefined;
+    if (!confirmarBorrar || !laminaRef.current) return undefined;
     const canvas = canvasRef.current;
     const escala = MINIATURA / Math.max(canvas.width, canvas.height);
     const mini = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
@@ -329,7 +391,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
       if (url) URL.revokeObjectURL(url);
       setMiniaturaBorrar(null);
     };
-  }, [dialogo]);
+  }, [confirmarBorrar]);
 
   const fotoLienzo = () => {
     const canvas = canvasRef.current;
@@ -376,6 +438,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
   };
 
   const alApoyar = (e) => {
+    // Con un panel abierto, tocar la hoja solo lo retrae (lo cierra el
+    // listener de "tocar fuera"); no se pinta.
+    if (ignorarToqueRef.current) {
+      ignorarToqueRef.current = false;
+      return;
+    }
     // Un solo dedo a la vez: un segundo dedo no mancha.
     if (trazoRef.current !== null || !dimensiones) return;
     e.preventDefault();
@@ -434,7 +502,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
   const rehacer = () => moverPaso(rehacerRef, deshacerRef);
 
   const borrarTodo = async () => {
-    setDialogo(null);
+    setConfirmarBorrar(false);
     recordarParaDeshacer();
     const canvas = canvasRef.current;
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
@@ -452,27 +520,36 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
       .toBlob((blob) => onImprimir(URL.createObjectURL(blob)), 'image/png');
   };
 
+  const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (nombre === 'colores' && m === 'espectro') ? null : nombre));
+
   // Elegir un color con la goma en la mano vuelve a la ultima herramienta
   // de pintar (la goma no usa color).
   const ultimaPintarRef = useRef('crayon');
   const elegirHerramienta = (h) => {
     if (h !== 'goma') ultimaPintarRef.current = h;
     setHerramienta(h);
+    setMenu(null);
   };
-  const elegirColor = (id) => {
-    setColorId(id);
+  const elegirColor = (cid) => {
+    setColorId(cid);
     if (esGoma) setHerramienta(ultimaPintarRef.current);
+    setMenu(null);
   };
   const elegirColorPropio = (valor) => {
     setColorPropio(valor);
     elegirColor('propio');
-    setDialogo(null);
   };
 
   const punta = PUNTAS[herramienta];
   const escalaCursor = CURSOR / 48;
   const anchoReal = Math.max(4, tamano * (ESCALA_HERRAMIENTA[herramienta] ?? 1));
-  const muestra = Math.min(anchoReal, 52);
+  const colorMuestra = esGoma ? '#F48FB1' : rgb ? css(rgb) : null;
+  const muestra = (diametro) => (
+    <span
+      className={`colorear-muestra${colorMuestra ? '' : ' colorear-arcoiris'}`}
+      style={{ width: diametro, height: diametro, ...(colorMuestra && { background: colorMuestra }) }}
+    />
+  );
 
   return (
     <div className="colorear-lienzo" ref={zonaRef}>
@@ -495,97 +572,171 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
           <img src={src} alt="" className="colorear-lamina" draggable={false} />
         </div>
 
-        {/* Bandeja de herramientas (+ acciones, separadas) */}
-        <div className="colorear-panel colorear-panel--herramientas" ref={panelHerramientasRef}>
-          <div className="colorear-utiles">
-            {HERRAMIENTAS.map((h) => (
-              <button
-                type="button"
-                key={h.id}
-                className={`colorear-util${herramienta === h.id ? ' colorear-util--activo' : ''}`}
-                onClick={() => elegirHerramienta(h.id)}
-                aria-label={h.nombre}
-                aria-pressed={herramienta === h.id}
-                title={h.nombre}
-              >
-                <IconoHerramienta herramienta={h.id} color={colorIcono} size={46} />
-              </button>
-            ))}
+        {/* Barra: tres selectores (muestran lo elegido y despliegan su
+            panel) + acciones. Los paneles cuelgan de la barra. */}
+        <div className="colorear-barra" ref={barraRef}>
+          <div className="colorear-barra-grupo">
+            <button
+              type="button"
+              className={`colorear-selector${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
+              onClick={() => alternarMenu('lapices')}
+              aria-haspopup="true"
+              aria-expanded={menu === 'lapices'}
+              aria-label={`Lápiz: ${NOMBRE_HERRAMIENTA[herramienta]}`}
+              title="Elegir lápiz"
+            >
+              <IconoHerramienta herramienta={herramienta} color={colorIcono} size={44} />
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector${menu === 'colores' || menu === 'espectro' ? ' colorear-selector--abierto' : ''}`}
+              onClick={() => alternarMenu('colores')}
+              aria-haspopup="true"
+              aria-expanded={menu === 'colores' || menu === 'espectro'}
+              aria-label="Color"
+              title="Elegir color"
+            >
+              <span
+                className={`colorear-selector-gota${rgb ? '' : ' colorear-arcoiris'}`}
+                style={rgb ? { '--gota': css(rgb) } : undefined}
+              />
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector${menu === 'tamano' ? ' colorear-selector--abierto' : ''}`}
+              onClick={() => alternarMenu('tamano')}
+              aria-haspopup="true"
+              aria-expanded={menu === 'tamano'}
+              aria-label="Tamaño"
+              title="Elegir tamaño"
+            >
+              {muestra(Math.min(Math.max(anchoReal, 8), 34))}
+            </button>
           </div>
-          <div className="colorear-acciones">
+
+          <div className="colorear-barra-grupo colorear-barra-grupo--acciones">
             <button type="button" className="colorear-accion" onClick={deshacer} disabled={!puedeDeshacer} aria-label="Deshacer" title="Deshacer">
               <LuUndo2 />
             </button>
             <button type="button" className="colorear-accion" onClick={rehacer} disabled={!puedeRehacer} aria-label="Rehacer" title="Rehacer">
               <LuRedo2 />
             </button>
-            <button type="button" className="colorear-accion" onClick={() => setDialogo('borrar')} aria-label="Borrar todo" title="Borrar todo">
+            <button type="button" className="colorear-accion" onClick={() => setConfirmarBorrar(true)} aria-label="Borrar todo" title="Borrar todo">
               <DeleteOutlined />
             </button>
             <button type="button" className="colorear-accion" onClick={imprimir} aria-label="Imprimir" title="Imprimir">
               <PrinterOutlined />
             </button>
           </div>
-        </div>
 
-        {/* Bandeja de tamaño y colores */}
-        <div className="colorear-panel colorear-panel--colores" ref={panelColoresRef}>
-          <div className="colorear-tamano">
-            <span className="colorear-tamano-muestra" aria-hidden="true">
-              <span
-                className={`colorear-tamano-punto${!rgb && !esGoma ? ' colorear-arcoiris' : ''}`}
-                style={{
-                  width: muestra,
-                  height: muestra,
-                  ...((rgb || esGoma) && { background: esGoma ? '#F48FB1' : css(rgb) }),
-                }}
-              />
-            </span>
-            <span className="colorear-tamano-pista">
-              <input
-                type="range"
-                min={TAMANO_MIN}
-                max={TAMANO_MAX}
-                value={tamano}
-                onChange={(e) => setTamano(Number(e.target.value))}
-                aria-label="Tamaño"
-              />
-            </span>
-          </div>
-          <div className="colorear-colores">
-            {COLORES.map((c) => (
-              <button
-                type="button"
-                key={c.id}
-                className={`colorear-color${c.rgb ? '' : ' colorear-arcoiris'}${!esGoma && colorId === c.id ? ' colorear-color--activo' : ''}`}
-                style={c.rgb ? { '--gota': css(c.rgb) } : undefined}
-                onClick={() => elegirColor(c.id)}
-                aria-label={c.nombre}
-                aria-pressed={!esGoma && colorId === c.id}
-                title={c.nombre}
-              />
-            ))}
-            {colorPropio && (
-              <button
-                type="button"
-                className={`colorear-color${!esGoma && colorId === 'propio' ? ' colorear-color--activo' : ''}`}
-                style={{ '--gota': css(colorPropio) }}
-                onClick={() => elegirColor('propio')}
-                aria-label="Mi color"
-                aria-pressed={!esGoma && colorId === 'propio'}
-                title="Mi color"
-              />
-            )}
-            <button
-              type="button"
-              className="colorear-color colorear-mas"
-              onClick={() => setDialogo('colores')}
-              aria-label="Más colores"
-              title="Más colores"
-            >
-              <PlusOutlined />
-            </button>
-          </div>
+          {menu === 'lapices' && (
+            <div className="colorear-desplegable colorear-desplegable--lapices" role="menu" aria-label="Lápices">
+              <div className="colorear-lapices">
+                {HERRAMIENTAS.map((h) => (
+                  <button
+                    type="button"
+                    key={h.id}
+                    role="menuitemradio"
+                    aria-checked={herramienta === h.id}
+                    className={`colorear-util${herramienta === h.id ? ' colorear-util--activo' : ''}`}
+                    onClick={() => elegirHerramienta(h.id)}
+                  >
+                    <IconoHerramienta herramienta={h.id} color={colorIcono} size={48} />
+                    <span className="colorear-util-nombre">{h.nombre}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {menu === 'colores' && (
+            <div className="colorear-desplegable colorear-desplegable--colores" role="menu" aria-label="Colores">
+              <div className="colorear-colores">
+                {COLORES.map((c) => (
+                  <Gota
+                    key={c.id}
+                    rgb={c.rgb}
+                    activo={!esGoma && colorId === c.id}
+                    onClick={() => elegirColor(c.id)}
+                    etiqueta={c.nombre}
+                  />
+                ))}
+                {colorPropio && (
+                  <Gota
+                    rgb={colorPropio}
+                    activo={!esGoma && colorId === 'propio'}
+                    onClick={() => elegirColor('propio')}
+                    etiqueta="Mi color"
+                  />
+                )}
+                <button
+                  type="button"
+                  className="colorear-color colorear-mas"
+                  onClick={() => setMenu('espectro')}
+                  aria-label="Más colores"
+                  title="Más colores"
+                >
+                  <PlusOutlined />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {menu === 'espectro' && (
+            <div className="colorear-desplegable colorear-desplegable--espectro" role="menu" aria-label="Más colores">
+              <div className="colorear-desplegable-titulo">
+                <button type="button" className="colorear-desplegable-volver" onClick={() => setMenu('colores')} aria-label="Volver a los colores">
+                  <LeftOutlined />
+                </button>
+                <span>Más colores</span>
+              </div>
+              <div className="colorear-espectro">
+                {ESPECTRO.map((valor) => {
+                  const clave = valor.join(',');
+                  const activo = colorId === 'propio' && colorPropio?.join(',') === clave;
+                  return (
+                    <button
+                      type="button"
+                      key={clave}
+                      className={`colorear-espectro-celda${activo ? ' colorear-espectro-celda--activo' : ''}`}
+                      style={{ background: css(valor) }}
+                      onClick={() => elegirColorPropio(valor)}
+                      aria-label="Elegir este color"
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {menu === 'tamano' && (
+            <div className="colorear-desplegable colorear-desplegable--tamano" role="menu" aria-label="Tamaño">
+              <div className="colorear-tamano-vista">{muestra(Math.min(anchoReal, 60))}</div>
+              <span className="colorear-tamano-pista">
+                <input
+                  type="range"
+                  min={TAMANO_MIN}
+                  max={TAMANO_MAX}
+                  value={tamano}
+                  onChange={(e) => setTamano(Number(e.target.value))}
+                  aria-label="Tamaño"
+                />
+              </span>
+              <div className="colorear-tamanos-rapidos">
+                {TAMANOS_RAPIDOS.map((t) => (
+                  <button
+                    type="button"
+                    key={t}
+                    className={`colorear-tamano-rapido${tamano === t ? ' colorear-tamano-rapido--activo' : ''}`}
+                    onClick={() => setTamano(t)}
+                    aria-label={`Tamaño ${t}`}
+                  >
+                    {muestra(Math.max(6, t * 0.55))}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -602,54 +753,14 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir }) {
         </span>
       </div>
 
-      {dialogo === 'borrar' && (
+      {confirmarBorrar && (
         <ConfirmarBorrado
           titulo="¿Borrar todo el dibujo?"
           texto="Se borra todo lo que pintaste en esta lámina."
           miniatura={miniaturaBorrar}
-          onCancelar={() => setDialogo(null)}
+          onCancelar={() => setConfirmarBorrar(false)}
           onConfirmar={borrarTodo}
         />
-      )}
-
-      {dialogo === 'colores' && (
-        <div className="memory-victoria-overlay colorear-dialogo-overlay" onClick={() => setDialogo(null)}>
-          <div
-            className="memory-niveles-modal colorear-espectro-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Más colores"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="memory-niveles-header">
-              <h3>Más colores</h3>
-              <button
-                type="button"
-                className="memory-cerrar-x memory-niveles-cerrar"
-                onClick={() => setDialogo(null)}
-                aria-label="Cerrar"
-              >
-                <CloseOutlined />
-              </button>
-            </div>
-            <div className="colorear-espectro">
-              {ESPECTRO.map((valor) => {
-                const clave = valor.join(',');
-                const activo = colorId === 'propio' && colorPropio?.join(',') === clave;
-                return (
-                  <button
-                    type="button"
-                    key={clave}
-                    className={`colorear-espectro-celda${activo ? ' colorear-espectro-celda--activo' : ''}`}
-                    style={{ background: css(valor) }}
-                    onClick={() => elegirColorPropio(valor)}
-                    aria-label="Elegir este color"
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

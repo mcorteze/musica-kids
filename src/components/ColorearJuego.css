@@ -134,7 +134,7 @@
   cursor: none;
 }
 
-/* Trazo en curso de acuarela/destacador: opacidad y modo los pone el JSX. */
+/* Trazo en curso de acuarela/destacador/neon: opacidad y modo los pone el JSX. */
 .colorear-canvas-trazo,
 .colorear-lamina {
   pointer-events: none;
@@ -145,63 +145,92 @@
   mix-blend-mode: multiply;
 }
 
-/* ----- Bandejas ----- */
-.colorear-panel {
+/* ----- Barra de herramientas -----
+   Vertical (por defecto): fila bajo la hoja. Horizontal: columna a la
+   izquierda (ver media queries). Los paneles (.colorear-desplegable)
+   cuelgan de la barra y flotan encima de la hoja. */
+.colorear-barra {
+  position: relative;
   flex: none;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 8px 22px rgba(8, 40, 66, 0.18);
+  padding: 8px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(8, 40, 66, 0.2);
 }
 
-/* Herramientas ilustradas */
-.colorear-utiles {
+.colorear-barra-grupo {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
   gap: 6px;
 }
 
-.colorear-util {
+.colorear-barra-grupo--acciones {
+  padding-left: 10px;
+  border-left: 2px solid rgba(8, 40, 66, 0.1);
+}
+
+/* Selectores: muestran lo elegido; el triangulito indica que despliegan. */
+.colorear-selector {
   appearance: none;
   cursor: pointer;
-  width: 56px;
-  height: 56px;
+  position: relative;
+  width: 60px;
+  height: 60px;
   padding: 0;
   border: none;
-  border-radius: 18px;
-  background: transparent;
+  border-radius: 20px;
+  background: #F2F6F9;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.colorear-util svg {
-  transition: transform 0.15s ease;
+.colorear-selector::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  translate: -50% 0;
+  border: 5px solid transparent;
+  border-top: none;
+  border-bottom: 6px solid rgba(11, 79, 115, 0.45);
 }
 
-.colorear-util--activo {
-  background: rgba(11, 79, 115, 0.1);
+.colorear-selector--abierto {
+  background: rgba(11, 79, 115, 0.12);
   box-shadow: inset 0 0 0 3px #0B4F73;
 }
 
-.colorear-util--activo svg {
-  transform: scale(1.12);
+.colorear-selector--abierto::after {
+  border-bottom-color: #0B4F73;
 }
 
-/* Acciones: aparte de las herramientas (separador) y mas discretas. */
-.colorear-acciones {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 2px solid rgba(8, 40, 66, 0.1);
-  align-self: stretch;
+.colorear-selector-gota {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.6) 0 16%, transparent 17%),
+    var(--gota);
+  box-shadow: 0 0 0 1.5px rgba(8, 40, 66, 0.25), 0 2px 5px rgba(8, 40, 66, 0.2);
+}
+
+.colorear-selector-gota.colorear-arcoiris {
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.6) 0 16%, transparent 17%),
+    conic-gradient(#E53935, #FB8C00, #FDD835, #43A047, #1E88E5, #8E24AA, #E53935);
+}
+
+.colorear-muestra {
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(8, 40, 66, 0.25);
 }
 
 .colorear-accion {
@@ -227,107 +256,101 @@
   opacity: 0.4;
 }
 
-/* Tamaño: muestra del trazo real + deslizador en cuña (de fino a grueso). */
-.colorear-tamano {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  align-self: stretch;
+/* ----- Paneles desplegables ----- */
+.colorear-desplegable {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  translate: -50% 0;
+  max-width: calc(100vw - 32px);
+  padding: 14px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(8, 40, 66, 0.3), 0 0 0 1px rgba(8, 40, 66, 0.06);
+  transform-origin: bottom center;
+  animation: colorearDespliega 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.colorear-tamano-muestra {
-  flex: none;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: #F4F7FA;
+@keyframes colorearDespliega {
+  from { opacity: 0; scale: 0.9; }
+  to { opacity: 1; scale: 1; }
+}
+
+.colorear-desplegable-titulo {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+.colorear-desplegable-volver {
+  appearance: none;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #EEF3F7;
+  color: #0B4F73;
+  font-size: 15px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.colorear-tamano-punto {
-  display: block;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(8, 40, 66, 0.25);
+/* Lapices: dibujo + nombre (para quien acompaña al niño). */
+.colorear-lapices {
+  display: grid;
+  grid-template-columns: repeat(4, 78px);
+  gap: 6px;
 }
 
-.colorear-tamano-pista {
-  position: relative;
-  flex: 1;
-  min-width: 90px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.colorear-tamano-pista::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 50%;
-  height: 22px;
-  transform: translateY(-50%);
-  background: #CFD9E3;
-  clip-path: polygon(0 44%, 100% 0, 100% 100%, 0 56%);
-}
-
-.colorear-tamano-pista input {
-  position: relative;
-  width: 100%;
-  height: 40px;
-  margin: 0;
-  background: transparent;
+.colorear-util {
   appearance: none;
-  -webkit-appearance: none;
   cursor: pointer;
-}
-
-.colorear-tamano-pista input::-webkit-slider-runnable-track {
-  height: 40px;
+  height: 82px;
+  padding: 4px 2px;
+  border: none;
+  border-radius: 18px;
   background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: inherit;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-.colorear-tamano-pista input::-moz-range-track {
-  height: 40px;
-  background: transparent;
+.colorear-util--activo {
+  background: rgba(11, 79, 115, 0.1);
+  box-shadow: inset 0 0 0 3px #0B4F73;
 }
 
-.colorear-tamano-pista input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 30px;
-  height: 30px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: #fff;
-  border: 4px solid #0B4F73;
-  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
+.colorear-util-nombre {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #0B4F73;
+  text-align: center;
 }
 
-.colorear-tamano-pista input::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  border: 4px solid #0B4F73;
-  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
-}
-
-/* Colores: gotas de pintura con brillo. Vertical: 2 filas de 10;
-   horizontal: columnas (ver mas abajo). */
+/* Colores: gotas de pintura con brillo. */
 .colorear-colores {
   display: grid;
-  grid-template-columns: repeat(10, 40px);
-  justify-content: center;
-  gap: 8px;
+  grid-template-columns: repeat(6, 44px);
+  gap: 10px;
 }
 
 .colorear-color {
   appearance: none;
   cursor: pointer;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
   border: 3px solid #fff;
@@ -351,7 +374,6 @@
 
 /* "Mas colores": un + sobre un aro de espectro. */
 .colorear-mas {
-  background: #fff;
   border: 3px solid transparent;
   background:
     linear-gradient(#fff, #fff) padding-box,
@@ -363,7 +385,113 @@
   justify-content: center;
 }
 
-/* ----- Dialogos (confirmar borrado, mas colores) -----
+.colorear-desplegable--espectro {
+  width: 400px;
+}
+
+/* Tamaño: vista del trazo real, deslizador en cuña y tamaños rapidos. */
+.colorear-desplegable--tamano {
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.colorear-tamano-vista {
+  height: 72px;
+  border-radius: 16px;
+  background: #F4F7FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-tamano-pista {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.colorear-tamano-pista::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  height: 24px;
+  transform: translateY(-50%);
+  background: #CFD9E3;
+  clip-path: polygon(0 44%, 100% 0, 100% 100%, 0 56%);
+}
+
+.colorear-tamano-pista input {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.colorear-tamano-pista input::-webkit-slider-runnable-track {
+  height: 44px;
+  background: transparent;
+}
+
+.colorear-tamano-pista input::-moz-range-track {
+  height: 44px;
+  background: transparent;
+}
+
+.colorear-tamano-pista input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #0B4F73;
+  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
+}
+
+.colorear-tamano-pista input::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #0B4F73;
+  box-shadow: 0 2px 6px rgba(8, 40, 66, 0.3);
+}
+
+.colorear-tamanos-rapidos {
+  display: flex;
+  justify-content: space-between;
+}
+
+.colorear-tamano-rapido {
+  appearance: none;
+  cursor: pointer;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(8, 40, 66, 0.14);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-tamano-rapido--activo {
+  border-color: #0B4F73;
+  box-shadow: inset 0 0 0 2px #0B4F73;
+}
+
+/* ----- Dialogo de confirmacion de borrado -----
    Base: .memory-victoria-overlay + .memory-niveles-modal (App.css). Fijo a
    la pantalla: en "Mis dibujos" la lista tiene scroll y un overlay absoluto
    podria quedar fuera de la vista. */
@@ -445,14 +573,6 @@
   color: #fff;
 }
 
-.colorear-espectro-modal {
-  width: min(94%, 520px);
-}
-
-.colorear-espectro-modal .memory-cerrar-x {
-  background: #EEF3F7;
-  color: #0B4F73;
-}
 
 .colorear-espectro {
   display: grid;
@@ -506,26 +626,179 @@
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
 }
 
-/* ----- Celular vertical: todo un poco mas chico para que quepa ----- */
+
+/* ----- Celular vertical: barra y paneles mas compactos ----- */
 @media screen and (max-width: 520px) {
   .colorear-centro {
     gap: 10px;
   }
 
-  .colorear-panel {
-    padding: 8px 10px;
-    gap: 8px;
-    border-radius: 20px;
+  .colorear-barra {
+    gap: 6px;
+    padding: 6px;
+    border-radius: 24px;
   }
 
-  .colorear-utiles {
+  .colorear-barra-grupo {
     gap: 4px;
   }
 
-  .colorear-util {
-    width: 46px;
-    height: 46px;
+  .colorear-barra-grupo--acciones {
+    padding-left: 6px;
+  }
+
+  .colorear-selector {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+  }
+
+  .colorear-selector svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .colorear-selector-gota {
+    width: 30px;
+    height: 30px;
+  }
+
+  .colorear-accion {
+    min-width: 38px;
+    height: 38px;
+    padding: 0;
+    font-size: 17px;
+  }
+
+  .colorear-desplegable {
+    padding: 10px;
+  }
+
+  .colorear-lapices {
+    grid-template-columns: repeat(4, 74px);
+    gap: 4px;
+  }
+
+  .colorear-colores {
+    grid-template-columns: repeat(6, 42px);
+    gap: 8px;
+  }
+
+  .colorear-color {
+    width: 42px;
+    height: 42px;
+  }
+
+  .colorear-desplegable--espectro {
+    width: calc(100vw - 32px);
+  }
+
+  .colorear-espectro {
+    gap: 3px;
+  }
+}
+
+/* ----- Horizontal (laptop, tablet acostada, celular acostado): barra a la
+   izquierda de la hoja, paneles abren hacia la derecha. ----- */
+@media screen and (orientation: landscape) and (min-width: 700px) {
+  .colorear-centro {
+    flex-direction: row;
+  }
+
+  .colorear-barra {
+    order: -1;
+    flex-direction: column;
+  }
+
+  .colorear-barra-grupo {
+    flex-direction: column;
+  }
+
+  .colorear-barra-grupo--acciones {
+    padding-left: 0;
+    padding-top: 10px;
+    border-left: none;
+    border-top: 2px solid rgba(8, 40, 66, 0.1);
+  }
+
+  /* El triangulito apunta hacia donde abre el panel: a la derecha. */
+  .colorear-selector::after {
+    top: 50%;
+    left: auto;
+    right: 4px;
+    translate: 0 -50%;
+    border: 5px solid transparent;
+    border-right: none;
+    border-left: 6px solid rgba(11, 79, 115, 0.45);
+  }
+
+  .colorear-selector--abierto::after {
+    border-left-color: #0B4F73;
+  }
+
+  .colorear-desplegable {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 12px);
+    translate: 0 -50%;
+    max-width: none;
+    transform-origin: left center;
+  }
+}
+
+/* Celular acostado (poco alto): barra y paneles compactos para caber. */
+@media screen and (orientation: landscape) and (min-width: 700px) and (max-height: 460px) {
+  .colorear-barra {
+    gap: 4px;
+    padding: 5px;
+    border-radius: 20px;
+  }
+
+  .colorear-barra-grupo {
+    gap: 3px;
+  }
+
+  .colorear-barra-grupo--acciones {
+    display: grid;
+    grid-template-columns: repeat(2, 32px);
+    padding-top: 4px;
+  }
+
+  .colorear-selector {
+    width: 44px;
+    height: 44px;
     border-radius: 14px;
+  }
+
+  .colorear-selector svg {
+    width: 34px;
+    height: 34px;
+  }
+
+  .colorear-selector-gota {
+    width: 26px;
+    height: 26px;
+  }
+
+  .colorear-accion {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 15px;
+  }
+
+  .colorear-desplegable {
+    padding: 8px;
+  }
+
+  .colorear-lapices {
+    grid-template-columns: repeat(6, 64px);
+    gap: 2px;
+  }
+
+  .colorear-util {
+    height: 70px;
   }
 
   .colorear-util svg {
@@ -533,71 +806,8 @@
     height: 38px;
   }
 
-  .colorear-acciones {
-    padding-top: 8px;
-  }
-
-  .colorear-accion {
-    min-width: 40px;
-    height: 40px;
-    font-size: 18px;
-  }
-
-  .colorear-tamano-muestra {
-    width: 44px;
-    height: 44px;
-  }
-
   .colorear-colores {
-    grid-template-columns: repeat(10, 28px);
-    gap: 4px;
-  }
-
-  .colorear-color {
-    width: 28px;
-    height: 28px;
-    border-width: 2px;
-  }
-}
-
-/* ----- Horizontal (laptop, tablet acostada, celular acostado):
-   herramientas a la izquierda de la hoja, tamaño y colores a la derecha. ----- */
-@media screen and (orientation: landscape) and (min-width: 700px) {
-  .colorear-centro {
-    flex-direction: row;
-  }
-
-  .colorear-panel--herramientas {
-    order: -1;
-    padding: 12px 10px;
-  }
-
-  .colorear-utiles {
-    display: grid;
-    grid-template-columns: repeat(2, 56px);
-  }
-
-  .colorear-acciones {
-    display: grid;
-    grid-template-columns: repeat(2, 46px);
-    justify-content: center;
-  }
-
-  .colorear-panel--colores {
-    padding: 12px;
-  }
-
-  .colorear-tamano {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .colorear-tamano-pista {
-    align-self: stretch;
-  }
-
-  .colorear-colores {
-    grid-template-columns: repeat(4, 38px);
+    grid-template-columns: repeat(7, 38px);
     gap: 7px;
   }
 
@@ -605,111 +815,20 @@
     width: 38px;
     height: 38px;
   }
-}
 
-/* Laptop baja: herramientas mas chicas. */
-@media screen and (orientation: landscape) and (min-width: 700px) and (max-height: 640px) {
-  .colorear-utiles {
-    grid-template-columns: repeat(2, 46px);
-    gap: 4px;
+  .colorear-desplegable--espectro {
+    width: 340px;
   }
 
-  .colorear-util {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
+  .colorear-espectro {
+    gap: 2px;
   }
 
-  .colorear-util svg {
-    width: 38px;
-    height: 38px;
+  .colorear-desplegable-titulo {
+    margin-bottom: 4px;
   }
 
-  .colorear-acciones {
-    grid-template-columns: repeat(2, 40px);
-    gap: 6px;
-    padding-top: 8px;
-  }
-
-  .colorear-accion {
-    min-width: 40px;
-    height: 40px;
-    padding: 0;
-    font-size: 18px;
-  }
-
-  .colorear-panel {
-    gap: 8px;
-  }
-
-  .colorear-panel--herramientas,
-  .colorear-panel--colores {
-    padding: 8px;
-  }
-
-  .colorear-tamano-muestra {
-    width: 44px;
-    height: 44px;
-  }
-
-  .colorear-colores {
-    grid-template-columns: repeat(4, 30px);
-    gap: 5px;
-  }
-
-  .colorear-color {
-    width: 30px;
-    height: 30px;
-    border-width: 2px;
-  }
-}
-
-/* Celular acostado: herramientas en 3 columnas, sin muestra de tamaño. */
-@media screen and (orientation: landscape) and (min-width: 700px) and (max-height: 460px) {
-  .colorear-utiles {
-    grid-template-columns: repeat(3, 40px);
-    gap: 3px;
-  }
-
-  .colorear-util {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-  }
-
-  .colorear-util svg {
-    width: 34px;
-    height: 34px;
-  }
-
-  .colorear-acciones {
-    grid-template-columns: repeat(4, 30px);
-    gap: 4px;
-    padding-top: 6px;
-  }
-
-  .colorear-accion {
-    min-width: 30px;
-    width: 30px;
-    height: 30px;
-    font-size: 15px;
-  }
-
-  .colorear-tamano-muestra {
-    display: none;
-  }
-
-  .colorear-tamano-pista {
-    height: 32px;
-  }
-
-  .colorear-colores {
-    grid-template-columns: repeat(5, 26px);
-    gap: 4px;
-  }
-
-  .colorear-color {
-    width: 26px;
-    height: 26px;
+  .colorear-tamano-vista {
+    height: 56px;
   }
 }
