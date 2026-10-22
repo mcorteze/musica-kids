@@ -544,6 +544,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const escalaCursor = CURSOR / 48;
   const anchoReal = Math.max(4, tamano * (ESCALA_HERRAMIENTA[herramienta] ?? 1));
   const colorMuestra = esGoma ? '#F48FB1' : rgb ? css(rgb) : null;
+  // Trazo marcado en el icono del selector de tamaño: fino, medio o grueso.
+  const nivelGrosor = tamano <= 16 ? 0 : tamano <= 34 ? 1 : 2;
   const muestra = (diametro) => (
     <span
       className={`colorear-muestra${colorMuestra ? '' : ' colorear-arcoiris'}`}
@@ -610,7 +612,36 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               aria-label="Tamaño"
               title="Elegir tamaño"
             >
-              {muestra(Math.min(Math.max(anchoReal, 8), 34))}
+              {/* Icono de grosor de linea (patron de las apps de dibujo):
+                  tres trazos de fino a grueso; el del tamaño actual va en
+                  el color elegido. Un circulo solo se confundia con el
+                  selector de color (pedido explicito). */}
+              <svg width="40" height="34" viewBox="0 0 40 34" aria-hidden="true" focusable="false">
+                {(rgb || esGoma) ? null : (
+                  <defs>
+                    {/* userSpaceOnUse: en una linea horizontal la caja tiene
+                        alto 0 y el degradado relativo no se pinta. */}
+                    <linearGradient id="colorear-grosor-arcoiris" gradientUnits="userSpaceOnUse" x1="5" x2="35" y1="0" y2="0">
+                      <stop offset="0" stopColor="#E53935" />
+                      <stop offset="0.33" stopColor="#FDD835" />
+                      <stop offset="0.66" stopColor="#43A047" />
+                      <stop offset="1" stopColor="#1E88E5" />
+                    </linearGradient>
+                  </defs>
+                )}
+                {[[6, 2.5], [16, 5.5], [27, 9]].map(([y, grosor], i) => (
+                  <line
+                    key={y}
+                    x1="5"
+                    x2="35"
+                    y1={y}
+                    y2={y}
+                    strokeWidth={grosor}
+                    strokeLinecap="round"
+                    stroke={i === nivelGrosor ? (colorMuestra ?? 'url(#colorear-grosor-arcoiris)') : '#B5C3D0'}
+                  />
+                ))}
+              </svg>
             </button>
           </div>
 
