@@ -41,7 +41,10 @@ musica-kids/
 - `npm run pruebas` — Pruebas de interfaz con Chrome (herramientas/pruebas/): arma un
   build de producción y uno de desarrollo (StrictMode) en una carpeta temporal y prueba
   Colorear (incluye sellos, varita, espejo, ¡Terminé!, repetición y marcos), el festejo
-  al ganar, la caducidad del guardado y las paletas de Pintar por números. Correrlas antes de
+  al ganar, la caducidad del guardado, el modo liviano y las paletas de Pintar por números.
+- `npm run rendimiento [lentitud] [liviano]` — Mide fluidez (cuadros/s) de Simón, Colorear y
+  Rompecabezas simulando una tablet modesta (CPU 4-6x más lenta). Correrlo antes y después de
+  sumar efectos visuales: la tablet del niño tiene gráficos modestos (ver utils/rendimiento.js). Correrlas antes de
   dar por terminado un cambio en esas pantallas.
 
 ## Deploy

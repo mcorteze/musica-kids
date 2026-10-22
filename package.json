@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "lint": "oxlint",
-    "pruebas": "node herramientas/pruebas/todas.mjs"
+    "pruebas": "node herramientas/pruebas/todas.mjs",
+    "rendimiento": "node herramientas/pruebas/rendimiento.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",

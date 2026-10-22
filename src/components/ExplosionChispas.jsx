@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GiSparkles } from 'react-icons/gi';
+import { esLiviano } from '../utils/rendimiento';
 import './ExplosionChispas.css';
 
 // Destellos de festejo al completar un juego (pedido explicito: los mismos
@@ -24,7 +25,9 @@ export default function ExplosionChispas() {
 
   useEffect(() => {
     const lado = Math.min(window.innerWidth, window.innerHeight);
-    const timers = RAFAGAS.map(({ origen, cantidad, ms }) => setTimeout(() => {
+    // Modo liviano: una sola rafaga con la mitad de chispas.
+    const rafagas = esLiviano() ? [{ ...RAFAGAS[0], cantidad: 12 }] : RAFAGAS;
+    const timers = rafagas.map(({ origen, cantidad, ms }) => setTimeout(() => {
       const nuevas = Array.from({ length: cantidad }, (_, k) => {
         idRef.current += 1;
         const ang = (k / cantidad) * Math.PI * 2 + Math.random() * 0.5;

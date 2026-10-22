@@ -44,6 +44,38 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Fluidez en tablets modestas (2026-10-22)
+- Pedido: la tablet del niño (gráficos modestos) se traba; no exigir tanto
+  en efectos. Medición: `npm run rendimiento [lentitud] [liviano]` (CPU
+  4-6x más lenta en Chrome; mide cuadros/s, cuadros trabados y peor cuadro).
+- Hallazgos (6x): 120 destellos titilando con drop-shadow animado = 30 fps
+  con la hoja QUIETA (y frenaban todo lo demás); neón redibujaba el trazo
+  entero (26 fps); tirón al primer trazo (texturas y AudioContext creados
+  en el primer trazo; respaldo leído desde la GPU). Rompecabezas: React
+  redibuja ~11 componentes por movimiento (normal); cada pieza pintaba la
+  foto entera (hasta 1600 px) ampliada.
+- Arreglos: destellos con brillo dibujado en el SVG (sin filtro) y máx 60;
+  neón por tramos (capas halo/centro; brillo = halo con ctx.filter blur, así
+  el arcoíris no queda en bloques); texturas y audio preparados al abrir la
+  hoja; respaldo con willReadFrequently; Simón pausa el fondo animado
+  mientras se juega; Rompecabezas con piezas recortadas (una imagen chica
+  por pieza, del tamaño en que se ve).
+- Modo liviano automático (utils/rendimiento.js): mide fps 2,5 s después de
+  abrir; < 48 fps o > 4 cuadros lentos → clase "modo-liviano" en <html>:
+  sin backdrop-filter, sin fondos animados ni pulsos de Simón, sin sombras
+  luminosas, sin destellos que titilan ni estela, festejo con menos chispas,
+  pegatinas sin sombra. Se recuerda (musica-kids-modo-liviano) y se vuelve
+  a medir. Forzar a mano: localStorage musica-kids-modo-liviano-forzado
+  '1'/'0' (no vence).
+- Resultado (6x, modo normal): destellos quietos 30→59 fps, neón 26→49,
+  zoom 28→59, primer trazo de varita 316→83 ms.
+- Ojo: el desenfoque de las píldoras de Simón NUNCA se aplicaba en
+  producción (el minificador deja solo -webkit-backdrop-filter y Chrome no
+  lo toma). Se deja así a propósito (más liviano).
+- Ojo: en MenuActividades `Image` es el de antd: usar
+  document.createElement('img'), no `new Image()` (rompió los recortes).
+- Pruebas: herramientas/pruebas/fluidez.mjs (135 chequeos en total).
+
 ## Colorear embellecido (2026-10-22, pedido: "implementar todo")
 - Sellos: 29 figuras en 3 grupos con pestañas (utils/formasSello.js: capas
   SVG 100×100, 'base'/'oscuro'/'claro' o color fijo → mariquita, abeja,

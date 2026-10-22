@@ -29,13 +29,15 @@ import {
   empezarTrazo,
   fundirCapa,
   pintarTramo,
+  prepararTexturas,
   recogerEfectos,
   titilanDe,
 } from '../utils/pincelesColorear';
 import { MARCOS, conMarco } from '../utils/marcosColorear';
-import { silenciar, sonidoClic, sonidoDeTrazo, sonidoFestejo, sonidoPop } from '../utils/sonidosColorear';
+import { prepararAudio, silenciar, sonidoClic, sonidoDeTrazo, sonidoFestejo, sonidoPop } from '../utils/sonidosColorear';
 import IconoHerramienta, { IconoSello, MuestraPolvo, PUNTAS } from './ColorearIconos';
 import ExplosionChispas from './ExplosionChispas';
+import { esLiviano } from '../utils/rendimiento';
 import './ColorearJuego.css';
 
 // ========== COLOREAR (pintar a mano sobre las laminas de Imprimir) ==========
@@ -92,8 +94,9 @@ const VISTA_INICIAL = { x: 0, y: 0, s: 1 };
 const MAX_PUNTOS_HISTORIA = 200000;
 // "Ver cómo lo pinté" dura ~8 s, sin importar cuanto se pinto.
 const SEGUNDOS_REPETICION = 8;
-// Brillos que titilan a la vez sobre la hoja (los ultimos).
-const MAX_TITILAN = 120;
+// Brillos que titilan a la vez sobre la hoja (los ultimos). 60: con 120 la
+// hoja quieta bajaba a ~37 cuadros/s en una tablet modesta simulada.
+const MAX_TITILAN = 60;
 // Estela de la varita: una particula cada tanto, y no mas de estas vivas.
 const ESTELA_CADA_MS = 40;
 const MAX_ESTELA = 36;
@@ -447,7 +450,16 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const respaldo = document.createElement('canvas');
       respaldo.width = ancho;
       respaldo.height = alto;
+      // El respaldo se lee en cada trazo (deshacer, brillos): en memoria y no
+      // en la GPU, asi leerlo no frena (antes: tiron al empezar a pintar).
+      respaldo.getContext('2d', { willReadFrequently: true });
       respaldoRef.current = respaldo;
+      // Granos de crayon, lapiz y tiza y el audio listos antes del primer
+      // trazo (armarlos en el primer trazo lo trababa un momento).
+      (window.requestIdleCallback ?? setTimeout)(() => {
+        prepararTexturas();
+        prepararAudio();
+      });
       if (guardado?.capa) {
         const capa = await createImageBitmap(guardado.capa);
         if (!vivo) return;
@@ -685,6 +697,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   // Estela de la varita: particulas que caen y se apagan detras del dedo.
   const lanzarEstela = (p, trazo) => {
+    if (esLiviano()) return;
     const ahora = performance.now();
     if (ahora - ultimaEstelaRef.current < ESTELA_CADA_MS) return;
     if ((efectosRef.current?.querySelectorAll('.colorear-estela').length ?? 0) >= MAX_ESTELA) return;
@@ -1145,6 +1158,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     lista.forEach((h, i) => {
       if (h.t === 'borrar') desde = i + 1;
     });
+    // Modo liviano: no se muestran (ni se calculan).
+    if (esLiviano()) return [];
     const ctx = respaldoRef.current?.getContext('2d');
     const conPintura = ([x, y]) => !ctx || ctx.getImageData(x, y, 1, 1).data[3] > 0;
     // Se revisan solo los mas recientes (con mucha varita serian miles).
@@ -1261,18 +1276,32 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             {espejo && <span className="colorear-eje" aria-hidden="true" />}
             {dimensiones && !repitiendo && (
               <div className="colorear-titilan" aria-hidden="true">
+                <svg width="0" height="0" style={{ position: 'absolute' }}>
+                  <defs>
+                    <radialGradient id="colorear-halo-destello">
+                      <stop offset="0" stopColor="#fff" stopOpacity="0.85" />
+                      <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
+                </svg>
                 {titilan.map(([x, y, s, color], i) => (
                   <svg
                     key={`${x}-${y}-${i}`}
-                    viewBox="0 0 24 24"
+                    className="colorear-titila"
+                    viewBox="-6 -6 36 36"
                     style={{
                       left: `${(x / dimensiones.ancho) * 100}%`,
                       top: `${(y / dimensiones.alto) * 100}%`,
-                      width: `${(s / dimensiones.ancho) * 100}%`,
+                      // x1,5: la caja del SVG suma el halo alrededor del destello.
+                      width: `${((s * 1.5) / dimensiones.ancho) * 100}%`,
                       animationDelay: `${((i * 0.37) % 2.4).toFixed(2)}s`,
                       animationDuration: `${(1.6 + ((i * 0.53) % 1.2)).toFixed(2)}s`,
                     }}
                   >
+                    {/* Brillo ya dibujado (un halo blanco difuso): antes era
+                        un drop-shadow que se recalculaba en cada cuadro de
+                        la animacion, lo mas caro de la hoja. */}
+                    <circle cx="12" cy="12" r="15" fill="url(#colorear-halo-destello)" />
                     <path d={PATH_DESTELLO} fill={color} />
                   </svg>
                 ))}

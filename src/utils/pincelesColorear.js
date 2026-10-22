@@ -23,6 +23,7 @@
 // estampar); el componente los lee despues de cada tramo.
 
 import { FORMA_POR_ID, FORMAS_SELLO, esSurtido, formasDeSurtido } from './formasSello';
+import { esLiviano } from './rendimiento';
 
 export { FORMAS_SELLO, GRUPOS_SELLO } from './formasSello';
 
@@ -164,6 +165,12 @@ function mascara(tipo) {
   g.drawImage(chico, 0, 0, grande.width, grande.height);
   mascaras[tipo] = grande;
   return grande;
+}
+
+// Arma los granos antes del primer trazo (si no, el primer trazo de crayon,
+// lapiz o tiza se trababa un momento armandolos).
+export function prepararTexturas() {
+  Object.keys(GRANOS).forEach(mascara);
 }
 
 // Muchos tonos (arcoiris, Mas colores): las cachés no crecen sin fin.
@@ -455,9 +462,12 @@ export function estampar(ctx, forma, x, y, tam, giro, tono) {
   ctx.fillStyle = '#fff';
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 10;
-  ctx.shadowColor = 'rgba(40, 30, 60, 0.3)';
-  ctx.shadowBlur = Math.max(2, tam * 0.06);
-  ctx.shadowOffsetY = tam * 0.025;
+  // Modo liviano: sin la sombra suave (la sombra difusa es lo caro).
+  if (!esLiviano()) {
+    ctx.shadowColor = 'rgba(40, 30, 60, 0.3)';
+    ctx.shadowBlur = Math.max(2, tam * 0.06);
+    ctx.shadowOffsetY = tam * 0.025;
+  }
   for (const capa of forma.capas) {
     const p = trazado(capa.d);
     ctx.fill(p);
@@ -548,32 +558,85 @@ function pintarUno(ctx, trazo, a, b) {
   ctx.restore();
 }
 
-// Neon: redibuja el trazo entero (y su reflejo, con espejo) en su capa.
+// Neon, por tramos (antes redibujaba el trazo ENTERO en cada movimiento: un
+// trazo largo se ponia cada vez mas lento). El tramo nuevo se pinta en dos
+// capas aparte, el cuerpo de color (halo) y el centro claro, y en la capa
+// visible del trazo solo se rehace el rectangulo que toco: primero el halo
+// con su brillo difuso (calculado sobre el halo ya pintado alrededor, asi no
+// hay manchas en las uniones) y encima el centro (el halo de un tramo nuevo
+// nunca tapa el centro de los anteriores).
+const capasNeon = {};
+// ctx.filter (desenfoque en el canvas): Chrome/Android y Firefox si; Safari
+// viejo no, y ahi el brillo usa la sombra de un color.
+const FILTRO_CANVAS = typeof document !== 'undefined'
+  && 'filter' in (document.createElement('canvas').getContext('2d') ?? {});
+function capaNeon(nombre, ancho, alto) {
+  let c = capasNeon[nombre];
+  if (!c || c.width !== ancho || c.height !== alto) {
+    c = document.createElement('canvas');
+    c.width = ancho;
+    c.height = alto;
+    capasNeon[nombre] = c;
+  }
+  return c;
+}
+
 function pintarNeon(ctx, trazo, a, b) {
-  const reflejar = (p) => ({ x: trazo.espejo - p.x, y: p.y });
-  trazo.puntos ??= [a];
-  trazo.puntos.push(b);
+  const { width: W, height: H } = ctx.canvas;
+  const halo = capaNeon('halo', W, H);
+  const centro = capaNeon('centro', W, H);
+  const hctx = halo.getContext('2d');
+  const cctx = centro.getContext('2d');
+  if (!trazo.neonIniciado) {
+    trazo.neonIniciado = true;
+    hctx.clearRect(0, 0, W, H);
+    cctx.clearRect(0, 0, W, H);
+  }
   const rgb = colorActual(trazo);
   if (!trazo.rgb) trazo.tono = (trazo.tono + Math.hypot(b.x - a.x, b.y - a.y) * 0.35) % 360;
-  ctx.save();
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  const recorrido = (puntos, grosor, estilo) => {
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = grosor;
-    ctx.strokeStyle = estilo;
+  const { ancho } = trazo;
+  const brillo = ancho * 1.1;
+  const reflejar = (p) => ({ x: trazo.espejo - p.x, y: p.y });
+  const tramos = trazo.espejo ? [[a, b], [reflejar(a), reflejar(b)]] : [[a, b]];
+  for (const [p, q] of tramos) {
+    linea(hctx, p, q, ancho, css(rgb));
+    linea(cctx, p, q, ancho * 0.38, css(mezclar(rgb, BLANCO, 0.7)));
+  }
+  for (const [p, q] of tramos) {
+    // Zona a rehacer: el tramo + su grosor + el brillo; se lee un poco mas
+    // (otro brillo) para que el difuso del borde incluya a los vecinos.
+    const m = ancho / 2 + brillo * 2;
+    const x0 = Math.max(0, Math.floor(Math.min(p.x, q.x) - m));
+    const y0 = Math.max(0, Math.floor(Math.min(p.y, q.y) - m));
+    const x1 = Math.min(W, Math.ceil(Math.max(p.x, q.x) + m));
+    const y1 = Math.min(H, Math.ceil(Math.max(p.y, q.y) + m));
+    const e = Math.ceil(brillo * 2);
+    const sx = Math.max(0, x0 - e);
+    const sy = Math.max(0, y0 - e);
+    const sw = Math.min(W, x1 + e) - sx;
+    const sh = Math.min(H, y1 + e) - sy;
+    ctx.save();
     ctx.beginPath();
-    puntos.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-    if (puntos.length === 2 && puntos[0].x === puntos[1].x && puntos[0].y === puntos[1].y) ctx.lineTo(puntos[1].x + 0.01, puntos[1].y);
-    ctx.stroke();
-  };
-  const listas = trazo.espejo ? [trazo.puntos, trazo.puntos.map(reflejar)] : [trazo.puntos];
-  ctx.shadowColor = css(rgb);
-  ctx.shadowBlur = trazo.ancho * 1.1;
-  listas.forEach((l) => recorrido(l, trazo.ancho, css(rgb)));
-  ctx.shadowBlur = 0;
-  listas.forEach((l) => recorrido(l, trazo.ancho * 0.38, css(mezclar(rgb, BLANCO, 0.7))));
-  ctx.restore();
+    ctx.rect(x0, y0, x1 - x0, y1 - y0);
+    ctx.clip();
+    ctx.clearRect(x0, y0, x1 - x0, y1 - y0);
+    if (FILTRO_CANVAS) {
+      // El brillo es el mismo halo desenfocado: cada parte brilla con SU
+      // color (con una sombra de un solo color, el neon arcoiris recoloreaba
+      // en bloques el brillo de los tramos vecinos).
+      ctx.filter = `blur(${brillo / 2}px)`;
+      ctx.drawImage(halo, sx, sy, sw, sh, sx, sy, sw, sh);
+      ctx.filter = 'none';
+    } else {
+      ctx.shadowColor = css(rgb);
+      ctx.shadowBlur = brillo;
+    }
+    ctx.drawImage(halo, sx, sy, sw, sh, sx, sy, sw, sh);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.drawImage(centro, sx, sy, sw, sh, sx, sy, sw, sh);
+    ctx.restore();
+  }
 }
 
 export function pintarTramo(ctx, trazo, a, b) {

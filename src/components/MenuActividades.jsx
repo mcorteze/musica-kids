@@ -1023,7 +1023,50 @@ const PADDING_TRAY_ROMP = 12;
 // que agarrar. El recorte que se muestra sale de la pieza puesta (su
 // posicion real en la foto), no de la ranura — asi una pieza mal puesta
 // se nota, como en un rompecabezas de verdad.
-function RanuraRompecabezas({ id, piezaId, imagen, columnas, filas }) {
+// Estilo de fondo de una pieza: su recorte propio (imagen chica del tamaño
+// justo, ver recortarPiezasRomp) o, mientras no esta listo, la foto entera
+// ampliada y corrida hasta su lugar.
+function fondoPiezaRomp(piezaId, imagen, recorte, columnas, filas) {
+  if (recorte) return { backgroundImage: `url(${recorte})`, backgroundSize: '100% 100%' };
+  const fila = Math.floor(piezaId / columnas);
+  const col = piezaId % columnas;
+  return {
+    backgroundImage: `url(${imagen})`,
+    backgroundSize: `${columnas * 100}% ${filas * 100}%`,
+    backgroundPosition: `${columnas === 1 ? 0 : (col * 100) / (columnas - 1)}% ${filas === 1 ? 0 : (fila * 100) / (filas - 1)}%`,
+  };
+}
+
+// Recorta cada pieza en su propia imagen, del tamaño en que se ve (x la
+// densidad de la pantalla, hasta 2). Antes cada pieza pintaba la foto
+// ENTERA (hasta 1600 px) ampliada columnas x filas veces y corrida: en una
+// tablet modesta, arrastrar una pieza escalaba la foto grande en cada
+// cuadro. Ahora se decodifica la foto una vez y cada pieza es chica.
+async function recortarPiezasRomp(src, columnas, filas, ancho, alto) {
+  // createElement y no "new Image()": en este archivo Image es el de antd.
+  const img = document.createElement('img');
+  img.src = src;
+  await img.decode();
+  const densidad = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(ancho * densidad));
+  const h = Math.max(1, Math.round(alto * densidad));
+  const sw = img.naturalWidth / columnas;
+  const sh = img.naturalHeight / filas;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const urls = [];
+  for (let id = 0; id < columnas * filas; id++) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, (id % columnas) * sw, Math.floor(id / columnas) * sh, sw, sh, 0, 0, w, h);
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.9));
+    urls.push(URL.createObjectURL(blob));
+  }
+  return urls;
+}
+
+function RanuraRompecabezas({ id, piezaId, imagen, recorte, columnas, filas }) {
   const { isOver, setNodeRef: setDropRef } = useDroppable({ id });
   const dragId = piezaId !== null ? piezaId : `vacia-${id}`;
   const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
@@ -1033,16 +1076,12 @@ function RanuraRompecabezas({ id, piezaId, imagen, columnas, filas }) {
 
   let pieza = null;
   if (piezaId !== null) {
-    const fila = Math.floor(piezaId / columnas);
-    const col = piezaId % columnas;
     pieza = (
       <div
         ref={setDragRef}
         className="romp-pieza-tablero"
         style={{
-          backgroundImage: `url(${imagen})`,
-          backgroundSize: `${columnas * 100}% ${filas * 100}%`,
-          backgroundPosition: `${columnas === 1 ? 0 : (col * 100) / (columnas - 1)}% ${filas === 1 ? 0 : (fila * 100) / (filas - 1)}%`,
+          ...fondoPiezaRomp(piezaId, imagen, recorte, columnas, filas),
           transform: transform ? CSS.Translate.toString(transform) : undefined,
           opacity: isDragging ? 0.3 : 1,
         }}
@@ -1070,10 +1109,8 @@ function RanuraRompecabezas({ id, piezaId, imagen, columnas, filas }) {
 // se arrastra queda semi-transparente aqui (el DragOverlay del componente
 // principal es el que se ve "volando" siguiendo el puntero, sin quedar
 // atrapado por el scroll del carrousel).
-function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
+function PiezaCarrousel({ id, imagen, recorte, columnas, filas, ancho, alto }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
-  const fila = Math.floor(id / columnas);
-  const col = id % columnas;
   return (
     <button
       type="button"
@@ -1082,9 +1119,7 @@ function PiezaCarrousel({ id, imagen, columnas, filas, ancho, alto }) {
       style={{
         width: ancho,
         height: alto,
-        backgroundImage: `url(${imagen})`,
-        backgroundSize: `${columnas * 100}% ${filas * 100}%`,
-        backgroundPosition: `${columnas === 1 ? 0 : (col * 100) / (columnas - 1)}% ${filas === 1 ? 0 : (fila * 100) / (filas - 1)}%`,
+        ...fondoPiezaRomp(id, imagen, recorte, columnas, filas),
         transform: transform ? CSS.Translate.toString(transform) : undefined,
         opacity: isDragging ? 0.3 : 1,
       }}
@@ -2371,10 +2406,36 @@ export default function MenuActividades({ onOpenChange }) {
   // alta y angosta rinde mas con el carrousel abajo — sin depender de como
   // este girado el dispositivo.
   const areaRefRomp = useRef(null);
+  // Recortes de las piezas (una URL por pieza; null mientras se arman).
+  const [recortesRomp, setRecortesRomp] = useState(null);
   const [celdaRomp, setCeldaRomp] = useState({
     anchoTablero: 0, altoTablero: 0, columnas: 1, filas: 1,
     celdaW: 0, celdaH: 0, trayAlto: null, trayAncho: null, bandeja: 'abajo',
   });
+
+  // Recorta las piezas cuando hay foto y tamaño de pieza (y otra vez si el
+  // tamaño cambia, p. ej. al girar la tablet). Las URLs viejas se liberan.
+  useEffect(() => {
+    const { columnas, filas, celdaW, celdaH } = celdaRomp;
+    if (!imagenRomp?.src || !columnas || !filas || !celdaW || !celdaH) {
+      setRecortesRomp(null);
+      return undefined;
+    }
+    let vivo = true;
+    let urls = null;
+    recortarPiezasRomp(imagenRomp.src, columnas, filas, celdaW, celdaH)
+      .then((lista) => {
+        urls = lista;
+        if (vivo) setRecortesRomp(lista);
+        else lista.forEach((u) => URL.revokeObjectURL(u));
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+      setRecortesRomp(null);
+      urls?.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [imagenRomp?.src, celdaRomp.columnas, celdaRomp.filas, celdaRomp.celdaW, celdaRomp.celdaH]);
 
   useLayoutEffect(() => {
     const el = areaRefRomp.current;
@@ -4131,6 +4192,7 @@ export default function MenuActividades({ onOpenChange }) {
                                 id={indice}
                                 piezaId={piezaId}
                                 imagen={imagenRomp.src}
+                                recorte={piezaId !== null ? recortesRomp?.[piezaId] : null}
                                 columnas={celdaRomp.columnas}
                                 filas={celdaRomp.filas}
                               />
@@ -4147,6 +4209,7 @@ export default function MenuActividades({ onOpenChange }) {
                               key={id}
                               id={id}
                               imagen={imagenRomp.src}
+                              recorte={recortesRomp?.[id]}
                               columnas={celdaRomp.columnas}
                               filas={celdaRomp.filas}
                               ancho={celdaRomp.celdaW}
@@ -4163,9 +4226,7 @@ export default function MenuActividades({ onOpenChange }) {
                             style={{
                               width: celdaRomp.celdaW,
                               height: celdaRomp.celdaH,
-                              backgroundImage: `url(${imagenRomp.src})`,
-                              backgroundSize: `${celdaRomp.columnas * 100}% ${celdaRomp.filas * 100}%`,
-                              backgroundPosition: `${celdaRomp.columnas === 1 ? 0 : ((piezaArrastrandoRomp % celdaRomp.columnas) * 100) / (celdaRomp.columnas - 1)}% ${celdaRomp.filas === 1 ? 0 : (Math.floor(piezaArrastrandoRomp / celdaRomp.columnas) * 100) / (celdaRomp.filas - 1)}%`,
+                              ...fondoPiezaRomp(piezaArrastrandoRomp, imagenRomp.src, recortesRomp?.[piezaArrastrandoRomp], celdaRomp.columnas, celdaRomp.filas),
                             }}
                           />
                         ) : null}

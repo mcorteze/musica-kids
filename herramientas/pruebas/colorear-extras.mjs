@@ -65,10 +65,10 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   for (let i = 0; i < 3; i++) await linea(0.1, 0.42 + i * 0.04, 0.9, 0.42 + i * 0.04);
   await espera(300);
   chequear('la varita deja estela al moverse', estela > 0, `${estela} partículas`);
-  chequear('quedan brillos que titilan', (await page.$$('.colorear-titilan svg')).length > 0, `${(await page.$$('.colorear-titilan svg')).length}`);
+  chequear('quedan brillos que titilan', (await page.$$('.colorear-titila')).length > 0, `${(await page.$$('.colorear-titila')).length}`);
 
   // La goma tambien se lleva los brillos que titilan (y deshacer los devuelve).
-  const contarTitilan = () => page.$$eval('.colorear-titilan svg', (els) => els.length);
+  const contarTitilan = () => page.$$eval('.colorear-titila', (els) => els.length);
   const antesGoma = await contarTitilan();
   await page.click('.colorear-selector[aria-label="Goma"]');
   await page.click('.colorear-selector[aria-label="Tamaño"]');

@@ -33,6 +33,8 @@ const PERMANENTES = new Set([
   'musica-kids-unicorn-songs',
   // Modo desarrollador y su trabajo
   'musica-kids-modo-desarrollador',
+  // Ajuste del equipo: modo liviano fijado a mano (utils/rendimiento.js)
+  'musica-kids-modo-liviano-forzado',
   'musica-kids-diferencias-marcas',
   'musica-kids-pintar-cuadriculas',
   'musica-kids-pintar-pixel-descartes',

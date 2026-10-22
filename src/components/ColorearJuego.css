@@ -775,13 +775,14 @@
   overflow: hidden;
 }
 
-.colorear-titilan svg {
+.colorear-titila {
   position: absolute;
   translate: -50% -50%;
   height: auto;
   aspect-ratio: 1;
   opacity: 0;
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
+  /* Solo opacidad, tamaño y giro: el navegador los anima sin repintar (el
+     brillo va dibujado en el SVG, no como filtro). */
   animation: colorearTitila 2s ease-in-out infinite;
 }
 
@@ -1033,11 +1034,11 @@
   .colorear-icono-vivo,
   .colorear-util--activo svg,
   .colorear-color--activo::after,
-  .colorear-titilan svg {
+  .colorear-titila {
     animation: none;
   }
 
-  .colorear-titilan svg {
+  .colorear-titila {
     opacity: 0.8;
   }
 
@@ -1393,4 +1394,28 @@
   .colorear-tamano-vista {
     height: 56px;
   }
+}
+
+/* ----- Modo liviano (utils/rendimiento.js): en equipos que no dan para mas,
+   sin brillos que titilan, sin estela, sin sombras luminosas y sin las
+   animaciones de adorno (la pintura y las herramientas son las mismas). */
+.modo-liviano .colorear-titilan,
+.modo-liviano .colorear-estela {
+  display: none;
+}
+
+.modo-liviano .colorear-pop {
+  box-shadow: none;
+}
+
+.modo-liviano .colorear-cursor-icono,
+.modo-liviano .colorear-selector-gota {
+  filter: none;
+}
+
+.modo-liviano .colorear-icono-vivo,
+.modo-liviano .colorear-util--activo svg,
+.modo-liviano .colorear-color--activo::after,
+.modo-liviano .colorear-desplegable {
+  animation: none;
 }

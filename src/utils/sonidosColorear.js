@@ -14,6 +14,15 @@ export function silenciar(valor) {
   silencio = valor;
 }
 
+// Crea el contexto y el ruido de antemano (al abrir la hoja): crearlos en el
+// primer trazo lo trababa un momento. Queda suspendido hasta el primer toque.
+export function prepararAudio() {
+  const s = silencio;
+  silencio = false;
+  audio();
+  silencio = s;
+}
+
 function audio() {
   if (silencio) return null;
   try {

@@ -6188,3 +6188,13 @@ body {
     animation: none !important;
   }
 }
+
+/* ===== Modo liviano (utils/rendimiento.js) =====
+   En equipos que no dan para mas: ningun desenfoque del fondo (el mas caro
+   para una tarjeta grafica modesta), en toda la app. */
+.modo-liviano *,
+.modo-liviano *::before,
+.modo-liviano *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}

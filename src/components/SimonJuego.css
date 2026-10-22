@@ -922,3 +922,32 @@
     display: none;
   }
 }
+
+/* ----- Fluidez (2026-10-22) -----
+   Mientras se juega (mostrando la secuencia, turno, aciertos), el fondo
+   animado se detiene: pesa en tablets modestas y distrae. Sigue al esperar
+   el "Jugar", al ganar y al terminar. */
+.simon-juego:not(.fase-listo):not(.fase-fin):not(.fase-victoria) .simon-decoracion * {
+  animation-play-state: paused;
+}
+
+/* Modo liviano (utils/rendimiento.js): sin desenfoques, sin sombras
+   luminosas y sin animaciones que no paran. */
+.modo-liviano .simon-juego *,
+.modo-liviano .simon-juego *::before,
+.modo-liviano .simon-juego *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+.modo-liviano .simon-decoracion *,
+.modo-liviano .simon-halo,
+.modo-liviano .simon-marcas,
+.modo-liviano .simon-jugar {
+  animation: none !important;
+}
+
+.modo-liviano .simon-grupo-blur {
+  display: none;
+}

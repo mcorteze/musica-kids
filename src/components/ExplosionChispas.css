@@ -28,3 +28,8 @@
     display: none;
   }
 }
+
+/* Modo liviano (utils/rendimiento.js): sin la sombra luminosa por chispa. */
+.modo-liviano .explosion-chispa {
+  filter: none;
+}
