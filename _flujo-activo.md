@@ -131,6 +131,13 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 - Botón "Guardar imagen" (descarga) visible en la barra, junto a
   "Imprimir o guardar"; sigue también en Mis dibujos y en el diálogo.
 - Prueba: herramientas/pruebas/colorear-ajustes.mjs. Suite 149/149.
+- Parpadeo/hoja cortada al estampar (visto en un celular potente, no
+  es falta de potencia): sin errores JS ni recargas; el navegador
+  rearmaba las capas en cada toque (la pintura pasaba a capa propia
+  y cada "pop" agregaba/quitaba otra) y volvía a dibujar la lámina.
+  Fix: will-change en canvas, lámina y contenedores de efectos (capas
+  fijas desde que se abre). Verificado con LayerTree (CDP); falta
+  confirmarlo en el celular real.
 
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una

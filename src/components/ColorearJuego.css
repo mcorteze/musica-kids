@@ -136,6 +136,20 @@
   display: block;
 }
 
+/* Capas FIJAS desde que se abre la hoja. Sin esto, el primer trazo pasaba
+   la pintura a su propia capa y cada "pop" de sello agregaba y quitaba otra:
+   el navegador rearmaba las capas y volvia a dibujar la lamina entera en
+   cada toque. En una tablet modesta eso se veia como un parpadeo o la hoja
+   cortada a medias (2026-10-22). Con capas fijas, un toque solo actualiza la
+   pintura. */
+.colorear-canvas,
+.colorear-canvas-trazo,
+.colorear-lamina,
+.colorear-titilan,
+.colorear-efectos {
+  will-change: transform;
+}
+
 .colorear-canvas {
   touch-action: none;
   /* Con mouse se ve .colorear-cursor en su lugar; en tactil no hay cursor. */
