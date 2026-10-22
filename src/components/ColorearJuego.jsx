@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DeleteOutlined, LeftOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
+import { DeleteOutlined, LeftOutlined, PrinterOutlined } from '@ant-design/icons';
 // Flechas en gancho para deshacer/rehacer: la flecha circular de antd
 // (UndoOutlined) se confundia con "recargar" (pedido explicito).
 import { LuBrush, LuHand, LuRedo2, LuShrink, LuUndo2 } from 'react-icons/lu';
@@ -56,6 +56,8 @@ const SEPARACION = 14;
 const CURSOR = 44;
 // Zoom de la hoja (mano y rueda del mouse): de la hoja entera a 5x.
 const ZOOM_MAX = 5;
+// Doble toque con la mano: acerca a esto (o vuelve a la hoja entera).
+const ZOOM_TOQUE = 2.5;
 const VISTA_INICIAL = { x: 0, y: 0, s: 1 };
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
@@ -455,16 +457,29 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (cursorRef.current) cursorRef.current.style.display = 'none';
   };
 
-  // ----- Mano: acercar (pellizco o rueda) y desplazar la hoja -----
+  // ----- Zoom y desplazamiento de la hoja -----
   // La vista se mueve con transform: translate(x, y) scale(s), origen
-  // arriba-izquierda, por estilo directo (sin re-render en cada movimiento);
-  // "zoom" (estado) solo alimenta el boton de porcentaje. punto() usa el
-  // rectangulo ya transformado del canvas, asi que pintar con zoom cae
-  // donde corresponde, y el grosor sigue igual EN PANTALLA (mas fino sobre
-  // la lamina: sirve para los detalles).
+  // arriba-izquierda, por estilo directo y una vez por cuadro (rAF), sin
+  // re-render: "zoom" (estado, el boton de porcentaje) se actualiza recien al
+  // terminar el gesto. Con un re-render por movimiento el zoom se sentia
+  // pesado (pedido explicito). punto() usa el rectangulo ya transformado del
+  // canvas, asi que pintar con zoom cae donde corresponde, y el grosor sigue
+  // igual EN PANTALLA (mas fino sobre la lamina: sirve para los detalles).
+  //
+  // Gestos (patron de las apps de dibujo):
+  // - Dos dedos pellizcan y arrastran SIEMPRE, con cualquier herramienta: si
+  //   el primer dedo alcanzo a pintar, ese trazo se cancela.
+  // - Con la mano: un dedo (o el mouse) arrastra; doble toque acerca a
+  //   ZOOM_TOQUE en ese punto, o vuelve a la hoja entera si ya habia zoom.
+  // - Rueda del mouse / pellizco del touchpad: acercan hacia el puntero.
   const vistaActualRef = useRef(VISTA_INICIAL);
   const gestosRef = useRef(new Map());
   const gestoInicioRef = useRef(null);
+  // true desde que se apoya el segundo dedo hasta que se levantan todos.
+  const pellizcoRef = useRef(false);
+  const cuadroRef = useRef(null);
+  const ultimoToqueRef = useRef(null);
+  const ruedaFinRef = useRef(null);
 
   // La hoja siempre llena su marco: nada de bordes vacios al desplazar.
   const limitarVista = ({ x, y, s }) => {
@@ -476,11 +491,20 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       y: Math.min(0, Math.max(alto - alto * s, y)),
     };
   };
+  const limitarVistaRef = useRef(limitarVista);
+  limitarVistaRef.current = limitarVista;
 
-  const aplicarVista = useCallback((v) => {
-    vistaActualRef.current = v;
+  const pintarVista = () => {
+    cuadroRef.current = null;
+    const v = vistaActualRef.current;
     if (vistaRef.current) vistaRef.current.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
-    setZoom((z) => (Math.abs(z - v.s) > 0.01 ? v.s : z));
+  };
+
+  // final: ademas actualiza el boton de porcentaje (re-render).
+  const aplicarVista = useCallback((v, final = true) => {
+    vistaActualRef.current = v;
+    if (!cuadroRef.current) cuadroRef.current = requestAnimationFrame(pintarVista);
+    if (final) setZoom(v.s);
   }, []);
 
   const reiniciarVista = useCallback(() => aplicarVista(VISTA_INICIAL), [aplicarVista]);
@@ -489,6 +513,19 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   useEffect(() => {
     reiniciarVista();
   }, [caja?.ancho, caja?.alto, reiniciarVista]);
+
+  useEffect(() => () => {
+    cancelAnimationFrame(cuadroRef.current);
+    clearTimeout(ruedaFinRef.current);
+  }, []);
+
+  // Acercar a "s" dejando quieto el punto m (coordenadas del marco).
+  const acercarEn = (m, s, final = true) => {
+    const v = vistaActualRef.current;
+    const nuevo = Math.min(ZOOM_MAX, Math.max(1, s));
+    const p = { x: (m.x - v.x) / v.s, y: (m.y - v.y) / v.s };
+    aplicarVista(limitarVistaRef.current({ s: nuevo, x: m.x - p.x * nuevo, y: m.y - p.y * nuevo }), final);
+  };
 
   const puntoMarco = (e) => {
     const r = marcoRef.current.getBoundingClientRect();
@@ -509,56 +546,103 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     gestoInicioRef.current = { m, d, vista: vistaActualRef.current };
   };
 
+  // El primer dedo empezo un trazo y llego el segundo: era un pellizco.
+  const cancelarTrazo = () => {
+    const actual = trazoRef.current;
+    if (!actual) return;
+    trazoRef.current = null;
+    if (actual.capa) {
+      const capa = canvasTrazoRef.current;
+      capa.getContext('2d').clearRect(0, 0, capa.width, capa.height);
+    }
+    const antes = deshacerRef.current.pop();
+    if (antes) canvasRef.current.getContext('2d').putImageData(antes, 0, 0);
+    setPuedeDeshacer(deshacerRef.current.length > 0);
+  };
+
+  // Doble toque con la mano: acerca a ZOOM_TOQUE ahi, o vuelve a la hoja entera.
+  const dobleToque = (p) => {
+    const antes = ultimoToqueRef.current;
+    const ahora = performance.now();
+    ultimoToqueRef.current = { ...p, t: ahora };
+    if (!antes || ahora - antes.t > 320 || Math.hypot(p.x - antes.x, p.y - antes.y) > 30) return false;
+    ultimoToqueRef.current = null;
+    if (vistaActualRef.current.s > 1.05) reiniciarVista();
+    else acercarEn(p, ZOOM_TOQUE);
+    return true;
+  };
+
   const gestoApoyar = (e) => {
-    if (!mano || e.target.closest('button')) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    gestosRef.current.set(e.pointerId, puntoMarco(e));
-    reiniciarGesto();
+    if (e.target.closest('button')) return;
+    const tactil = e.pointerType === 'touch';
+    if (!mano && !tactil) return;
+    const p = puntoMarco(e);
+    gestosRef.current.set(e.pointerId, p);
+    if (mano) {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      if (gestosRef.current.size === 1 && dobleToque(p)) {
+        gestosRef.current.delete(e.pointerId);
+        return;
+      }
+      reiniciarGesto();
+    } else if (gestosRef.current.size >= 2) {
+      // Pintando: el segundo dedo convierte el toque en pellizco.
+      cancelarTrazo();
+      pellizcoRef.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      reiniciarGesto();
+    }
   };
 
   const gestoMover = (e) => {
-    if (!mano || !gestosRef.current.has(e.pointerId) || !gestoInicioRef.current) return;
+    if (!gestosRef.current.has(e.pointerId)) return;
     gestosRef.current.set(e.pointerId, puntoMarco(e));
+    if (!(mano || pellizcoRef.current) || !gestoInicioRef.current) return;
     const dedos = [...gestosRef.current.values()];
     const { m: m0, d: d0, vista: v0 } = gestoInicioRef.current;
     if (dedos.length >= 2 && d0 > 0) {
-      // Pellizco: el punto de la lamina bajo los dedos se queda bajo los dedos.
+      // Pellizco + arrastre a la vez: el punto de la lamina que estaba bajo
+      // los dedos sigue bajo los dedos.
       const m = { x: (dedos[0].x + dedos[1].x) / 2, y: (dedos[0].y + dedos[1].y) / 2 };
       const d = Math.hypot(dedos[0].x - dedos[1].x, dedos[0].y - dedos[1].y);
       const s = Math.min(ZOOM_MAX, Math.max(1, v0.s * (d / d0)));
       const p = { x: (m0.x - v0.x) / v0.s, y: (m0.y - v0.y) / v0.s };
-      aplicarVista(limitarVista({ s, x: m.x - p.x * s, y: m.y - p.y * s }));
-    } else {
+      aplicarVista(limitarVista({ s, x: m.x - p.x * s, y: m.y - p.y * s }), false);
+    } else if (mano) {
       const m = dedos[0];
-      aplicarVista(limitarVista({ s: v0.s, x: v0.x + (m.x - m0.x), y: v0.y + (m.y - m0.y) }));
+      aplicarVista(limitarVista({ s: v0.s, x: v0.x + (m.x - m0.x), y: v0.y + (m.y - m0.y) }), false);
     }
   };
 
   const gestoSoltar = (e) => {
     if (!gestosRef.current.delete(e.pointerId)) return;
+    if (gestosRef.current.size === 0) {
+      pellizcoRef.current = false;
+      setZoom(vistaActualRef.current.s);
+    }
     reiniciarGesto();
   };
 
-  // Rueda del mouse (laptop): acerca hacia el puntero, con o sin la mano.
-  // Listener propio: el de React es pasivo y no deja frenar el scroll.
+  // Rueda del mouse y pellizco del touchpad (llega como rueda con ctrlKey,
+  // en pasos chicos: por eso acerca mas por unidad). Listener propio: el de
+  // React es pasivo y no deja frenar el scroll de la pagina.
   useEffect(() => {
     const marco = marcoRef.current;
     if (!marco) return undefined;
     const rueda = (e) => {
       e.preventDefault();
-      const v = vistaActualRef.current;
       const r = marco.getBoundingClientRect();
-      const m = { x: e.clientX - r.left, y: e.clientY - r.top };
-      const s = Math.min(ZOOM_MAX, Math.max(1, v.s * Math.exp(-e.deltaY * 0.0015)));
-      const p = { x: (m.x - v.x) / v.s, y: (m.y - v.y) / v.s };
-      aplicarVista(limitarVistaRef.current({ s, x: m.x - p.x * s, y: m.y - p.y * s }));
+      const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0028));
+      acercarEn({ x: e.clientX - r.left, y: e.clientY - r.top }, vistaActualRef.current.s * factor, false);
+      clearTimeout(ruedaFinRef.current);
+      ruedaFinRef.current = setTimeout(() => setZoom(vistaActualRef.current.s), 150);
     };
     marco.addEventListener('wheel', rueda, { passive: false });
     return () => marco.removeEventListener('wheel', rueda);
+    // acercarEn usa solo refs y aplicarVista (estable).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aplicarVista]);
-  const limitarVistaRef = useRef(limitarVista);
-  limitarVistaRef.current = limitarVista;
 
   const alternarMano = () => {
     setMenu(null);
@@ -567,8 +651,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   const alApoyar = (e) => {
-    // Con la mano, la hoja se desplaza (gestoApoyar en el marco), no se pinta.
-    if (mano) return;
+    // Con la mano o durante un pellizco, la hoja se mueve (gestoApoyar en
+    // el marco), no se pinta.
+    if (mano || pellizcoRef.current) return;
     // Con un panel abierto, tocar la hoja solo lo retrae (lo cierra el
     // listener de "tocar fuera"); no se pinta.
     if (ignorarToqueRef.current) {
@@ -720,7 +805,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           onPointerMove={gestoMover}
           onPointerUp={gestoSoltar}
           onPointerCancel={gestoSoltar}
-          onDoubleClick={() => mano && reiniciarVista()}
         >
           {/* La hoja es un marco fijo; adentro, la "vista" es lo que se
               acerca y desplaza con la mano (transform, ver aplicarVista). */}
@@ -934,15 +1018,15 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                     etiqueta="Mi color"
                   />
                 )}
+                {/* Selector de color: la rueda abre la paleta completa (sin
+                    boton "+": se enredaba con la rueda, pedido explicito). */}
                 <button
                   type="button"
-                  className="colorear-color colorear-mas"
+                  className="colorear-color colorear-rueda"
                   onClick={() => setMenu('espectro')}
-                  aria-label="Más colores"
-                  title="Más colores"
-                >
-                  <PlusOutlined />
-                </button>
+                  aria-label="Elegir otro color"
+                  title="Elegir otro color"
+                />
               </div>
             </div>
           )}
@@ -953,7 +1037,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                 <button type="button" className="colorear-desplegable-volver" onClick={() => setMenu('colores')} aria-label="Volver a los colores">
                   <LeftOutlined />
                 </button>
-                <span>Más colores</span>
+                <span>Elige un color</span>
               </div>
               <div className="colorear-espectro">
                 {ESPECTRO.map((valor) => {

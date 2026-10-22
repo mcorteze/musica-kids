@@ -32,6 +32,14 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   utils/pincelesColorear.js. Horizontal: herramientas izq., colores der.;
   vertical: ambas bajo la hoja. Cursor en laptop (solo mouse): la
   herramienta dibujada con el color + anillo del grosor real.
+- Zoom más liviano (2026-10-22, reclamo "pesado"): transform por rAF y
+  `zoom` (botón %) solo al terminar el gesto; pellizco con 2 dedos SIEMPRE
+  (si el 1er dedo alcanzó a pintar, el trazo se cancela); doble toque con
+  la mano = 2,5x en ese punto / hoja entera; rueda 0.0028 (2x en 3 pasos),
+  ctrl+rueda (touchpad) 0.012.
+- Color (2026-10-22): sin botón "+". La rueda de colores ES el selector
+  (abre la paleta completa); el arcoíris pasa a franjas para no confundirse
+  con la rueda. El color elegido se suma a las opciones ("Mi color").
 - Mano (2026-10-22): botón propio en la barra (tras la goma). Con la mano:
   1 dedo/mouse arrastra, 2 dedos pellizcan (1x–5x); rueda del mouse acerca
   siempre. La hoja es un marco fijo y .colorear-vista se transforma
