@@ -1,7 +1,7 @@
 // Pruebas de lo que embellece Colorear: sellos con figuras y pegatinas,
 // varita con polvos (estela y brillos que titilan), lapices con patron,
-// espejo, sonido, "¡Terminé!", "Ver cómo lo pinté" (repite el dibujo
-// identico), imprimir/guardar con marcos y la hoja en blanco.
+// espejo, sonido, "Ver cómo lo pinté" (boton de la barra con confirmacion;
+// repite el dibujo identico), imprimir/guardar con marcos y la hoja en blanco.
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -80,8 +80,17 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await espera(300);
   const conGoma = await contarTitilan();
   chequear('la goma borra los brillos que titilan', antesGoma > 0 && conGoma === 0, `${antesGoma} -> ${conGoma}`);
-  // Fueron 15 pasadas de goma: deshacer las 15 deja todo como antes.
-  for (let i = 0; i < 15; i++) await page.click('[aria-label="Deshacer"]');
+  // Pintar de nuevo donde paso la goma no los trae de vuelta (antes si: se
+  // mostraban los que tenian pintura debajo).
+  await page.click('.colorear-selector[aria-label^="Lápiz"]');
+  await espera(200);
+  await page.$$eval('.colorear-desplegable--lapices .colorear-util', (els) => els.find((e) => e.textContent === 'Destacador').click());
+  await espera(150);
+  for (let i = 0; i < 4; i++) await linea(0.05, 0.33 + i * 0.04, 0.95, 0.33 + i * 0.04);
+  await espera(300);
+  chequear('pintar encima de lo borrado no devuelve los brillos', (await contarTitilan()) === 0, `${await contarTitilan()}`);
+  // 4 trazos de destacador y 15 pasadas de goma: deshacer las 19 deja todo como antes.
+  for (let i = 0; i < 19; i++) await page.click('[aria-label="Deshacer"]');
   await espera(300);
   chequear('deshacer la goma devuelve los brillos que titilan', (await contarTitilan()) === antesGoma, `${await contarTitilan()} de ${antesGoma}`);
   await page.click('.colorear-selector[aria-label="Goma"]');
@@ -127,14 +136,18 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   chequear('el sonido se silencia y se recuerda', await page.evaluate(() => localStorage.getItem('musica-kids-colorear-sonido') === '0'));
   await page.click('.colorear-flotante[aria-label="Activar sonidos"]');
 
-  // ---------- ¡Terminé! y Ver cómo lo pinté ----------
+  // ---------- Ver cómo lo pinté (barra, con confirmacion) ----------
   const final = await pintado(page);
-  await page.click('.colorear-termine');
-  await espera(400);
-  chequear('"¡Terminé!" festeja con destellos', (await page.$$('.explosion-chispa')).length > 0);
-  await page.waitForSelector('.colorear-dialogo--terminado', { timeout: 4000 });
-  chequear('"¡Terminé!" ofrece ver cómo se pintó', await page.$$eval('.colorear-dialogo--terminado button', (bs) => bs.some((b) => b.textContent.includes('Ver cómo lo pinté'))));
-  await page.$$eval('.colorear-dialogo--terminado button', (bs) => bs.find((b) => b.textContent.includes('Ver cómo lo pinté')).click());
+  chequear('ya no está el botón "¡Terminé!"', !(await page.$('[aria-label="¡Terminé!"]')));
+  await page.click('.colorear-accion[aria-label="Ver cómo lo pinté"]');
+  await page.waitForSelector('.colorear-dialogo--repetir', { timeout: 4000 });
+  chequear('"Ver cómo lo pinté" pregunta antes de empezar', !(await page.$('.colorear-vista--repitiendo')));
+  await page.$$eval('.colorear-dialogo--repetir button', (bs) => bs.find((b) => b.textContent.includes('Ahora no')).click());
+  await espera(200);
+  chequear('"Ahora no" cierra sin repetir', !(await page.$('.colorear-dialogo--repetir')) && !(await page.$('.colorear-vista--repitiendo')));
+  await page.click('.colorear-accion[aria-label="Ver cómo lo pinté"]');
+  await page.waitForSelector('.colorear-dialogo--repetir', { timeout: 4000 });
+  await page.$$eval('.colorear-dialogo--repetir button', (bs) => bs.find((b) => b.textContent.includes('Sí, ver')).click());
   await espera(300);
   chequear('la repetición empieza', await page.$('.colorear-vista--repitiendo'));
   // Mismo azar y mismos puntos: al terminar, el dibujo repetido es identico.

@@ -138,6 +138,16 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   Fix: will-change en canvas, lámina y contenedores de efectos (capas
   fijas desde que se abre). Verificado con LayerTree (CDP); falta
   confirmarlo en el celular real.
+- Quitado "¡Terminé!" (pedido): fuera el botón, el festejo (chispas +
+  fanfarria, sonidoFestejo) y su diálogo. "Ver cómo lo pinté" pasó a
+  la barra (▶, deshabilitado sin trazos) con confirmación para el niño
+  ("¿Vemos cómo lo pintaste?" — Ahora no / Sí, ver). En horizontal las
+  6 acciones van 2 por fila (en una columna no cabían en laptop 768).
+- Destellos que volvían al pintar encima de lo borrado: se mostraban los
+  que tenían pintura debajo. Ahora la goma los apaga en su entrada de la
+  historia (h.ap); vuelven solo si se deshace la goma.
+- Descargas con nombre único: grupo-número_AAAA-MM-DD_HH-MM-SS.png
+  (hoja en blanco: hoja-en-blanco_fecha.png). Suite 155/155.
 
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una

@@ -87,6 +87,7 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
     archivo = readdirSync(descargas).find((f) => f.endsWith('.png'));
   }
   chequear('el botón de descarga de la barra guarda el dibujo', archivo && existsSync(join(descargas, archivo)), archivo ?? 'sin archivo');
+  chequear('el archivo lleva grupo, número y fecha y hora', /^paw-patrol-\d+_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/.test(archivo ?? ''), archivo ?? '');
 
   // Vencimiento: se corre "usado" hacia atras en IndexedDB.
   const correrUso = (dias) => page.evaluate((ms) => new Promise((res) => {

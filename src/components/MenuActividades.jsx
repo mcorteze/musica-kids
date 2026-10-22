@@ -1971,7 +1971,7 @@ export default function MenuActividades({ onOpenChange }) {
   }, []);
   const guardarImagenDibujoGuardado = useCallback((d) => {
     cargarLaminaColorear(d.id).then((src) => {
-      if (src) guardarImagenDibujo(d.capa, src);
+      if (src) guardarImagenDibujo(d.capa, src, d.id);
     });
   }, []);
   const borrarDibujoGuardado = useCallback((id) => {

@@ -8,7 +8,6 @@ import {
   LuFastForward,
   LuFlipHorizontal2,
   LuHand,
-  LuPartyPopper,
   LuPlay,
   LuRedo2,
   LuShrink,
@@ -34,9 +33,8 @@ import {
   titilanDe,
 } from '../utils/pincelesColorear';
 import { MARCOS, conMarco } from '../utils/marcosColorear';
-import { prepararAudio, silenciar, sonidoClic, sonidoDeTrazo, sonidoFestejo, sonidoPop } from '../utils/sonidosColorear';
+import { prepararAudio, silenciar, sonidoClic, sonidoDeTrazo, sonidoPop } from '../utils/sonidosColorear';
 import IconoHerramienta, { IconoSello, MuestraPolvo, PUNTAS } from './ColorearIconos';
-import ExplosionChispas from './ExplosionChispas';
 import { esLiviano } from '../utils/rendimiento';
 import './ColorearJuego.css';
 
@@ -56,11 +54,13 @@ import './ColorearJuego.css';
 //
 // Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
 // compacta — herramientas (lapiz, sello, varita, goma, mano), estilo (color,
-// tamaño) y acciones (deshacer, rehacer, borrar, imprimir). Los selectores
+// tamaño) y acciones (deshacer, rehacer, borrar, ver como se pinto,
+// guardar imagen, imprimir). Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
-// y sonido (arriba a la derecha), "¡Terminé!" (abajo a la izquierda) y el
-// porcentaje de zoom (abajo a la derecha). Barra a la izquierda en
+// y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
+// derecha). El boton "¡Terminé!" con festejo se quito (pedido explicito,
+// 2026-10-22); "Ver cómo lo pinté" quedo en la barra, con confirmacion. Barra a la izquierda en
 // horizontal, abajo en vertical. Lo destructivo siempre pide confirmacion.
 
 // Tamaño en px de pantalla (cada herramienta lo ajusta con su escala).
@@ -101,8 +101,6 @@ const MAX_TITILAN = 60;
 // Estela de la varita: una particula cada tanto, y no mas de estas vivas.
 const ESTELA_CADA_MS = 40;
 const MAX_ESTELA = 36;
-// Espera entre "¡Terminé!" (destellos y fanfarria) y su dialogo.
-const DIALOGO_TERMINE_MS = 1400;
 const SONIDO_KEY = 'musica-kids-colorear-sonido';
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
@@ -145,7 +143,21 @@ function componer(capa, lamina, ancho, alto) {
 }
 
 // Descarga una imagen ("Guardar imagen"): en la tablet queda en Descargas.
-function descargar(blob, nombre = 'mi-dibujo.png') {
+// Nombre del archivo descargado: grupo, numero de la lamina y fecha y hora
+// (pedido explicito: que dos descargas no choquen de nombre). id es la ruta
+// de la lamina ("paw-patrol-gallery/03-paw-patrol.jpg") o "hoja-en-blanco".
+// Ej.: paw-patrol-03_2026-10-22_18-31-05.png
+const dos = (n) => String(n).padStart(2, '0');
+function nombreDescarga(id) {
+  const [carpeta, archivo = ''] = String(id).split('/');
+  const numero = archivo.match(/^\d+/)?.[0];
+  const base = `${carpeta.replace(/-gallery$/, '')}${numero ? `-${numero}` : ''}`;
+  const f = new Date();
+  const fecha = `${f.getFullYear()}-${dos(f.getMonth() + 1)}-${dos(f.getDate())}_${dos(f.getHours())}-${dos(f.getMinutes())}-${dos(f.getSeconds())}`;
+  return `${base}_${fecha}.png`;
+}
+
+function descargar(blob, nombre) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -187,8 +199,8 @@ export function imprimirDibujo(capaBlob, src, imprimir) {
   dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => imprimir(URL.createObjectURL(blob)), 'image/png'));
 }
 
-export function guardarImagenDibujo(capaBlob, src) {
-  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => descargar(blob), 'image/png'));
+export function guardarImagenDibujo(capaBlob, src, id) {
+  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png'));
 }
 
 // ---------- Dialogo base: mismo overlay y tarjeta que "Elige un nivel" de
@@ -389,13 +401,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // que no basta con mirar "menu").
   const ignorarToqueRef = useRef(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(false);
-  // Dialogo abierto: 'terminado' | 'imprimir' | null.
+  // Dialogo abierto: 'repetir' | 'imprimir' | null.
   const [dialogo, setDialogo] = useState(null);
   const [miniaturaDialogo, setMiniaturaDialogo] = useState(null);
   const [marco, setMarco] = useState('ninguno');
   const [vistasMarcos, setVistasMarcos] = useState({});
-  const [festejo, setFestejo] = useState(0);
-  const festejoRef = useRef(null);
   const [repitiendo, setRepitiendo] = useState(false);
   const repitiendoRef = useRef(false);
   const cuadroRepeticionRef = useRef(null);
@@ -552,14 +562,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   }, [guardar]);
 
   useEffect(() => () => {
-    clearTimeout(festejoRef.current);
     cancelAnimationFrame(cuadroRepeticionRef.current);
     clearTimeout(cuadroRepeticionRef.current);
     sonidoTrazoRef.current?.parar();
   }, []);
 
-  // Miniatura de los dialogos de "Borrar todo" y "¡Terminé!".
-  const conMiniatura = confirmarBorrar || dialogo === 'terminado';
+  // Miniatura de los dialogos de "Borrar todo" y "Ver cómo lo pinté".
+  const conMiniatura = confirmarBorrar || dialogo === 'repetir';
   useEffect(() => {
     if (!conMiniatura || !laminaRef.current) return undefined;
     const canvas = canvasRef.current;
@@ -1010,6 +1019,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const titilan = titilanDe(actual.trazo);
     if (titilan.length) actual.hist.ti = titilan;
     registrarCambio(zonaDeTrazo(actual.caja, actual.trazo.ancho, actual.trazo.espejo), actual.hist);
+    if (actual.trazo.herramienta === 'goma') apagarBrillosBorrados(actual.hist);
     programarGuardado();
   };
 
@@ -1048,20 +1058,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     onGuardadoRef.current?.();
   };
 
-  // ----- ¡Terminé!: guarda, festeja (destellos y fanfarria) y ofrece ver,
-  // imprimir o guardar el dibujo.
-  // El festejo sale al instante; el guardado va en paralelo (con un dibujo
-  // grande tarda, y esperarlo demoraba los destellos).
-  const terminar = () => {
-    setMenu(null);
-    pendienteRef.current = true;
-    guardar();
-    sonidoFestejo();
-    setFestejo((f) => f + 1);
-    clearTimeout(festejoRef.current);
-    festejoRef.current = setTimeout(() => setDialogo('terminado'), DIALOGO_TERMINE_MS);
-  };
-
   // Imprimir o guardar, con el marco elegido, a la resolucion del lienzo.
   const dibujoConMarco = () => {
     const canvas = canvasRef.current;
@@ -1074,7 +1070,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
   const guardarImagen = () => {
     if (!laminaRef.current) return;
-    dibujoConMarco().toBlob((blob) => descargar(blob), 'image/png');
+    dibujoConMarco().toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png');
     setDialogo(null);
   };
 
@@ -1151,25 +1147,37 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // Brillos que titilan: los de los trazos de varita desde el ultimo "borrar
-  // todo" (los ultimos MAX_TITILAN), sacados de la historia. Solo los que
-  // tienen pintura debajo: si la goma borro ese lugar, el destello se va
-  // (y vuelve si se deshace la goma). Se mira el respaldo, no la hoja: el
-  // respaldo ya se lee siempre; leer la hoja la volveria mas lenta al pintar.
+  // todo" (los ultimos MAX_TITILAN), sacados de la historia, menos los que
+  // apago la goma (h.ap, ver apagarBrillosBorrados). Antes se mostraban los
+  // que tenian pintura debajo: al pintar de nuevo donde la goma habia
+  // borrado, el destello volvia a aparecer.
   const titilan = useMemo(() => {
-    const lista = historiaRef.current ?? [];
-    let desde = 0;
-    lista.forEach((h, i) => {
-      if (h.t === 'borrar') desde = i + 1;
-    });
     // Modo liviano: no se muestran (ni se calculan).
     if (esLiviano()) return [];
-    const ctx = respaldoRef.current?.getContext('2d');
-    const conPintura = ([x, y]) => !ctx || ctx.getImageData(x, y, 1, 1).data[3] > 0;
-    // Se revisan solo los mas recientes (con mucha varita serian miles).
-    return lista.slice(desde).flatMap((h) => h.ti ?? []).slice(-MAX_TITILAN * 4).filter(conPintura).slice(-MAX_TITILAN);
+    let todos = [];
+    for (const h of historiaRef.current ?? []) {
+      if (h.t === 'borrar') todos = [];
+      if (h.ap) {
+        const apagados = new Set(h.ap);
+        todos = todos.filter(([x, y]) => !apagados.has(`${x},${y}`));
+      }
+      if (h.ti) todos.push(...h.ti);
+    }
+    return todos.slice(-MAX_TITILAN);
     // versionHistoria avisa cada cambio de la historia (vive en un ref).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versionHistoria]);
+
+  // Al soltar la goma, los destellos que quedaron sin pintura debajo se
+  // anotan en su entrada de la historia: se apagan para siempre (vuelven solo
+  // si se deshace esa goma). Se mira el respaldo, ya al dia tras el cambio:
+  // leer la hoja la volveria mas lenta al pintar.
+  const apagarBrillosBorrados = (hist) => {
+    const ctx = respaldoRef.current?.getContext('2d');
+    if (!ctx || !titilan.length) return;
+    const ap = titilan.filter(([x, y]) => ctx.getImageData(x, y, 1, 1).data[3] === 0).map(([x, y]) => `${x},${y}`);
+    if (ap.length) hist.ap = ap;
+  };
 
   // ----- Elegir herramientas, colores y opciones -----
   const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (nombre === 'colores' && m === 'espectro') ? null : nombre));
@@ -1340,10 +1348,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                   {sonido ? <LuVolume2 /> : <LuVolumeX />}
                 </button>
               </div>
-              <button type="button" className="colorear-termine" onClick={terminar} aria-label="¡Terminé!">
-                <LuPartyPopper />
-                <span>¡Terminé!</span>
-              </button>
             </>
           )}
           {zoom > 1.01 && !repitiendo && (
@@ -1500,6 +1504,16 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
             <button type="button" className="colorear-accion" onClick={() => setConfirmarBorrar(true)} aria-label="Borrar todo" title="Borrar todo">
               <DeleteOutlined />
+            </button>
+            <button
+              type="button"
+              className="colorear-accion"
+              onClick={() => setDialogo('repetir')}
+              disabled={!sePuedeRepetir}
+              aria-label="Ver cómo lo pinté"
+              title="Ver cómo lo pinté"
+            >
+              <LuPlay />
             </button>
             {/* Guardar imagen directo (pedido explicito: dentro de "Imprimir o
                 guardar" no se encontraba); usa el ultimo marco elegido. */}
@@ -1693,7 +1707,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         </span>
       </div>
 
-      {festejo > 0 && <ExplosionChispas key={festejo} />}
 
       {confirmarBorrar && (
         <ConfirmarBorrado
@@ -1705,21 +1718,16 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         />
       )}
 
-      {dialogo === 'terminado' && (
-        <Dialogo etiqueta="¡Qué lindo te quedó!" onCerrar={() => setDialogo(null)} className="colorear-dialogo--terminado">
+      {dialogo === 'repetir' && (
+        <Dialogo etiqueta="¿Vemos cómo lo pintaste?" onCerrar={() => setDialogo(null)} className="colorear-dialogo--repetir">
           {miniaturaDialogo && <img src={miniaturaDialogo} alt="" className="colorear-dialogo-miniatura colorear-dialogo-miniatura--grande" />}
-          <h3>¡Qué lindo te quedó!</h3>
-          <div className="colorear-dialogo-botones colorear-dialogo-botones--columna">
-            {sePuedeRepetir && (
-              <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--principal" onClick={repetir}>
-                <LuPlay /> Ver cómo lo pinté
-              </button>
-            )}
-            <button type="button" className="colorear-dialogo-btn" onClick={() => setDialogo('imprimir')}>
-              <PrinterOutlined /> Imprimir o guardar
-            </button>
+          <h3>¿Vemos cómo lo pintaste?</h3>
+          <div className="colorear-dialogo-botones">
             <button type="button" className="colorear-dialogo-btn" onClick={() => setDialogo(null)} autoFocus>
-              Seguir pintando
+              Ahora no
+            </button>
+            <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--principal" onClick={repetir}>
+              <LuPlay /> Sí, ver
             </button>
           </div>
         </Dialogo>

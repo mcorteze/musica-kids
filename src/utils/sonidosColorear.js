@@ -1,6 +1,5 @@
 // Sonidos de "Colorear", generados con Web Audio (sin archivos): cada
-// herramienta suena distinto mientras pinta, el sello hace "pop" y
-// "¡Terminé!" toca una fanfarria corta. Volumen bajo (es una app infantil
+// herramienta suena distinto mientras pinta y el sello hace "pop". Volumen bajo (es una app infantil
 // que suele sonar junto a la musica). Se silencian con silenciar(true).
 //
 // El AudioContext se crea recien con el primer toque (los navegadores no
@@ -143,11 +142,6 @@ export function sonidoDeTrazo(herramienta) {
 export function sonidoPop() {
   nota(620, { volumen: 0.07, ms: 110, hasta: 180 });
   nota(1250, { volumen: 0.025, ms: 70, cuando: 0.01 });
-}
-
-export function sonidoFestejo() {
-  [523, 659, 784, 1047].forEach((f, i) => nota(f, { volumen: 0.06, ms: 360, tipo: 'triangle', cuando: i * 0.11 }));
-  nota(1568, { volumen: 0.035, ms: 600, cuando: 0.48 });
 }
 
 // Un toque suave al elegir herramienta, color o forma.

@@ -873,32 +873,6 @@
   color: #9AAFC0;
 }
 
-.colorear-termine {
-  appearance: none;
-  cursor: pointer;
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 3;
-  height: 42px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 21px;
-  background: linear-gradient(135deg, #FF7A59, #E91E63);
-  color: #fff;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  box-shadow: 0 6px 16px rgba(233, 30, 99, 0.38);
-}
-
-.colorear-termine svg {
-  font-size: 20px;
-}
-
 /* ----- Pestañas del panel de sellos ----- */
 .colorear-pestanas {
   display: flex;
@@ -937,16 +911,10 @@
   border-radius: 12px;
 }
 
-/* ----- Dialogos de "¡Terminé!" e imprimir/guardar ----- */
+/* ----- Dialogos de "Ver cómo lo pinté" e imprimir/guardar ----- */
 .colorear-dialogo-miniatura--grande {
   width: 170px;
   max-height: 220px;
-}
-
-.colorear-dialogo-botones--columna {
-  flex-direction: column;
-  align-items: stretch;
-  width: 100%;
 }
 
 .colorear-dialogo-btn {
@@ -1107,11 +1075,6 @@
     font-size: 19px;
   }
 
-  .colorear-termine {
-    height: 38px;
-    padding: 0 12px;
-    font-size: 14px;
-  }
 
   .colorear-desplegable--sellos .colorear-lapices,
   .colorear-desplegable--varita .colorear-lapices {
@@ -1204,6 +1167,12 @@
     min-width: 42px;
     height: 42px;
     font-size: 19px;
+  }
+
+  /* Seis acciones en una columna no caben a lo alto en un laptop: 2 por fila. */
+  .colorear-barra-grupo--acciones {
+    display: grid;
+    grid-template-columns: repeat(2, 42px);
   }
 
   .colorear-barra-grupo--separado {
@@ -1325,11 +1294,6 @@
     font-size: 17px;
   }
 
-  .colorear-termine {
-    height: 34px;
-    padding: 0 10px;
-    font-size: 13px;
-  }
 
   .colorear-selector {
     width: 40px;
