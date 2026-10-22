@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeleteOutlined, LeftOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 // Flechas en gancho para deshacer/rehacer: la flecha circular de antd
 // (UndoOutlined) se confundia con "recargar" (pedido explicito).
-import { LuBrush, LuRedo2, LuUndo2 } from 'react-icons/lu';
+import { LuBrush, LuHand, LuRedo2, LuShrink, LuUndo2 } from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, VIGENCIA_MS } from '../utils/dibujosColorear';
 import {
   COLORES,
@@ -54,6 +54,9 @@ const ESPERA_GUARDADO_MS = 800;
 const SEPARACION = 14;
 // Tamaño del dibujo de la herramienta que hace de cursor (laptop).
 const CURSOR = 44;
+// Zoom de la hoja (mano y rueda del mouse): de la hoja entera a 5x.
+const ZOOM_MAX = 5;
+const VISTA_INICIAL = { x: 0, y: 0, s: 1 };
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
 const NOMBRE_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.nombre]));
@@ -277,6 +280,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const ignorarToqueRef = useRef(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(false);
   const [miniaturaBorrar, setMiniaturaBorrar] = useState(null);
+  // Mano: con ella activa la hoja se acerca (pellizco) y se desplaza (arrastre).
+  const [mano, setMano] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const marcoRef = useRef(null);
+  const vistaRef = useRef(null);
 
   // Con un panel o el dialogo abierto, el Escape del drawer no cierra todo
   // (lo cierra este componente).
@@ -433,7 +441,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const moverCursor = (e) => {
     const cursor = cursorRef.current;
     if (!cursor) return;
-    if (e.pointerType !== 'mouse') {
+    // Con la mano, el cursor es la mano del sistema (grab/grabbing en CSS).
+    if (e.pointerType !== 'mouse' || mano) {
       cursor.style.display = 'none';
       return;
     }
@@ -446,7 +455,120 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (cursorRef.current) cursorRef.current.style.display = 'none';
   };
 
+  // ----- Mano: acercar (pellizco o rueda) y desplazar la hoja -----
+  // La vista se mueve con transform: translate(x, y) scale(s), origen
+  // arriba-izquierda, por estilo directo (sin re-render en cada movimiento);
+  // "zoom" (estado) solo alimenta el boton de porcentaje. punto() usa el
+  // rectangulo ya transformado del canvas, asi que pintar con zoom cae
+  // donde corresponde, y el grosor sigue igual EN PANTALLA (mas fino sobre
+  // la lamina: sirve para los detalles).
+  const vistaActualRef = useRef(VISTA_INICIAL);
+  const gestosRef = useRef(new Map());
+  const gestoInicioRef = useRef(null);
+
+  // La hoja siempre llena su marco: nada de bordes vacios al desplazar.
+  const limitarVista = ({ x, y, s }) => {
+    const ancho = caja?.ancho ?? 0;
+    const alto = caja?.alto ?? 0;
+    return {
+      s,
+      x: Math.min(0, Math.max(ancho - ancho * s, x)),
+      y: Math.min(0, Math.max(alto - alto * s, y)),
+    };
+  };
+
+  const aplicarVista = useCallback((v) => {
+    vistaActualRef.current = v;
+    if (vistaRef.current) vistaRef.current.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
+    setZoom((z) => (Math.abs(z - v.s) > 0.01 ? v.s : z));
+  }, []);
+
+  const reiniciarVista = useCallback(() => aplicarVista(VISTA_INICIAL), [aplicarVista]);
+
+  // Si cambia el tamaño de la hoja (girar la tablet), vuelve a la hoja entera.
+  useEffect(() => {
+    reiniciarVista();
+  }, [caja?.ancho, caja?.alto, reiniciarVista]);
+
+  const puntoMarco = (e) => {
+    const r = marcoRef.current.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  // Foto del gesto al empezar (o al sumar/quitar un dedo): de ahi se mide.
+  const reiniciarGesto = () => {
+    const dedos = [...gestosRef.current.values()];
+    if (!dedos.length) {
+      gestoInicioRef.current = null;
+      return;
+    }
+    const m = dedos.length >= 2
+      ? { x: (dedos[0].x + dedos[1].x) / 2, y: (dedos[0].y + dedos[1].y) / 2 }
+      : dedos[0];
+    const d = dedos.length >= 2 ? Math.hypot(dedos[0].x - dedos[1].x, dedos[0].y - dedos[1].y) : 0;
+    gestoInicioRef.current = { m, d, vista: vistaActualRef.current };
+  };
+
+  const gestoApoyar = (e) => {
+    if (!mano || e.target.closest('button')) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    gestosRef.current.set(e.pointerId, puntoMarco(e));
+    reiniciarGesto();
+  };
+
+  const gestoMover = (e) => {
+    if (!mano || !gestosRef.current.has(e.pointerId) || !gestoInicioRef.current) return;
+    gestosRef.current.set(e.pointerId, puntoMarco(e));
+    const dedos = [...gestosRef.current.values()];
+    const { m: m0, d: d0, vista: v0 } = gestoInicioRef.current;
+    if (dedos.length >= 2 && d0 > 0) {
+      // Pellizco: el punto de la lamina bajo los dedos se queda bajo los dedos.
+      const m = { x: (dedos[0].x + dedos[1].x) / 2, y: (dedos[0].y + dedos[1].y) / 2 };
+      const d = Math.hypot(dedos[0].x - dedos[1].x, dedos[0].y - dedos[1].y);
+      const s = Math.min(ZOOM_MAX, Math.max(1, v0.s * (d / d0)));
+      const p = { x: (m0.x - v0.x) / v0.s, y: (m0.y - v0.y) / v0.s };
+      aplicarVista(limitarVista({ s, x: m.x - p.x * s, y: m.y - p.y * s }));
+    } else {
+      const m = dedos[0];
+      aplicarVista(limitarVista({ s: v0.s, x: v0.x + (m.x - m0.x), y: v0.y + (m.y - m0.y) }));
+    }
+  };
+
+  const gestoSoltar = (e) => {
+    if (!gestosRef.current.delete(e.pointerId)) return;
+    reiniciarGesto();
+  };
+
+  // Rueda del mouse (laptop): acerca hacia el puntero, con o sin la mano.
+  // Listener propio: el de React es pasivo y no deja frenar el scroll.
+  useEffect(() => {
+    const marco = marcoRef.current;
+    if (!marco) return undefined;
+    const rueda = (e) => {
+      e.preventDefault();
+      const v = vistaActualRef.current;
+      const r = marco.getBoundingClientRect();
+      const m = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const s = Math.min(ZOOM_MAX, Math.max(1, v.s * Math.exp(-e.deltaY * 0.0015)));
+      const p = { x: (m.x - v.x) / v.s, y: (m.y - v.y) / v.s };
+      aplicarVista(limitarVistaRef.current({ s, x: m.x - p.x * s, y: m.y - p.y * s }));
+    };
+    marco.addEventListener('wheel', rueda, { passive: false });
+    return () => marco.removeEventListener('wheel', rueda);
+  }, [aplicarVista]);
+  const limitarVistaRef = useRef(limitarVista);
+  limitarVistaRef.current = limitarVista;
+
+  const alternarMano = () => {
+    setMenu(null);
+    setMano((m) => !m);
+    ocultarCursor();
+  };
+
   const alApoyar = (e) => {
+    // Con la mano, la hoja se desplaza (gestoApoyar en el marco), no se pinta.
+    if (mano) return;
     // Con un panel abierto, tocar la hoja solo lo retrae (lo cierra el
     // listener de "tocar fuera"); no se pinta.
     if (ignorarToqueRef.current) {
@@ -534,7 +656,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // Ultima herramienta de pintar (lapiz o sello): a ella vuelve la goma al
   // tocarla de nuevo o al elegir un color (la goma no usa color).
   const ultimaPintarRef = useRef('crayon');
+  // Elegir cualquier herramienta (o color) apaga la mano: es para pintar.
   const usarHerramienta = (h) => {
+    setMano(false);
     if (h !== 'goma') ultimaPintarRef.current = h;
     if (GRUPO_HERRAMIENTA[h] === 'lapiz') setUltimoLapiz(h);
     setHerramienta(h);
@@ -563,6 +687,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
   const elegirColor = (cid) => {
     setColorId(cid);
+    setMano(false);
     if (esGoma) usarHerramienta(ultimaPintarRef.current);
     setMenu(null);
   };
@@ -588,21 +713,43 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     <div className="colorear-lienzo" ref={zonaRef}>
       <div className="colorear-centro">
         <div
-          className="colorear-hoja"
+          ref={marcoRef}
+          className={`colorear-hoja${mano ? ' colorear-hoja--mano' : ''}`}
           style={caja ? { width: caja.ancho, height: caja.alto } : { visibility: 'hidden' }}
+          onPointerDown={gestoApoyar}
+          onPointerMove={gestoMover}
+          onPointerUp={gestoSoltar}
+          onPointerCancel={gestoSoltar}
+          onDoubleClick={() => mano && reiniciarVista()}
         >
-          <canvas
-            ref={canvasRef}
-            className="colorear-canvas"
-            onPointerDown={alApoyar}
-            onPointerMove={alMover}
-            onPointerUp={alSoltar}
-            onPointerCancel={alSoltar}
-            onPointerEnter={moverCursor}
-            onPointerLeave={ocultarCursor}
-          />
-          <canvas ref={canvasTrazoRef} className="colorear-canvas-trazo" aria-hidden="true" />
-          <img src={src} alt="" className="colorear-lamina" draggable={false} />
+          {/* La hoja es un marco fijo; adentro, la "vista" es lo que se
+              acerca y desplaza con la mano (transform, ver aplicarVista). */}
+          <div className="colorear-vista" ref={vistaRef}>
+            <canvas
+              ref={canvasRef}
+              className="colorear-canvas"
+              onPointerDown={alApoyar}
+              onPointerMove={alMover}
+              onPointerUp={alSoltar}
+              onPointerCancel={alSoltar}
+              onPointerEnter={moverCursor}
+              onPointerLeave={ocultarCursor}
+            />
+            <canvas ref={canvasTrazoRef} className="colorear-canvas-trazo" aria-hidden="true" />
+            <img src={src} alt="" className="colorear-lamina" draggable={false} />
+          </div>
+          {zoom > 1.01 && (
+            <button
+              type="button"
+              className="colorear-zoom"
+              onClick={reiniciarVista}
+              aria-label="Ver la hoja completa"
+              title="Ver la hoja completa"
+            >
+              <LuShrink />
+              <span>{Math.round(zoom * 100)}%</span>
+            </button>
+          )}
         </div>
 
         {/* Barra: herramientas (lapiz, sello, goma), estilo (color,
@@ -613,7 +760,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           <div className="colorear-barra-grupo">
             <button
               type="button"
-              className={`colorear-selector${GRUPO_HERRAMIENTA[herramienta] === 'lapiz' ? ' colorear-selector--en-uso' : ''}${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${!mano && GRUPO_HERRAMIENTA[herramienta] === 'lapiz' ? ' colorear-selector--en-uso' : ''}${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
               onClick={tocarLapiz}
               aria-haspopup="true"
               aria-expanded={menu === 'lapices'}
@@ -624,7 +771,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
             <button
               type="button"
-              className={`colorear-selector${herramienta === 'sellos' ? ' colorear-selector--en-uso' : ''}${menu === 'sellos' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${!mano && herramienta === 'sellos' ? ' colorear-selector--en-uso' : ''}${menu === 'sellos' ? ' colorear-selector--abierto' : ''}`}
               onClick={tocarSello}
               aria-haspopup="true"
               aria-expanded={menu === 'sellos'}
@@ -635,13 +782,23 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
             <button
               type="button"
-              className={`colorear-selector colorear-selector--simple${esGoma ? ' colorear-selector--en-uso' : ''}`}
+              className={`colorear-selector colorear-selector--simple${!mano && esGoma ? ' colorear-selector--en-uso' : ''}`}
               onClick={alternarGoma}
-              aria-pressed={esGoma}
+              aria-pressed={!mano && esGoma}
               aria-label="Goma"
               title="Goma"
             >
               <IconoHerramienta herramienta="goma" color={colorIcono} size={44} />
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector colorear-selector--simple colorear-selector--mano${mano ? ' colorear-selector--en-uso' : ''}`}
+              onClick={alternarMano}
+              aria-pressed={mano}
+              aria-label="Mano: acercar y mover la hoja"
+              title="Mano: acercar y mover la hoja"
+            >
+              <LuHand />
             </button>
           </div>
 

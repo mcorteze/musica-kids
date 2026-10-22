@@ -118,6 +118,14 @@
   box-shadow: 0 10px 28px rgba(8, 40, 66, 0.22);
 }
 
+/* Lo que acerca y desplaza la mano (transform inline, origen arriba-izq). */
+.colorear-vista {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 .colorear-canvas,
 .colorear-canvas-trazo,
 .colorear-lamina {
@@ -143,6 +151,47 @@
 /* La linea de la lamina queda encima del color sin taparlo. */
 .colorear-lamina {
   mix-blend-mode: multiply;
+}
+
+/* Mano: los gestos van al marco (pellizco y arrastre, sin scroll del
+   navegador) y el cursor del mouse es la mano del sistema. */
+.colorear-hoja {
+  touch-action: none;
+}
+
+.colorear-hoja--mano .colorear-canvas {
+  cursor: grab;
+}
+
+.colorear-hoja--mano:active .colorear-canvas {
+  cursor: grabbing;
+}
+
+/* Porcentaje de zoom en la esquina de la hoja: tocarlo vuelve a la hoja entera. */
+.colorear-zoom {
+  appearance: none;
+  cursor: pointer;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 14px rgba(8, 40, 66, 0.25);
+  color: #0B4F73;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colorear-zoom svg {
+  font-size: 18px;
 }
 
 /* ----- Barra de herramientas -----
@@ -225,6 +274,11 @@
   height: 4px;
   border-radius: 2px;
   background: #0B4F73;
+}
+
+.colorear-selector--mano {
+  color: #0B4F73;
+  font-size: 30px;
 }
 
 /* La goma no despliega panel: sin triangulito. */
@@ -854,8 +908,14 @@
     gap: 3px;
   }
 
+  .colorear-barra-grupo {
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+  }
+
   .colorear-barra-grupo--acciones {
     grid-template-columns: repeat(2, 32px);
+    justify-content: center;
   }
 
   .colorear-desplegable--sellos .colorear-lapices {

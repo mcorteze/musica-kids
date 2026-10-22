@@ -11,6 +11,7 @@ import PintarJuego from './PintarJuego';
 import PintarDev from './PintarDev';
 import PintarPixelDev from './PintarPixelDev';
 import SimonJuego, { SIMON_GRUPOS } from './SimonJuego';
+import ExplosionChispas from './ExplosionChispas';
 import ColorearLienzo, { ColorearGaleria, MisDibujos, imprimirDibujo } from './ColorearJuego';
 import { borrarDibujo, leerDibujos, limpiarDibujosVencidos } from '../utils/dibujosColorear';
 import imagenColorear from '../assets/menu-general/colorear.avif';
@@ -3255,6 +3256,13 @@ export default function MenuActividades({ onOpenChange }) {
     colorHeader = grupoInfo?.header;
   }
   const esMenu = !colorHeader;
+  const celebrando = (vista === 'memorice' && gano)
+    || (vista === 'rompecabezas' && ganoRomp)
+    || (vista === 'contar' && ganoNivelContar)
+    || (vista === 'secuencias' && ganoSec)
+    || (vista === 'diferencias' && ganoDif)
+    || (vista === 'pintar' && ganoPin)
+    || (vista === 'pixel' && ganoPix);
 
   let estiloDrawer;
   if (vista === 'memorice' && fotosTema) {
@@ -4872,6 +4880,10 @@ export default function MenuActividades({ onOpenChange }) {
                 </>
               )}
             </div>
+
+            {/* Destellos al completar cualquier juego (los de Simon dice al
+                pasar de nivel, pedido explicito). Se montan al ganar. */}
+            {celebrando && <ExplosionChispas key={vista} />}
 
             {avisoDev && <div className="memory-toast" role="status">{avisoDev}</div>}
           </div>

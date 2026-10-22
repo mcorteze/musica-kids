@@ -32,6 +32,18 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   utils/pincelesColorear.js. Horizontal: herramientas izq., colores der.;
   vertical: ambas bajo la hoja. Cursor en laptop (solo mouse): la
   herramienta dibujada con el color + anillo del grosor real.
+- Mano (2026-10-22): botón propio en la barra (tras la goma). Con la mano:
+  1 dedo/mouse arrastra, 2 dedos pellizcan (1x–5x); rueda del mouse acerca
+  siempre. La hoja es un marco fijo y .colorear-vista se transforma
+  (translate+scale, origen 0 0) por estilo directo; la vista se limita para
+  llenar siempre el marco. Botón "%" en la esquina vuelve a la hoja entera
+  (también doble clic con la mano). Elegir herramienta/color apaga la mano.
+  Grosor constante en pantalla (con zoom, más fino sobre la lámina).
+  Verificado con toques CDP (pellizco y arrastre) en tablet.
+- Destellos de festejo (2026-10-22): ExplosionChispas.jsx/.css (mismas
+  chispas de Simón) al ganar Memorice, Rompecabezas, Contar, Secuencias,
+  Diferencias y ambos Pintar por números (flag `celebrando` en
+  MenuActividades). Verificado ganando un Memorice: 3 ráfagas.
 - v5 (2026-10-22): goma y sello con botón propio en la barra (grupo
   herramientas: lápiz · sello · goma | estilo: color · tamaño | acciones).
   Panel de lápices = 10 lápices. Sello: panel de formas (Surtido = estado
