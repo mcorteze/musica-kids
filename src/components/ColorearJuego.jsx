@@ -1,41 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeleteOutlined, LeftOutlined, PrinterOutlined } from '@ant-design/icons';
 // Flechas en gancho para deshacer/rehacer: la flecha circular de antd
 // (UndoOutlined) se confundia con "recargar" (pedido explicito).
-import { LuBrush, LuHand, LuRedo2, LuShrink, LuUndo2 } from 'react-icons/lu';
+import {
+  LuBrush,
+  LuDownload,
+  LuFastForward,
+  LuFlipHorizontal2,
+  LuHand,
+  LuPartyPopper,
+  LuPlay,
+  LuRedo2,
+  LuShrink,
+  LuUndo2,
+  LuVolume2,
+  LuVolumeX,
+} from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, VIGENCIA_MS } from '../utils/dibujosColorear';
 import {
   COLORES,
   ESPECTRO,
   FORMAS_SELLO,
+  GRUPOS_SELLO,
   HERRAMIENTAS,
+  VARIANTES_BRILLO,
   capaDe,
   css,
   empezarTrazo,
   fundirCapa,
   pintarTramo,
+  recogerEfectos,
+  titilanDe,
 } from '../utils/pincelesColorear';
-import IconoHerramienta, { IconoSello, PUNTAS } from './ColorearIconos';
+import { MARCOS, conMarco } from '../utils/marcosColorear';
+import { silenciar, sonidoClic, sonidoDeTrazo, sonidoFestejo, sonidoPop } from '../utils/sonidosColorear';
+import IconoHerramienta, { IconoSello, MuestraPolvo, PUNTAS } from './ColorearIconos';
+import ExplosionChispas from './ExplosionChispas';
 import './ColorearJuego.css';
 
 // ========== COLOREAR (pintar a mano sobre las laminas de Imprimir) ==========
 // Pedido explicito: trazo libre, sin balde ni cierre de bordes. Capas, de
 // abajo hacia arriba: el <canvas> de color; un <canvas> de "trazo en curso"
-// (acuarela, destacador y neon, que se funden al soltar); y la lamina
-// original con mix-blend-mode: multiply — el blanco deja ver el color y la
-// linea negra queda SIEMPRE encima, nunca se tapa al pintar.
-// Herramientas y colores: utils/pincelesColorear.js. Dibujos de las
-// herramientas (barra, paneles y cursor): ColorearIconos.jsx.
+// (acuarela, destacador y neon, que se funden al soltar); la lamina original
+// con mix-blend-mode: multiply — el blanco deja ver el color y la linea negra
+// queda SIEMPRE encima, nunca se tapa al pintar —; y encima, los efectos que
+// no se pintan: brillos que titilan, estela de la varita y "pop" de sellos.
+// Herramientas y colores: utils/pincelesColorear.js (figuras de sellos en
+// utils/formasSello.js). Dibujos de herramientas: ColorearIconos.jsx.
+// Sonidos: utils/sonidosColorear.js. Marcos: utils/marcosColorear.js.
 // Lo pintado se guarda solo en el dispositivo (utils/dibujosColorear.js) y
-// se borra a las 48 h de empezado.
+// se borra a las 48 h de empezado, con su historia de trazos para "Ver cómo
+// lo pinté".
 //
 // Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
-// compacta con tres selectores que muestran lo elegido — lapiz, color y
-// tamaño — mas deshacer/rehacer/borrar/imprimir. Cada selector despliega su
-// panel encima de la hoja y se retrae al elegir, al tocar fuera o al tocar
-// el mismo boton. Asi la hoja usa todo el resto de la pantalla. Barra a la
-// izquierda en horizontal, abajo en vertical. Lo destructivo (borrar todo,
-// borrar un dibujo guardado) siempre pide confirmacion en un dialogo.
+// compacta — herramientas (lapiz, sello, varita, goma, mano), estilo (color,
+// tamaño) y acciones (deshacer, rehacer, borrar, imprimir). Los selectores
+// muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
+// al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
+// y sonido (arriba a la derecha), "¡Terminé!" (abajo a la izquierda) y el
+// porcentaje de zoom (abajo a la derecha). Barra a la izquierda en
+// horizontal, abajo en vertical. Lo destructivo siempre pide confirmacion.
 
 // Tamaño en px de pantalla (cada herramienta lo ajusta con su escala).
 const TAMANO_MIN = 6;
@@ -56,7 +80,6 @@ const ESPERA_GUARDADO_MS = 800;
 const SEPARACION = 14;
 // Tamaño del dibujo de la herramienta que hace de cursor (laptop).
 const CURSOR = 44;
-// Zoom de la hoja (mano y rueda del mouse): de la hoja entera a 5x.
 // 4x: mas alla, aun a 1800 px el trazo se ve borroso en una tablet.
 const ZOOM_MAX = 4;
 // Doble toque con la mano: acerca a esto (o vuelve a la hoja entera).
@@ -64,13 +87,31 @@ const ZOOM_TOQUE = 2.5;
 // Colores elegidos en la paleta completa que quedan a mano en la paleta.
 const MIS_COLORES = 5;
 const VISTA_INICIAL = { x: 0, y: 0, s: 1 };
+// Historia de trazos para "Ver cómo lo pinté": sobre este total de puntos se
+// deja de anotar (la repeticion ya no estaria completa y se oculta).
+const MAX_PUNTOS_HISTORIA = 200000;
+// "Ver cómo lo pinté" dura ~8 s, sin importar cuanto se pinto.
+const SEGUNDOS_REPETICION = 8;
+// Brillos que titilan a la vez sobre la hoja (los ultimos).
+const MAX_TITILAN = 120;
+// Estela de la varita: una particula cada tanto, y no mas de estas vivas.
+const ESTELA_CADA_MS = 40;
+const MAX_ESTELA = 36;
+// Espera entre "¡Terminé!" (destellos y fanfarria) y su dialogo.
+const DIALOGO_TERMINE_MS = 1400;
+const SONIDO_KEY = 'musica-kids-colorear-sonido';
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
 const NOMBRE_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.nombre]));
 const GRUPO_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.grupo]));
-// Panel de lapices: sin sello ni goma (tienen boton propio en la barra).
+// Panel de lapices: sin sello, varita ni goma (tienen boton propio).
 const LAPICES = HERRAMIENTAS.filter((h) => h.grupo === 'lapiz');
-const NOMBRE_FORMA = { surtido: 'Surtido', ...Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f.nombre])) };
+const NOMBRE_FORMA = Object.fromEntries([
+  ...GRUPOS_SELLO.map((g) => [`surtido:${g.id}`, 'Surtido']),
+  ...FORMAS_SELLO.map((f) => [f.id, f.nombre]),
+]);
+const GRUPO_DE_FORMA = (forma) => (forma.startsWith('surtido') ? forma.split(':')[1] : FORMAS_SELLO.find((f) => f.id === forma)?.grupo) ?? 'cosas';
+const PATH_DESTELLO = 'M12 0C13 7 17 11 24 12C17 13 13 17 12 24C11 17 7 13 0 12C7 11 11 7 12 0Z';
 
 function cargarImagen(src) {
   return new Promise((resolve, reject) => {
@@ -85,7 +126,7 @@ function aBlob(canvas, tipo, calidad) {
   return new Promise((resolve) => canvas.toBlob(resolve, tipo, calidad));
 }
 
-// Lamina + color en una sola imagen (para la miniatura y para imprimir).
+// Lamina + color en una sola imagen (para la miniatura, imprimir y guardar).
 function componer(capa, lamina, ancho, alto) {
   const c = document.createElement('canvas');
   c.width = ancho;
@@ -99,6 +140,26 @@ function componer(capa, lamina, ancho, alto) {
   return c;
 }
 
+// Descarga una imagen ("Guardar imagen"): en la tablet queda en Descargas.
+function descargar(blob, nombre = 'mi-dibujo.png') {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+const leerSonido = () => {
+  try {
+    return localStorage.getItem(SONIDO_KEY) !== '0';
+  } catch {
+    return true;
+  }
+};
+
 // Texto para quien cuida al niño en "Mis dibujos": cuanto le queda.
 function textoVence(creado) {
   const horas = Math.max(0, Math.ceil((creado + VIGENCIA_MS - Date.now()) / 3600000));
@@ -107,53 +168,67 @@ function textoVence(creado) {
   return horas < 48 ? 'Se borra mañana' : 'Se borra en 2 días';
 }
 
-export function imprimirDibujo(capaBlob, src, imprimir) {
-  Promise.all([cargarImagen(src), capaBlob ? createImageBitmap(capaBlob) : null]).then(([lamina, capa]) => {
-    const escala = LADO_LARGO / Math.max(lamina.naturalWidth, lamina.naturalHeight);
-    const ancho = Math.round(lamina.naturalWidth * escala);
-    const alto = Math.round(lamina.naturalHeight * escala);
-    const vacio = document.createElement('canvas');
-    const final = componer(capa ?? vacio, lamina, ancho, alto);
-    final.toBlob((blob) => imprimir(URL.createObjectURL(blob)), 'image/png');
-  });
+// Dibujo guardado (capa + lamina) en una sola imagen, del tamaño del lienzo.
+async function dibujoCompleto(capaBlob, src) {
+  const [lamina, capa] = await Promise.all([cargarImagen(src), capaBlob ? createImageBitmap(capaBlob) : null]);
+  const escala = LADO_LARGO / Math.max(lamina.naturalWidth, lamina.naturalHeight);
+  const ancho = Math.round(lamina.naturalWidth * escala);
+  const alto = Math.round(lamina.naturalHeight * escala);
+  return componer(capa ?? document.createElement('canvas'), lamina, ancho, alto);
 }
 
-// ---------- Dialogo de confirmacion (mismo overlay y tarjeta que "Elige un
-// nivel" de los otros juegos) ----------
-function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar }) {
+export function imprimirDibujo(capaBlob, src, imprimir) {
+  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => imprimir(URL.createObjectURL(blob)), 'image/png'));
+}
+
+export function guardarImagenDibujo(capaBlob, src) {
+  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => descargar(blob), 'image/png'));
+}
+
+// ---------- Dialogo base: mismo overlay y tarjeta que "Elige un nivel" de
+// los otros juegos; Escape y tocar fuera lo cierran ----------
+function Dialogo({ etiqueta, onCerrar, rol = 'dialog', className = '', children }) {
   useEffect(() => {
     const escape = (e) => {
-      if (e.key === 'Escape') onCancelar();
+      if (e.key === 'Escape') onCerrar();
     };
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
-  }, [onCancelar]);
+  }, [onCerrar]);
   return (
-    <div className="memory-victoria-overlay colorear-dialogo-overlay" onClick={onCancelar}>
+    <div className="memory-victoria-overlay colorear-dialogo-overlay" onClick={onCerrar}>
       <div
-        className="memory-niveles-modal colorear-dialogo"
-        role="alertdialog"
+        className={`memory-niveles-modal colorear-dialogo ${className}`}
+        role={rol}
         aria-modal="true"
-        aria-label={titulo}
+        aria-label={etiqueta}
         onClick={(e) => e.stopPropagation()}
       >
-        {miniatura ? (
-          <img src={miniatura} alt="" className="colorear-dialogo-miniatura" />
-        ) : (
-          <span className="colorear-dialogo-icono" aria-hidden="true"><DeleteOutlined /></span>
-        )}
-        <h3>{titulo}</h3>
-        <p>{texto}</p>
-        <div className="colorear-dialogo-botones">
-          <button type="button" className="colorear-dialogo-btn" onClick={onCancelar} autoFocus>
-            No, volver
-          </button>
-          <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--peligro" onClick={onConfirmar}>
-            Sí, borrar
-          </button>
-        </div>
+        {children}
       </div>
     </div>
+  );
+}
+
+function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar }) {
+  return (
+    <Dialogo etiqueta={titulo} onCerrar={onCancelar} rol="alertdialog">
+      {miniatura ? (
+        <img src={miniatura} alt="" className="colorear-dialogo-miniatura" />
+      ) : (
+        <span className="colorear-dialogo-icono" aria-hidden="true"><DeleteOutlined /></span>
+      )}
+      <h3>{titulo}</h3>
+      <p>{texto}</p>
+      <div className="colorear-dialogo-botones">
+        <button type="button" className="colorear-dialogo-btn" onClick={onCancelar} autoFocus>
+          No, volver
+        </button>
+        <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--peligro" onClick={onConfirmar}>
+          Sí, borrar
+        </button>
+      </div>
+    </Dialogo>
   );
 }
 
@@ -182,7 +257,7 @@ export function ColorearGaleria({ laminas, miniaturas, onElegir }) {
 }
 
 // ---------- Mis dibujos: lo pintado en este dispositivo ----------
-export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onBorrar, onCapaAbierta }) {
+export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onGuardarImagen, onBorrar, onCapaAbierta }) {
   const [porBorrar, setPorBorrar] = useState(null);
   // Con el dialogo abierto, el Escape del drawer no debe cerrar todo.
   useEffect(() => {
@@ -206,10 +281,13 @@ export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onBorrar
             </button>
             <span className="colorear-mio-vence">{textoVence(d.creado)}</span>
             <div className="colorear-mio-acciones">
-              <button type="button" className="colorear-accion" onClick={() => onImprimir(d)} aria-label="Imprimir">
+              <button type="button" className="colorear-accion" onClick={() => onImprimir(d)} aria-label="Imprimir" title="Imprimir">
                 <PrinterOutlined />
               </button>
-              <button type="button" className="colorear-accion" onClick={() => setPorBorrar(d.id)} aria-label="Borrar">
+              <button type="button" className="colorear-accion" onClick={() => onGuardarImagen(d)} aria-label="Guardar imagen" title="Guardar imagen">
+                <LuDownload />
+              </button>
+              <button type="button" className="colorear-accion" onClick={() => setPorBorrar(d.id)} aria-label="Borrar" title="Borrar">
                 <DeleteOutlined />
               </button>
             </div>
@@ -247,6 +325,11 @@ function Gota({ rgb, activo, onClick, etiqueta, className = '' }) {
   );
 }
 
+// Punto del puntero en px internos del lienzo, con un decimal: asi la
+// historia guarda exactamente los puntos con que se pinto y "Ver cómo lo
+// pinté" repite el mismo dibujo (mismo azar, mismos tramos).
+const redondear = (v) => Math.round(v * 10) / 10;
+
 // ---------- Lienzo ----------
 export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapaAbierta }) {
   const zonaRef = useRef(null);
@@ -254,6 +337,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const cursorRef = useRef(null);
   const canvasRef = useRef(null);
   const canvasTrazoRef = useRef(null);
+  const repeticionRef = useRef(null);
+  const efectosRef = useRef(null);
   // Copia propia del canvas: al desmontar, React suelta canvasRef ANTES de
   // la limpieza de los efectos, y ahi se guarda lo ultimo pintado.
   const capaRef = useRef(null);
@@ -266,15 +351,23 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const respaldoRef = useRef(null);
   // Lo deshecho, para rehacerlo. Se vacia con cualquier cambio nuevo.
   const rehacerRef = useRef([]);
+  // Historia: trazos y borrados en orden (null = no se puede repetir: dibujo
+  // anterior a la historia o demasiado largo). Ver registrarCambio.
+  const historiaRef = useRef([]);
+  const puntosHistoriaRef = useRef(0);
+  const [versionHistoria, setVersionHistoria] = useState(0);
   const temporizadorRef = useRef(null);
   const pendienteRef = useRef(false);
+  const sonidoTrazoRef = useRef(null);
   const [dimensiones, setDimensiones] = useState(null);
   const [caja, setCaja] = useState(null);
   const [herramienta, setHerramienta] = useState('crayon');
-  // Ultimo lapiz elegido (lo muestra su boton aunque se este usando el
-  // sello o la goma) y forma del sello ('surtido' = va alternando todas).
+  // Ultimo lapiz elegido (lo muestra su boton aunque se este usando otra
+  // herramienta), forma del sello y polvo de la varita.
   const [ultimoLapiz, setUltimoLapiz] = useState('crayon');
-  const [formaSello, setFormaSello] = useState('surtido');
+  const [formaSello, setFormaSello] = useState('surtido:cosas');
+  const [grupoSello, setGrupoSello] = useState('cosas');
+  const [varianteBrillo, setVarianteBrillo] = useState('magia');
   // colorId: uno de COLORES o 'propio:<r,g,b>' (elegido en la paleta
   // completa). coloresPropios: los ultimos MIS_COLORES elegidos ahi, el mas
   // reciente primero; quedan en la paleta para volver a usarlos.
@@ -283,26 +376,48 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
-  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'colores' | 'espectro' | 'tamano' | null.
+  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'varita' | 'colores' | 'espectro' | 'tamano' | null.
   const [menu, setMenu] = useState(null);
   // Toque en la hoja que solo retrajo un panel: no debe pintar. (React
   // puede re-renderizar entre el listener que cierra y el del canvas, asi
   // que no basta con mirar "menu").
   const ignorarToqueRef = useRef(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(false);
-  const [miniaturaBorrar, setMiniaturaBorrar] = useState(null);
+  // Dialogo abierto: 'terminado' | 'imprimir' | null.
+  const [dialogo, setDialogo] = useState(null);
+  const [miniaturaDialogo, setMiniaturaDialogo] = useState(null);
+  const [marco, setMarco] = useState('ninguno');
+  const [vistasMarcos, setVistasMarcos] = useState({});
+  const [festejo, setFestejo] = useState(0);
+  const festejoRef = useRef(null);
+  const [repitiendo, setRepitiendo] = useState(false);
+  const repitiendoRef = useRef(false);
+  const cuadroRepeticionRef = useRef(null);
   // Mano: con ella activa la hoja se acerca (pellizco) y se desplaza (arrastre).
   const [mano, setMano] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [espejo, setEspejo] = useState(false);
+  const [sonido, setSonido] = useState(leerSonido);
   const marcoRef = useRef(null);
   const vistaRef = useRef(null);
+  const ultimaEstelaRef = useRef(0);
+  const ultimoPopRef = useRef(0);
 
-  // Con un panel o el dialogo abierto, el Escape del drawer no cierra todo
-  // (lo cierra este componente).
+  // Con un panel, un dialogo o la repeticion abiertos, el Escape del drawer
+  // no cierra todo (lo cierra este componente).
   useEffect(() => {
-    onCapaAbierta?.(Boolean(menu || confirmarBorrar));
+    onCapaAbierta?.(Boolean(menu || confirmarBorrar || dialogo || repitiendo));
     return () => onCapaAbierta?.(false);
-  }, [menu, confirmarBorrar, onCapaAbierta]);
+  }, [menu, confirmarBorrar, dialogo, repitiendo, onCapaAbierta]);
+
+  useEffect(() => {
+    silenciar(!sonido);
+    try {
+      localStorage.setItem(SONIDO_KEY, sonido ? '1' : '0');
+    } catch {
+      // Sin localStorage: el sonido igual se apaga en esta sesion.
+    }
+  }, [sonido]);
 
   const esGoma = herramienta === 'goma';
   const rgb = colorId.startsWith('propio:')
@@ -310,6 +425,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     : COLORES.find((c) => c.id === colorId).rgb;
   // Color con que se dibujan los iconos, la muestra y el cursor.
   const colorIcono = rgb ? css(rgb) : 'arcoiris';
+  const variante = VARIANTES_BRILLO.find((v) => v.id === varianteBrillo) ?? VARIANTES_BRILLO[0];
+  // La varita se dibuja con el color de su polvo (oro, plata...) o el elegido.
+  const colorVarita = variante.paleta ? css(variante.paleta[1] ?? variante.paleta[0]) : colorIcono;
 
   // Lamina + lo guardado (si hay) al entrar.
   useEffect(() => {
@@ -320,11 +438,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const escala = LADO_LARGO / Math.max(lamina.naturalWidth, lamina.naturalHeight);
       const ancho = Math.round(lamina.naturalWidth * escala);
       const alto = Math.round(lamina.naturalHeight * escala);
+      for (const c of [canvasRef.current, canvasTrazoRef.current, repeticionRef.current]) {
+        c.width = ancho;
+        c.height = alto;
+      }
       const canvas = canvasRef.current;
-      canvas.width = ancho;
-      canvas.height = alto;
-      canvasTrazoRef.current.width = ancho;
-      canvasTrazoRef.current.height = alto;
       capaRef.current = canvas;
       const respaldo = document.createElement('canvas');
       respaldo.width = ancho;
@@ -335,12 +453,19 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         if (!vivo) return;
         canvas.getContext('2d').drawImage(capa, 0, 0, ancho, alto);
       }
+      // Dibujo con capa pero sin historia (anterior a "Ver cómo lo pinté"):
+      // no se puede repetir.
+      historiaRef.current = guardado?.capa ? guardado.historia ?? null : [];
+      puntosHistoriaRef.current = (historiaRef.current ?? []).reduce((t, e) => t + (e.p?.length ?? 0) / 2, 0);
+      setVersionHistoria((v) => v + 1);
       sincronizarRespaldo();
       setDimensiones({ ancho, alto });
     });
     return () => {
       vivo = false;
     };
+    // sincronizarRespaldo usa solo refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, src]);
 
   // La lamina ocupa el mayor tamaño posible sin deformarse, descontando
@@ -396,7 +521,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const escala = MINIATURA / Math.max(canvas.width, canvas.height);
     const mini = componer(canvas, lamina, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
     const [capa, miniatura] = await Promise.all([aBlob(canvas, 'image/png'), aBlob(mini, 'image/jpeg', 0.82)]);
-    await guardarDibujo(id, capa, miniatura);
+    await guardarDibujo(id, capa, miniatura, historiaRef.current);
     onGuardadoRef.current?.();
   }, [id]);
 
@@ -411,29 +536,56 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     guardar();
   }, [guardar]);
 
-  // Miniatura del dialogo de "Borrar todo": lo que se va a borrar.
+  useEffect(() => () => {
+    clearTimeout(festejoRef.current);
+    cancelAnimationFrame(cuadroRepeticionRef.current);
+    clearTimeout(cuadroRepeticionRef.current);
+    sonidoTrazoRef.current?.parar();
+  }, []);
+
+  // Miniatura de los dialogos de "Borrar todo" y "¡Terminé!".
+  const conMiniatura = confirmarBorrar || dialogo === 'terminado';
   useEffect(() => {
-    if (!confirmarBorrar || !laminaRef.current) return undefined;
+    if (!conMiniatura || !laminaRef.current) return undefined;
     const canvas = canvasRef.current;
     const escala = MINIATURA / Math.max(canvas.width, canvas.height);
     const mini = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
     let url = null;
     mini.toBlob((blob) => {
       url = URL.createObjectURL(blob);
-      setMiniaturaBorrar(url);
+      setMiniaturaDialogo(url);
     }, 'image/jpeg', 0.85);
     return () => {
       if (url) URL.revokeObjectURL(url);
-      setMiniaturaBorrar(null);
+      setMiniaturaDialogo(null);
     };
-  }, [confirmarBorrar]);
+  }, [conMiniatura]);
+
+  // Vistas previas de cada marco en el dialogo de imprimir/guardar.
+  useEffect(() => {
+    if (dialogo !== 'imprimir' || !laminaRef.current) return undefined;
+    const canvas = canvasRef.current;
+    const escala = (MINIATURA * 0.7) / Math.max(canvas.width, canvas.height);
+    const base = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
+    const urls = {};
+    let vivo = true;
+    Promise.all(MARCOS.map((m) => aBlob(conMarco(base, m.id), 'image/jpeg', 0.85).then((blob) => {
+      urls[m.id] = URL.createObjectURL(blob);
+    }))).then(() => {
+      if (vivo) setVistasMarcos({ ...urls });
+    });
+    return () => {
+      vivo = false;
+      Object.values(urls).forEach((u) => URL.revokeObjectURL(u));
+      setVistasMarcos({});
+    };
+  }, [dialogo]);
 
   // ----- Deshacer / rehacer por zonas -----
-  // Antes se guardaba la hoja entera en cada paso (~10 MB a 1800 px, y se
-  // copiaba al apoyar el dedo, lo que demoraba el inicio del trazo). Ahora
   // respaldoRef es una copia de la hoja como estaba ANTES del trazo en curso;
   // al soltar se guarda solo el rectangulo que toco el trazo, sacado del
-  // respaldo, y el respaldo se pone al dia en esa zona. Paso = { x, y, datos }.
+  // respaldo, y el respaldo se pone al dia en esa zona.
+  // Paso = { x, y, datos, hist } (hist = su entrada en la historia).
   const sincronizarRespaldo = (zona) => {
     const respaldo = respaldoRef.current;
     const canvas = canvasRef.current;
@@ -445,28 +597,42 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // Zona del trazo (minimo/maximo de sus puntos) + margen por el grosor, el
-  // halo del neon/pincel y las chispas o sellos, ajustada a la hoja.
-  const zonaDeTrazo = (caja, ancho) => {
+  // halo del neon/pincel y las chispas o sellos, ajustada a la hoja. Con
+  // espejo suma la zona reflejada.
+  const zonaDeTrazo = (caja, ancho, anchoEspejo) => {
     const canvas = canvasRef.current;
     const m = Math.ceil(ancho * 1.7 + 6);
-    const x = Math.max(0, Math.floor(caja.x0 - m));
+    let [x0, x1] = [caja.x0, caja.x1];
+    if (anchoEspejo) [x0, x1] = [Math.min(x0, anchoEspejo - caja.x1), Math.max(x1, anchoEspejo - caja.x0)];
+    const x = Math.max(0, Math.floor(x0 - m));
     const y = Math.max(0, Math.floor(caja.y0 - m));
-    const x1 = Math.min(canvas.width, Math.ceil(caja.x1 + m));
-    const y1 = Math.min(canvas.height, Math.ceil(caja.y1 + m));
-    return { x, y, w: Math.max(1, x1 - x), h: Math.max(1, y1 - y) };
+    const xf = Math.min(canvas.width, Math.ceil(x1 + m));
+    const yf = Math.min(canvas.height, Math.ceil(caja.y1 + m));
+    return { x, y, w: Math.max(1, xf - x), h: Math.max(1, yf - y) };
+  };
+
+  // Anota un cambio en la historia (si se puede repetir todavia).
+  const anotarEnHistoria = (hist) => {
+    if (!historiaRef.current) return;
+    puntosHistoriaRef.current += (hist.p?.length ?? 0) / 2;
+    if (puntosHistoriaRef.current > MAX_PUNTOS_HISTORIA) historiaRef.current = null;
+    else historiaRef.current.push(hist);
+    setVersionHistoria((v) => v + 1);
   };
 
   // Registra un cambio ya hecho en la hoja: la zona como estaba antes (del
-  // respaldo) va a deshacer, se vacia rehacer y el respaldo se pone al dia.
-  const registrarCambio = (zona) => {
+  // respaldo) va a deshacer, se vacia rehacer, se anota en la historia y el
+  // respaldo se pone al dia.
+  const registrarCambio = (zona, hist) => {
     const respaldo = respaldoRef.current;
     if (!respaldo) return;
     const pila = deshacerRef.current;
-    pila.push({ x: zona.x, y: zona.y, datos: respaldo.getContext('2d').getImageData(zona.x, zona.y, zona.w, zona.h) });
+    pila.push({ x: zona.x, y: zona.y, datos: respaldo.getContext('2d').getImageData(zona.x, zona.y, zona.w, zona.h), hist });
     if (pila.length > MAX_DESHACER) pila.shift();
     rehacerRef.current = [];
     setPuedeDeshacer(true);
     setPuedeRehacer(false);
+    anotarEnHistoria(hist);
     sincronizarRespaldo(zona);
   };
 
@@ -474,8 +640,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const canvas = canvasRef.current;
     const r = canvas.getBoundingClientRect();
     return {
-      x: ((e.clientX - r.left) / r.width) * canvas.width,
-      y: ((e.clientY - r.top) / r.height) * canvas.height,
+      x: redondear(((e.clientX - r.left) / r.width) * canvas.width),
+      y: redondear(((e.clientY - r.top) / r.height) * canvas.height),
     };
   };
 
@@ -486,7 +652,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const cursor = cursorRef.current;
     if (!cursor) return;
     // Con la mano, el cursor es la mano del sistema (grab/grabbing en CSS).
-    if (e.pointerType !== 'mouse' || mano) {
+    if (e.pointerType !== 'mouse' || mano || repitiendoRef.current) {
       cursor.style.display = 'none';
       return;
     }
@@ -499,14 +665,55 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (cursorRef.current) cursorRef.current.style.display = 'none';
   };
 
+  // ----- Efectos que no se pintan (sobre la lamina, se mueven con el zoom).
+  // Se agregan al DOM directo (sin re-render) y se quitan solos al terminar
+  // su animacion. Posicion y tamaño en % de la hoja.
+  const agregarEfecto = (clase, p, tam, estilo = {}) => {
+    const cont = efectosRef.current;
+    const canvas = canvasRef.current;
+    if (!cont || !canvas) return null;
+    const el = document.createElement('span');
+    el.className = clase;
+    el.style.left = `${(p.x / canvas.width) * 100}%`;
+    el.style.top = `${(p.y / canvas.height) * 100}%`;
+    el.style.width = `${(tam / canvas.width) * 100}%`;
+    Object.assign(el.style, estilo);
+    el.addEventListener('animationend', () => el.remove());
+    cont.appendChild(el);
+    return el;
+  };
+
+  // Estela de la varita: particulas que caen y se apagan detras del dedo.
+  const lanzarEstela = (p, trazo) => {
+    const ahora = performance.now();
+    if (ahora - ultimaEstelaRef.current < ESTELA_CADA_MS) return;
+    if ((efectosRef.current?.querySelectorAll('.colorear-estela').length ?? 0) >= MAX_ESTELA) return;
+    ultimaEstelaRef.current = ahora;
+    const paleta = variante.paleta;
+    const color = paleta ? css(paleta[Math.floor(Math.random() * paleta.length)]) : css(trazo.rgb ?? [255, 213, 79]);
+    const tam = trazo.ancho * (0.12 + Math.random() * 0.12);
+    agregarEfecto('colorear-estela', p, tam, {
+      background: color,
+      '--deriva': `${Math.round((Math.random() - 0.5) * 60)}%`,
+    });
+  };
+
+  // "Pop" al estampar: un anillo que se abre y se apaga.
+  const lanzarPop = (sello) => {
+    const ahora = performance.now();
+    if (ahora - ultimoPopRef.current < 70) return;
+    ultimoPopRef.current = ahora;
+    agregarEfecto('colorear-pop', sello, sello.tam * 1.25);
+    sonidoPop();
+  };
+
   // ----- Zoom y desplazamiento de la hoja -----
   // La vista se mueve con transform: translate(x, y) scale(s), origen
   // arriba-izquierda, por estilo directo y una vez por cuadro (rAF), sin
   // re-render: "zoom" (estado, el boton de porcentaje) se actualiza recien al
-  // terminar el gesto. Con un re-render por movimiento el zoom se sentia
-  // pesado (pedido explicito). punto() usa el rectangulo ya transformado del
-  // canvas, asi que pintar con zoom cae donde corresponde, y el grosor sigue
-  // igual EN PANTALLA (mas fino sobre la lamina: sirve para los detalles).
+  // terminar el gesto. punto() usa el rectangulo ya transformado del canvas,
+  // asi que pintar con zoom cae donde corresponde, y el grosor sigue igual
+  // EN PANTALLA (mas fino sobre la lamina: sirve para los detalles).
   //
   // Gestos (patron de las apps de dibujo):
   // - Dos dedos pellizcan y arrastran SIEMPRE, con cualquier herramienta: si
@@ -598,6 +805,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const actual = trazoRef.current;
     if (!actual) return;
     trazoRef.current = null;
+    sonidoTrazoRef.current?.parar();
     if (actual.capa) {
       const capa = canvasTrazoRef.current;
       capa.getContext('2d').clearRect(0, 0, capa.width, capa.height);
@@ -622,7 +830,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   const gestoApoyar = (e) => {
-    if (e.target.closest('button')) return;
+    if (e.target.closest('button') || repitiendoRef.current) return;
     const tactil = e.pointerType === 'touch';
     if (!mano && !tactil) return;
     const p = puntoMarco(e);
@@ -681,6 +889,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!marco) return undefined;
     const rueda = (e) => {
       e.preventDefault();
+      if (repitiendoRef.current) return;
       const r = marco.getBoundingClientRect();
       const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0028));
       acercarEn({ x: e.clientX - r.left, y: e.clientY - r.top }, vistaActualRef.current.s * factor, false);
@@ -694,15 +903,16 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   }, [aplicarVista]);
 
   const alternarMano = () => {
+    sonidoClic();
     setMenu(null);
     setMano((m) => !m);
     ocultarCursor();
   };
 
+  // ----- Pintar -----
   const alApoyar = (e) => {
-    // Con la mano o durante un pellizco, la hoja se mueve (gestoApoyar en
-    // el marco), no se pinta.
-    if (mano || pellizcoRef.current) return;
+    // Con la mano, durante un pellizco o repitiendo el dibujo, no se pinta.
+    if (mano || pellizcoRef.current || repitiendoRef.current) return;
     // Con un panel abierto, tocar la hoja solo lo retrae (lo cierra el
     // listener de "tocar fuera"); no se pinta.
     if (ignorarToqueRef.current) {
@@ -714,8 +924,14 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const canvas = canvasRef.current;
-    const escala = canvas.width / canvas.getBoundingClientRect().width;
-    const trazo = empezarTrazo(herramienta, rgb, tamano * escala, formaSello);
+    const ancho = redondear((tamano * canvas.width) / canvas.getBoundingClientRect().width);
+    const opciones = {
+      forma: formaSello,
+      variante: varianteBrillo,
+      semilla: Math.floor(Math.random() * 2 ** 31),
+      espejo: espejo ? canvas.width : 0,
+    };
+    const trazo = empezarTrazo(herramienta, rgb, ancho, opciones);
     const capa = capaDe(herramienta);
     const destino = capa ? canvasTrazoRef.current : canvas;
     if (capa) {
@@ -726,7 +942,26 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     }
     const p = punto(e);
     pintarTramo(destino.getContext('2d'), trazo, p, p);
-    trazoRef.current = { pointerId: e.pointerId, ultimo: p, trazo, destino, capa, caja: { x0: p.x, y0: p.y, x1: p.x, y1: p.y } };
+    sonidoTrazoRef.current?.parar();
+    sonidoTrazoRef.current = sonidoDeTrazo(herramienta);
+    sonidoTrazoRef.current.mover();
+    trazoRef.current = {
+      pointerId: e.pointerId,
+      ultimo: p,
+      trazo,
+      destino,
+      capa,
+      caja: { x0: p.x, y0: p.y, x1: p.x, y1: p.y },
+      // Entrada de la historia: lo necesario para repetir este trazo.
+      hist: { t: 'trazo', h: herramienta, c: rgb, a: ancho, f: opciones.forma, v: opciones.variante, s: opciones.semilla, e: opciones.espejo, p: [p.x, p.y] },
+    };
+    mostrarEfectos(trazoRef.current, p);
+  };
+
+  const mostrarEfectos = (actual, p) => {
+    const { trazo } = actual;
+    if (trazo.herramienta === 'brillos') lanzarEstela(p, trazo);
+    recogerEfectos(trazo).sellos.forEach(lanzarPop);
   };
 
   const alMover = (e) => {
@@ -739,34 +974,46 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const p = punto(ev);
       pintarTramo(ctx, actual.trazo, actual.ultimo, p);
       actual.ultimo = p;
+      actual.hist.p.push(p.x, p.y);
       const { caja } = actual;
       caja.x0 = Math.min(caja.x0, p.x);
       caja.y0 = Math.min(caja.y0, p.y);
       caja.x1 = Math.max(caja.x1, p.x);
       caja.y1 = Math.max(caja.y1, p.y);
     }
+    sonidoTrazoRef.current?.mover();
+    mostrarEfectos(actual, actual.ultimo);
   };
 
   const alSoltar = (e) => {
     const actual = trazoRef.current;
     if (!actual || actual.pointerId !== e.pointerId) return;
     trazoRef.current = null;
+    sonidoTrazoRef.current?.parar();
     if (actual.capa) fundirCapa(canvasRef.current.getContext('2d'), canvasTrazoRef.current, actual.trazo.herramienta);
-    registrarCambio(zonaDeTrazo(actual.caja, actual.trazo.ancho));
+    const titilan = titilanDe(actual.trazo);
+    if (titilan.length) actual.hist.ti = titilan;
+    registrarCambio(zonaDeTrazo(actual.caja, actual.trazo.ancho, actual.trazo.espejo), actual.hist);
     programarGuardado();
   };
 
   // Mueve un paso entre las dos pilas: lo que sale de "desde" se pinta y el
-  // estado actual pasa a "hacia".
+  // estado actual pasa a "hacia". La historia sigue al paso: deshacer saca
+  // su entrada, rehacer la vuelve a poner.
   const moverPaso = (desde, hacia) => {
     const paso = desde.current.pop();
     if (!paso) return;
-    const { x, y, datos } = paso;
+    const { x, y, datos, hist } = paso;
     const ctx = canvasRef.current.getContext('2d');
-    hacia.current.push({ x, y, datos: ctx.getImageData(x, y, datos.width, datos.height) });
+    hacia.current.push({ x, y, datos: ctx.getImageData(x, y, datos.width, datos.height), hist });
     if (hacia.current.length > MAX_DESHACER) hacia.current.shift();
     ctx.putImageData(datos, x, y);
     respaldoRef.current.getContext('2d').putImageData(datos, x, y);
+    if (historiaRef.current) {
+      if (desde === deshacerRef) historiaRef.current.pop();
+      else historiaRef.current.push(hist);
+      setVersionHistoria((v) => v + 1);
+    }
     setPuedeDeshacer(deshacerRef.current.length > 0);
     setPuedeRehacer(rehacerRef.current.length > 0);
     programarGuardado();
@@ -778,25 +1025,133 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setConfirmarBorrar(false);
     const canvas = canvasRef.current;
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height });
+    registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height }, { t: 'borrar' });
     clearTimeout(temporizadorRef.current);
     pendienteRef.current = false;
     await borrarDibujo(id);
     onGuardadoRef.current?.();
   };
 
-  const imprimir = () => {
-    const canvas = canvasRef.current;
-    const lamina = laminaRef.current;
-    if (!lamina) return;
-    componer(canvas, lamina, canvas.width, canvas.height)
-      .toBlob((blob) => onImprimir(URL.createObjectURL(blob)), 'image/png');
+  // ----- ¡Terminé!: guarda, festeja (destellos y fanfarria) y ofrece ver,
+  // imprimir o guardar el dibujo.
+  // El festejo sale al instante; el guardado va en paralelo (con un dibujo
+  // grande tarda, y esperarlo demoraba los destellos).
+  const terminar = () => {
+    setMenu(null);
+    pendienteRef.current = true;
+    guardar();
+    sonidoFestejo();
+    setFestejo((f) => f + 1);
+    clearTimeout(festejoRef.current);
+    festejoRef.current = setTimeout(() => setDialogo('terminado'), DIALOGO_TERMINE_MS);
   };
 
+  // Imprimir o guardar, con el marco elegido, a la resolucion del lienzo.
+  const dibujoConMarco = () => {
+    const canvas = canvasRef.current;
+    return conMarco(componer(canvas, laminaRef.current, canvas.width, canvas.height), marco);
+  };
+  const imprimirConMarco = () => {
+    if (!laminaRef.current) return;
+    dibujoConMarco().toBlob((blob) => onImprimir(URL.createObjectURL(blob)), 'image/png');
+    setDialogo(null);
+  };
+  const guardarImagen = () => {
+    if (!laminaRef.current) return;
+    dibujoConMarco().toBlob((blob) => descargar(blob), 'image/png');
+    setDialogo(null);
+  };
+
+  // ----- Ver cómo lo pinté: repite la historia en un canvas aparte (el de
+  // pintar queda oculto), ~SEGUNDOS_REPETICION, con el mismo azar de cada
+  // trazo. Tocar "Saltar" termina.
+  const historia = historiaRef.current;
+  const sePuedeRepetir = Boolean(historia?.some((h) => h.t === 'trazo'));
+
+  const terminarRepeticion = useCallback(() => {
+    cancelAnimationFrame(cuadroRepeticionRef.current);
+    clearTimeout(cuadroRepeticionRef.current);
+    repitiendoRef.current = false;
+    setRepitiendo(false);
+  }, []);
+
+  const repetir = () => {
+    const lista = historiaRef.current;
+    if (!lista?.length) return;
+    setDialogo(null);
+    setMenu(null);
+    repitiendoRef.current = true;
+    setRepitiendo(true);
+    reiniciarVista();
+    const lienzo = repeticionRef.current;
+    const ctx = lienzo.getContext('2d');
+    ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+    const capa = document.createElement('canvas');
+    capa.width = lienzo.width;
+    capa.height = lienzo.height;
+    const total = lista.reduce((t, h) => t + (h.p?.length ?? 0) / 2, 0);
+    // Un punto por cuadro como minimo: un dibujo corto igual se alcanza a ver.
+    const porCuadro = Math.max(1, Math.ceil(total / (60 * SEGUNDOS_REPETICION)));
+    let i = 0;
+    let j = 0;
+    let trazo = null;
+    let destino = null;
+    let previo = null;
+    const avanzar = () => {
+      let presupuesto = porCuadro;
+      while (presupuesto > 0 && i < lista.length) {
+        const h = lista[i];
+        if (h.t === 'borrar') {
+          ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+          i += 1;
+          continue;
+        }
+        const n = h.p.length / 2;
+        if (j === 0) {
+          trazo = empezarTrazo(h.h, h.c, h.a, { forma: h.f, variante: h.v, semilla: h.s, espejo: h.e });
+          destino = (capaDe(h.h) ? capa : lienzo).getContext('2d');
+          previo = { x: h.p[0], y: h.p[1] };
+          pintarTramo(destino, trazo, previo, previo);
+          j = 1;
+          presupuesto -= 1;
+        }
+        while (j < n && presupuesto > 0) {
+          const p = { x: h.p[j * 2], y: h.p[j * 2 + 1] };
+          pintarTramo(destino, trazo, previo, p);
+          previo = p;
+          j += 1;
+          presupuesto -= 1;
+        }
+        if (j >= n) {
+          if (capaDe(h.h)) fundirCapa(ctx, capa, h.h);
+          i += 1;
+          j = 0;
+        }
+      }
+      if (i < lista.length) cuadroRepeticionRef.current = requestAnimationFrame(avanzar);
+      else cuadroRepeticionRef.current = setTimeout(terminarRepeticion, 1000);
+    };
+    cuadroRepeticionRef.current = requestAnimationFrame(avanzar);
+  };
+
+  // Brillos que titilan: los de los trazos de varita desde el ultimo "borrar
+  // todo" (los ultimos MAX_TITILAN), sacados de la historia.
+  const titilan = useMemo(() => {
+    const lista = historiaRef.current ?? [];
+    let desde = 0;
+    lista.forEach((h, i) => {
+      if (h.t === 'borrar') desde = i + 1;
+    });
+    return lista.slice(desde).flatMap((h) => h.ti ?? []).slice(-MAX_TITILAN);
+    // versionHistoria avisa cada cambio de la historia (vive en un ref).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versionHistoria]);
+
+  // ----- Elegir herramientas, colores y opciones -----
   const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (nombre === 'colores' && m === 'espectro') ? null : nombre));
 
-  // Ultima herramienta de pintar (lapiz o sello): a ella vuelve la goma al
-  // tocarla de nuevo o al elegir un color (la goma no usa color).
+  // Ultima herramienta de pintar (lapiz, sello o varita): a ella vuelve la
+  // goma al tocarla de nuevo o al elegir un color (la goma no usa color).
   const ultimaPintarRef = useRef('crayon');
   // Elegir cualquier herramienta (o color) apaga la mano: es para pintar.
   const usarHerramienta = (h) => {
@@ -806,28 +1161,43 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setHerramienta(h);
   };
   const elegirHerramienta = (h) => {
+    sonidoClic();
     usarHerramienta(h);
     setMenu(null);
   };
-  // Botones de lapiz y sello: se activan al tocarlos y despliegan su panel.
+  // Botones de lapiz, sello y varita: se activan al tocarlos y despliegan su panel.
   const tocarLapiz = () => {
     usarHerramienta(ultimoLapiz);
     alternarMenu('lapices');
   };
   const tocarSello = () => {
     usarHerramienta('sellos');
+    setGrupoSello(GRUPO_DE_FORMA(formaSello));
     alternarMenu('sellos');
   };
+  const tocarVarita = () => {
+    usarHerramienta('brillos');
+    alternarMenu('varita');
+  };
   const elegirForma = (forma) => {
+    sonidoClic();
     setFormaSello(forma);
     usarHerramienta('sellos');
     setMenu(null);
   };
+  const elegirVariante = (v) => {
+    sonidoClic();
+    setVarianteBrillo(v);
+    usarHerramienta('brillos');
+    setMenu(null);
+  };
   const alternarGoma = () => {
+    sonidoClic();
     setMenu(null);
     usarHerramienta(esGoma ? ultimaPintarRef.current : 'goma');
   };
   const elegirColor = (cid) => {
+    sonidoClic();
     setColorId(cid);
     setMano(false);
     if (esGoma) usarHerramienta(ultimaPintarRef.current);
@@ -851,9 +1221,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       style={{ width: diametro, height: diametro, ...(colorMuestra && { background: colorMuestra }) }}
     />
   );
+  const enUso = (grupo) => (!mano && GRUPO_HERRAMIENTA[herramienta] === grupo ? ' colorear-selector--en-uso' : '');
+  const abierto = (...nombres) => (nombres.includes(menu) ? ' colorear-selector--abierto' : '');
 
   return (
-    <div className="colorear-lienzo" ref={zonaRef}>
+    <div className={`colorear-lienzo${repitiendo ? ' colorear-lienzo--repitiendo' : ''}`} ref={zonaRef}>
       <div className="colorear-centro">
         <div
           ref={marcoRef}
@@ -866,7 +1238,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         >
           {/* La hoja es un marco fijo; adentro, la "vista" es lo que se
               acerca y desplaza con la mano (transform, ver aplicarVista). */}
-          <div className="colorear-vista" ref={vistaRef}>
+          <div className={`colorear-vista${repitiendo ? ' colorear-vista--repitiendo' : ''}`} ref={vistaRef}>
             <canvas
               ref={canvasRef}
               className="colorear-canvas"
@@ -878,9 +1250,65 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               onPointerLeave={ocultarCursor}
             />
             <canvas ref={canvasTrazoRef} className="colorear-canvas-trazo" aria-hidden="true" />
+            <canvas ref={repeticionRef} className="colorear-canvas-repeticion" aria-hidden="true" />
             <img src={src} alt="" className="colorear-lamina" draggable={false} />
+            {espejo && <span className="colorear-eje" aria-hidden="true" />}
+            {dimensiones && !repitiendo && (
+              <div className="colorear-titilan" aria-hidden="true">
+                {titilan.map(([x, y, s, color], i) => (
+                  <svg
+                    key={`${x}-${y}-${i}`}
+                    viewBox="0 0 24 24"
+                    style={{
+                      left: `${(x / dimensiones.ancho) * 100}%`,
+                      top: `${(y / dimensiones.alto) * 100}%`,
+                      width: `${(s / dimensiones.ancho) * 100}%`,
+                      animationDelay: `${((i * 0.37) % 2.4).toFixed(2)}s`,
+                      animationDuration: `${(1.6 + ((i * 0.53) % 1.2)).toFixed(2)}s`,
+                    }}
+                  >
+                    <path d={PATH_DESTELLO} fill={color} />
+                  </svg>
+                ))}
+              </div>
+            )}
+            <div className="colorear-efectos" ref={efectosRef} aria-hidden="true" />
           </div>
-          {zoom > 1.01 && (
+
+          {!repitiendo && (
+            <>
+              <div className="colorear-flotantes">
+                <button
+                  type="button"
+                  className={`colorear-flotante${espejo ? ' colorear-flotante--activo' : ''}`}
+                  onClick={() => {
+                    sonidoClic();
+                    setEspejo((v) => !v);
+                  }}
+                  aria-pressed={espejo}
+                  aria-label="Espejo: pinta igual en los dos lados"
+                  title="Espejo"
+                >
+                  <LuFlipHorizontal2 />
+                </button>
+                <button
+                  type="button"
+                  className={`colorear-flotante${sonido ? '' : ' colorear-flotante--apagado'}`}
+                  onClick={() => setSonido((v) => !v)}
+                  aria-pressed={sonido}
+                  aria-label={sonido ? 'Silenciar sonidos' : 'Activar sonidos'}
+                  title={sonido ? 'Silenciar sonidos' : 'Activar sonidos'}
+                >
+                  {sonido ? <LuVolume2 /> : <LuVolumeX />}
+                </button>
+              </div>
+              <button type="button" className="colorear-termine" onClick={terminar} aria-label="¡Terminé!">
+                <LuPartyPopper />
+                <span>¡Terminé!</span>
+              </button>
+            </>
+          )}
+          {zoom > 1.01 && !repitiendo && (
             <button
               type="button"
               className="colorear-zoom"
@@ -892,39 +1320,62 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               <span>{Math.round(zoom * 100)}%</span>
             </button>
           )}
+          {repitiendo && (
+            <button type="button" className="colorear-saltar" onClick={terminarRepeticion} aria-label="Saltar">
+              <LuFastForward />
+              <span>Saltar</span>
+            </button>
+          )}
         </div>
 
-        {/* Barra: herramientas (lapiz, sello, goma), estilo (color,
-            tamaño) y acciones. Lapiz, sello, color y tamaño muestran lo
-            elegido y despliegan su panel; los paneles cuelgan de la barra.
-            --en-uso marca cual de las tres herramientas esta pintando. */}
-        <div className="colorear-barra" ref={barraRef}>
-          <div className="colorear-barra-grupo">
+        {/* Barra: herramientas (lapiz, sello, varita, goma, mano), estilo
+            (color, tamaño) y acciones. Los selectores muestran lo elegido y
+            despliegan su panel; los paneles cuelgan de la barra. --en-uso
+            marca la herramienta que esta pintando. */}
+        <div className="colorear-barra" ref={barraRef} inert={repitiendo || undefined}>
+          <div className="colorear-barra-grupo colorear-barra-grupo--herramientas">
             <button
               type="button"
-              className={`colorear-selector${!mano && GRUPO_HERRAMIENTA[herramienta] === 'lapiz' ? ' colorear-selector--en-uso' : ''}${menu === 'lapices' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${enUso('lapiz')}${abierto('lapices')}`}
               onClick={tocarLapiz}
               aria-haspopup="true"
               aria-expanded={menu === 'lapices'}
               aria-label={`Lápiz: ${NOMBRE_HERRAMIENTA[ultimoLapiz]}`}
               title="Lápices"
             >
-              <IconoHerramienta herramienta={ultimoLapiz} color={colorIcono} size={44} />
+              <span className="colorear-icono-vivo" key={ultimoLapiz}>
+                <IconoHerramienta herramienta={ultimoLapiz} color={colorIcono} size={44} />
+              </span>
             </button>
             <button
               type="button"
-              className={`colorear-selector${!mano && herramienta === 'sellos' ? ' colorear-selector--en-uso' : ''}${menu === 'sellos' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${enUso('sello')}${abierto('sellos')}`}
               onClick={tocarSello}
               aria-haspopup="true"
               aria-expanded={menu === 'sellos'}
               aria-label={`Sello: ${NOMBRE_FORMA[formaSello]}`}
               title="Sellos"
             >
-              <IconoSello forma={formaSello} color={colorIcono} size={38} />
+              <span className="colorear-icono-vivo" key={formaSello}>
+                <IconoSello forma={formaSello} rgb={rgb} size={40} />
+              </span>
             </button>
             <button
               type="button"
-              className={`colorear-selector colorear-selector--simple${!mano && esGoma ? ' colorear-selector--en-uso' : ''}`}
+              className={`colorear-selector${enUso('varita')}${abierto('varita')}`}
+              onClick={tocarVarita}
+              aria-haspopup="true"
+              aria-expanded={menu === 'varita'}
+              aria-label={`Varita mágica: ${variante.nombre}`}
+              title="Varita mágica"
+            >
+              <span className="colorear-icono-vivo" key={varianteBrillo}>
+                <IconoHerramienta herramienta="brillos" color={colorVarita} size={44} />
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector colorear-selector--simple${enUso('goma')}`}
               onClick={alternarGoma}
               aria-pressed={!mano && esGoma}
               aria-label="Goma"
@@ -944,10 +1395,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
           </div>
 
-          <div className="colorear-barra-grupo colorear-barra-grupo--separado">
+          <div className="colorear-barra-grupo colorear-barra-grupo--separado colorear-barra-grupo--estilo">
             <button
               type="button"
-              className={`colorear-selector${menu === 'colores' || menu === 'espectro' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${abierto('colores', 'espectro')}`}
               onClick={() => alternarMenu('colores')}
               aria-haspopup="true"
               aria-expanded={menu === 'colores' || menu === 'espectro'}
@@ -955,13 +1406,14 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               title="Elegir color"
             >
               <span
-                className={`colorear-selector-gota${rgb ? '' : ' colorear-arcoiris'}`}
+                key={colorId}
+                className={`colorear-selector-gota colorear-icono-vivo${rgb ? '' : ' colorear-arcoiris'}`}
                 style={rgb ? { '--gota': css(rgb) } : undefined}
               />
             </button>
             <button
               type="button"
-              className={`colorear-selector${menu === 'tamano' ? ' colorear-selector--abierto' : ''}`}
+              className={`colorear-selector${abierto('tamano')}`}
               onClick={() => alternarMenu('tamano')}
               aria-haspopup="true"
               aria-expanded={menu === 'tamano'}
@@ -1011,7 +1463,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             <button type="button" className="colorear-accion" onClick={() => setConfirmarBorrar(true)} aria-label="Borrar todo" title="Borrar todo">
               <DeleteOutlined />
             </button>
-            <button type="button" className="colorear-accion" onClick={imprimir} aria-label="Imprimir" title="Imprimir">
+            <button type="button" className="colorear-accion" onClick={() => setDialogo('imprimir')} aria-label="Imprimir o guardar" title="Imprimir o guardar">
               <PrinterOutlined />
             </button>
           </div>
@@ -1038,8 +1490,22 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
           {menu === 'sellos' && (
             <div className="colorear-desplegable colorear-desplegable--sellos" role="menu" aria-label="Sellos">
+              <div className="colorear-pestanas" role="tablist">
+                {GRUPOS_SELLO.map((g) => (
+                  <button
+                    type="button"
+                    key={g.id}
+                    role="tab"
+                    aria-selected={grupoSello === g.id}
+                    className={`colorear-pestana${grupoSello === g.id ? ' colorear-pestana--activa' : ''}`}
+                    onClick={() => setGrupoSello(g.id)}
+                  >
+                    {g.nombre}
+                  </button>
+                ))}
+              </div>
               <div className="colorear-lapices">
-                {['surtido', ...FORMAS_SELLO.map((f) => f.id)].map((forma) => (
+                {[`surtido:${grupoSello}`, ...FORMAS_SELLO.filter((f) => f.grupo === grupoSello).map((f) => f.id)].map((forma) => (
                   <button
                     type="button"
                     key={forma}
@@ -1048,8 +1514,28 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                     className={`colorear-util${formaSello === forma ? ' colorear-util--activo' : ''}`}
                     onClick={() => elegirForma(forma)}
                   >
-                    <IconoSello forma={forma} color={colorIcono} size={42} />
+                    <IconoSello forma={forma} rgb={rgb} size={44} />
                     <span className="colorear-util-nombre">{NOMBRE_FORMA[forma]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {menu === 'varita' && (
+            <div className="colorear-desplegable colorear-desplegable--varita" role="menu" aria-label="Varita mágica">
+              <div className="colorear-lapices">
+                {VARIANTES_BRILLO.map((v) => (
+                  <button
+                    type="button"
+                    key={v.id}
+                    role="menuitemradio"
+                    aria-checked={varianteBrillo === v.id}
+                    className={`colorear-util${varianteBrillo === v.id ? ' colorear-util--activo' : ''}`}
+                    onClick={() => elegirVariante(v.id)}
+                  >
+                    <MuestraPolvo variante={v.id} rgb={rgb} size={46} />
+                    <span className="colorear-util-nombre">{v.nombre}</span>
                   </button>
                 ))}
               </div>
@@ -1160,18 +1646,71 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           className="colorear-cursor-icono"
           style={{ left: -punta.x * escalaCursor, top: -punta.y * escalaCursor }}
         >
-          <IconoHerramienta herramienta={herramienta} color={colorIcono} size={CURSOR} />
+          <IconoHerramienta herramienta={herramienta} color={herramienta === 'brillos' ? colorVarita : colorIcono} size={CURSOR} />
         </span>
       </div>
+
+      {festejo > 0 && <ExplosionChispas key={festejo} />}
 
       {confirmarBorrar && (
         <ConfirmarBorrado
           titulo="¿Borrar todo el dibujo?"
           texto="Se borra todo lo que pintaste en esta lámina."
-          miniatura={miniaturaBorrar}
+          miniatura={miniaturaDialogo}
           onCancelar={() => setConfirmarBorrar(false)}
           onConfirmar={borrarTodo}
         />
+      )}
+
+      {dialogo === 'terminado' && (
+        <Dialogo etiqueta="¡Qué lindo te quedó!" onCerrar={() => setDialogo(null)} className="colorear-dialogo--terminado">
+          {miniaturaDialogo && <img src={miniaturaDialogo} alt="" className="colorear-dialogo-miniatura colorear-dialogo-miniatura--grande" />}
+          <h3>¡Qué lindo te quedó!</h3>
+          <div className="colorear-dialogo-botones colorear-dialogo-botones--columna">
+            {sePuedeRepetir && (
+              <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--principal" onClick={repetir}>
+                <LuPlay /> Ver cómo lo pinté
+              </button>
+            )}
+            <button type="button" className="colorear-dialogo-btn" onClick={() => setDialogo('imprimir')}>
+              <PrinterOutlined /> Imprimir o guardar
+            </button>
+            <button type="button" className="colorear-dialogo-btn" onClick={() => setDialogo(null)} autoFocus>
+              Seguir pintando
+            </button>
+          </div>
+        </Dialogo>
+      )}
+
+      {dialogo === 'imprimir' && (
+        <Dialogo etiqueta="Imprimir o guardar" onCerrar={() => setDialogo(null)} className="colorear-dialogo--imprimir">
+          <h3>Elige un marco</h3>
+          <div className="colorear-marcos" role="radiogroup" aria-label="Marco">
+            {MARCOS.map((m) => (
+              <button
+                type="button"
+                key={m.id}
+                role="radio"
+                aria-checked={marco === m.id}
+                className={`colorear-marco${marco === m.id ? ' colorear-marco--activo' : ''}`}
+                onClick={() => setMarco(m.id)}
+              >
+                <span className="colorear-marco-vista">
+                  {vistasMarcos[m.id] && <img src={vistasMarcos[m.id]} alt="" />}
+                </span>
+                <span className="colorear-util-nombre">{m.nombre}</span>
+              </button>
+            ))}
+          </div>
+          <div className="colorear-dialogo-botones">
+            <button type="button" className="colorear-dialogo-btn" onClick={guardarImagen}>
+              <LuDownload /> Guardar imagen
+            </button>
+            <button type="button" className="colorear-dialogo-btn colorear-dialogo-btn--principal" onClick={imprimirConMarco}>
+              <PrinterOutlined /> Imprimir
+            </button>
+          </div>
+        </Dialogo>
       )}
     </div>
   );

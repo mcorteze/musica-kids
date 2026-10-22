@@ -8,7 +8,9 @@
 // dos dias. Lo vencido no se muestra nunca y se elimina al abrir la app
 // (limpiarDibujosVencidos) y cada vez que se leen los dibujos.
 //
-// Registro: { id, creado, actualizado, capa: Blob, miniatura: Blob }
+// Registro: { id, creado, actualizado, capa: Blob, miniatura: Blob,
+//   historia: [trazos y borrados, para "Ver cómo lo pinté"] (puede faltar en
+//   dibujos viejos) }. Los brillos que titilan salen de la historia.
 // id = ruta de la lamina dentro de src/assets (ej. "paw-patrol-gallery/01-paw-patrol.jpg").
 
 const DB_NOMBRE = 'musica-kids-colorear';
@@ -75,12 +77,12 @@ export async function leerDibujo(id) {
 }
 
 // Conserva la fecha de creacion original (el plazo de 48 h no se renueva).
-export async function guardarDibujo(id, capa, miniatura) {
+export async function guardarDibujo(id, capa, miniatura, historia = null) {
   try {
     const anterior = await operar('readonly', (store) => store.get(id));
     const ahora = Date.now();
     const creado = anterior && !vencido(anterior) ? anterior.creado : ahora;
-    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, capa, miniatura }));
+    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, capa, miniatura, historia }));
   } catch {
     // Sin espacio o sin IndexedDB: el dibujo sigue en pantalla, solo no se guarda.
   }

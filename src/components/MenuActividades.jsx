@@ -12,7 +12,8 @@ import PintarDev from './PintarDev';
 import PintarPixelDev from './PintarPixelDev';
 import SimonJuego, { SIMON_GRUPOS } from './SimonJuego';
 import ExplosionChispas from './ExplosionChispas';
-import ColorearLienzo, { ColorearGaleria, MisDibujos, imprimirDibujo } from './ColorearJuego';
+import ColorearLienzo, { ColorearGaleria, MisDibujos, guardarImagenDibujo, imprimirDibujo } from './ColorearJuego';
+import { LuPencil } from 'react-icons/lu';
 import { borrarDibujo, leerDibujos, limpiarDibujosVencidos } from '../utils/dibujosColorear';
 import imagenColorear from '../assets/menu-general/colorear.avif';
 import { laminaDePixelArt } from '../utils/pintarPixel';
@@ -370,7 +371,25 @@ const idLaminaColorear = (ruta) => ruta.replace(/^.*\/assets\//, '');
 const CARGAR_LAMINA_COLOREAR = Object.fromEntries(
   Object.entries(ENTRADAS_GALERIAS).map(([ruta, cargar]) => [idLaminaColorear(ruta), cargar]),
 );
-const cargarLaminaColorear = (id) => CARGAR_LAMINA_COLOREAR[id]?.().then((m) => m.default) ?? Promise.resolve(null);
+// "Hoja en blanco" (dibujo libre): una lamina blanca vertical, armada una
+// sola vez. Se guarda y aparece en "Mis dibujos" como cualquier lamina.
+const HOJA_EN_BLANCO = 'hoja-en-blanco';
+let srcHojaEnBlanco = null;
+function hojaEnBlanco() {
+  if (!srcHojaEnBlanco) {
+    const c = document.createElement('canvas');
+    c.width = 1350;
+    c.height = 1800;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    srcHojaEnBlanco = c.toDataURL('image/png');
+  }
+  return srcHojaEnBlanco;
+}
+const cargarLaminaColorear = (id) => (id === HOJA_EN_BLANCO
+  ? Promise.resolve(hojaEnBlanco())
+  : CARGAR_LAMINA_COLOREAR[id]?.().then((m) => m.default) ?? Promise.resolve(null));
 
 // ========== ROMPECABEZAS ==========
 // Un NIVEL define la dificultad (la cantidad de piezas) y agrupa VARIOS
@@ -1913,6 +1932,11 @@ export default function MenuActividades({ onOpenChange }) {
   const imprimirDibujoGuardado = useCallback((d) => {
     cargarLaminaColorear(d.id).then((src) => {
       if (src) imprimirDibujo(d.capa, src, imprimirImagen);
+    });
+  }, []);
+  const guardarImagenDibujoGuardado = useCallback((d) => {
+    cargarLaminaColorear(d.id).then((src) => {
+      if (src) guardarImagenDibujo(d.capa, src);
     });
   }, []);
   const borrarDibujoGuardado = useCallback((id) => {
@@ -4753,6 +4777,17 @@ export default function MenuActividades({ onOpenChange }) {
                         <span className="memory-picker-nombre">Mis dibujos</span>
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className="memory-picker-tile"
+                      onClick={() => abrirLaminaColorear(HOJA_EN_BLANCO)}
+                      aria-label="Hoja en blanco"
+                    >
+                      <span className="memory-picker-img-wrap colorear-portada colorear-hoja-en-blanco">
+                        <LuPencil aria-hidden="true" />
+                      </span>
+                      <span className="memory-picker-nombre">Hoja en blanco</span>
+                    </button>
                     {GRUPOS_IMPRIMIBLES.map((g) => (
                       <button
                         type="button"
@@ -4781,6 +4816,7 @@ export default function MenuActividades({ onOpenChange }) {
                   miniaturas={miniaturasColorear}
                   onElegir={abrirLaminaColorear}
                   onImprimir={imprimirDibujoGuardado}
+                  onGuardarImagen={guardarImagenDibujoGuardado}
                   onBorrar={borrarDibujoGuardado}
                   onCapaAbierta={marcarCapaColorear}
                 />

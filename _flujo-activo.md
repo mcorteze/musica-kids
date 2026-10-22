@@ -44,6 +44,44 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Colorear embellecido (2026-10-22, pedido: "implementar todo")
+- Sellos: 29 figuras en 3 grupos con pestañas (utils/formasSello.js: capas
+  SVG 100×100, 'base'/'oscuro'/'claro' o color fijo → mariquita, abeja,
+  arcoíris...). Se estampan como PEGATINA (silueta blanca con sombra +
+  reflejo). Surtido por grupo ('surtido:<grupo>'), con tamaño y giro
+  variados. "Pop" al estampar (anillo, DOM) + sonido.
+- Varita: botón propio (sale del panel de lápices) con 8 polvos (Mágico,
+  Polvo de hada, Oro, Plata, Confeti, Corazoncitos, Estrellitas, Nieve);
+  más denso si el dedo va lento; estela de partículas al moverse; algunos
+  destellos quedan TITILANDO sobre la hoja (salen de la historia, máx 120).
+- Lápices con patrón: Rayas, Puntitos, Cuadros, Estrellitas (tesela anclada
+  a la hoja).
+- Espejo (botón flotante arriba a la derecha + línea central): trazo gemelo
+  reflejado con su propia semilla; neón redibuja ambos.
+- Sonidos Web Audio (utils/sonidosColorear.js) por herramienta + pop +
+  fanfarria + clic; botón de silencio (localStorage
+  musica-kids-colorear-sonido).
+- "¡Terminé!" (abajo a la izquierda): destellos + fanfarria al instante,
+  guarda en paralelo; diálogo: Ver cómo lo pinté / Imprimir o guardar /
+  Seguir pintando.
+- Ver cómo lo pinté: historia de trazos guardada con el dibujo (IndexedDB,
+  campo historia; tope 200 000 puntos). Todo el azar sale de la semilla de
+  cada trazo (mulberry32) y los puntos se redondean a 0,1 → repetición fiel
+  (~8 s, 1 punto/cuadro mínimo). Dibujos viejos sin historia: no se repiten.
+- Imprimir o guardar: diálogo con 6 marcos (sin marco, arcoíris, estrellas,
+  corazones, flores, lunares; utils/marcosColorear.js) con vista previa;
+  "Guardar imagen" descarga PNG. Mis dibujos también tiene Guardar imagen.
+- Hoja en blanco: tarjeta en el menú de Colorear (lámina blanca 1350×1800,
+  id 'hoja-en-blanco').
+- Íconos con vida: lo elegido se menea, el color salpica (sin animación con
+  prefers-reduced-motion).
+- Pruebas: herramientas/pruebas/colorear-extras.mjs (117 chequeos en total,
+  prod + dev). Ojo: leer un canvas mientras se dibuja lo pasa de GPU a
+  software y cambia el suavizado; la prueba de la repetición lee al final.
+- Posible siguiente paso (no pedido): hoy las pegatinas quedan bajo la
+  lámina (las líneas negras las cruzan); una capa de pegatinas sobre la
+  lámina las dejaría "encima" como stickers reales.
+
 ## Caducidad por último uso (2026-10-22, pedido)
 - localStorage vence a los 7 días SIN USO (leer o escribir cuenta), ya no
   a los 7 días de guardado. caducidad.js intercepta getItem/setItem/

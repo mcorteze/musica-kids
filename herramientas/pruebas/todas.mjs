@@ -8,6 +8,7 @@
 // variable CHROME_PATH. Sale con codigo 1 si algun chequeo falla.
 import { construir, crearInforme, lanzar } from './comun.mjs';
 import { probarColorear } from './colorear.mjs';
+import { probarColorearExtras } from './colorear-extras.mjs';
 import { probarJuegos } from './juegos.mjs';
 import { probarPaletas } from './paletas.mjs';
 import { probarCaducidad } from './caducidad.mjs';
@@ -23,6 +24,8 @@ try {
     const carpeta = construir(modo);
     console.log('-- Colorear');
     await probarColorear(browser, carpeta, chequear);
+    console.log('-- Colorear: sellos, varita, espejo, terminé, marcos');
+    await probarColorearExtras(browser, carpeta, chequear);
     console.log('-- Festejo al ganar');
     await probarJuegos(browser, carpeta, chequear);
     console.log('-- Caducidad del guardado');

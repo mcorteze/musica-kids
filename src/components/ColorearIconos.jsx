@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import { FORMAS_SELLO } from '../utils/pincelesColorear';
+import { FORMA_POR_ID } from '../utils/formasSello';
+import { VARIANTES_BRILLO, aHex, mezclar } from '../utils/pincelesColorear';
 
 // Herramientas ilustradas de "Colorear": se dibujan horizontales con la
 // punta a la izquierda y se giran 45° (punta abajo a la izquierda, como un
@@ -22,6 +23,10 @@ export const PUNTAS = {
   tiza: puntaGirada(3.5),
   spray: puntaGirada(2),
   neon: puntaGirada(3),
+  rayas: puntaGirada(3),
+  puntitos: puntaGirada(3),
+  cuadros: puntaGirada(3),
+  estrellitas: puntaGirada(3),
   brillos: puntaGirada(9),
   sellos: puntaGirada(4),
   goma: puntaGirada(4),
@@ -37,7 +42,9 @@ function estrella(cx, cy, r) {
   return puntos.join(' ');
 }
 
-function Dibujo({ herramienta, c }) {
+const PATRONES = new Set(['rayas', 'puntitos', 'cuadros', 'estrellitas']);
+
+function Dibujo({ herramienta, c, patron }) {
   switch (herramienta) {
     case 'crayon':
       return (
@@ -130,6 +137,19 @@ function Dibujo({ herramienta, c }) {
           <rect x="14.5" y="16.5" width="30" height="15" rx="4" fill="none" {...LINEA} />
         </>
       );
+    case 'rayas':
+    case 'puntitos':
+    case 'cuadros':
+    case 'estrellitas':
+      // Plumon gordo con la tela del patron en el cuerpo.
+      return (
+        <>
+          <path d="M3 24 L9.5 21 L9.5 27 Z" fill={c} {...LINEA} />
+          <rect x="9.5" y="19.5" width="5" height="9" rx="1" fill="#E7ECF2" {...LINEA} />
+          <rect x="14.5" y="15" width="30" height="18" rx="4.5" fill={patron} />
+          <rect x="14.5" y="15" width="30" height="18" rx="4.5" fill="none" {...LINEA} />
+        </>
+      );
     case 'pincel':
       return (
         <>
@@ -160,14 +180,24 @@ function Dibujo({ herramienta, c }) {
   }
 }
 
+// Motivo del patron en el icono (en coordenadas de una tesela de 6x6).
+function MotivoPatron({ tipo, c }) {
+  if (tipo === 'rayas') return <path d="M-1 7 L7 -1 M-1 1 L1 -1 M5 7 L7 5" stroke={c} strokeWidth="1.8" />;
+  if (tipo === 'puntitos') return <><circle cx="1.5" cy="1.5" r="1" fill={c} /><circle cx="4.5" cy="4.5" r="1" fill={c} /></>;
+  if (tipo === 'cuadros') return <><rect x="0" y="0" width="3" height="6" fill={c} opacity="0.55" /><rect x="0" y="0" width="6" height="3" fill={c} opacity="0.55" /></>;
+  return <path d="M3 0.6 L3.7 2.3 L5.5 2.4 L4.1 3.5 L4.6 5.3 L3 4.3 L1.4 5.3 L1.9 3.5 L0.5 2.4 L2.3 2.3 Z" fill={c} />;
+}
+
 // color: 'rgb(...)' o 'arcoiris'.
 export default function IconoHerramienta({ herramienta, color, size = 48 }) {
   const idArcoiris = useId();
+  const idPatron = useId();
   const c = color === 'arcoiris' ? `url(#${idArcoiris})` : color;
+  const conPatron = PATRONES.has(herramienta);
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      {color === 'arcoiris' && (
-        <defs>
+      <defs>
+        {color === 'arcoiris' && (
           <linearGradient id={idArcoiris} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#E53935" />
             <stop offset="0.25" stopColor="#FDD835" />
@@ -175,43 +205,59 @@ export default function IconoHerramienta({ herramienta, color, size = 48 }) {
             <stop offset="0.75" stopColor="#1E88E5" />
             <stop offset="1" stopColor="#8E24AA" />
           </linearGradient>
-        </defs>
-      )}
+        )}
+        {conPatron && (
+          <pattern id={idPatron} width="6" height="6" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="#FFFFFF" />
+            <rect width="6" height="6" fill={c} opacity="0.3" />
+            <MotivoPatron tipo={herramienta} c={c} />
+          </pattern>
+        )}
+      </defs>
       <g transform="rotate(-45 24 24)">
-        <Dibujo herramienta={herramienta} c={c} />
+        <Dibujo herramienta={herramienta} c={c} patron={`url(#${idPatron})`} />
       </g>
     </svg>
   );
 }
 
-// Forma de sello (mismo trazado que se estampa, ver FORMAS_SELLO) o
-// 'surtido': tres formas chicas mezcladas. color: 'rgb(...)' o 'arcoiris'.
-const SURTIDO = [
-  { id: 'corazon', x: 2, y: 4, s: 0.5 },
-  { id: 'estrella', x: 48, y: 10, s: 0.48 },
-  { id: 'flor', x: 22, y: 50, s: 0.48 },
-];
-const FORMA = Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f]));
+// ---------- Sellos ----------
+// Figura (mismas capas que se estampan, ver formasSello.js) con aspecto de
+// pegatina: silueta blanca con sombra debajo y las capas de color encima.
+// 'surtido:<grupo>' muestra tres figuras chicas del grupo. rgb: [r, g, b] o
+// null (arcoiris: las capas del color elegido van con un degradado).
+const TRIO_SURTIDO = {
+  naturaleza: ['sol', 'flor', 'hoja'],
+  animales: ['mariposa', 'huella', 'pez'],
+  cosas: ['corazon', 'corona', 'helado'],
+};
+const LUGARES_TRIO = [{ x: 0, y: 2, s: 0.52 }, { x: 48, y: 6, s: 0.5 }, { x: 22, y: 48, s: 0.52 }];
 
-// Contorno abajo y relleno encima: las formas hechas de varios circulos
-// (nube, huellita, flor) muestran solo el borde de afuera, sin lineas
-// internas. El contorno tambien deja ver el sello blanco sobre el panel.
-function Forma({ forma, c }) {
+function Figura({ forma, colores }) {
   return (
     <>
-      <path d={forma.d} fill="none" stroke={TRAZO} strokeWidth="6" strokeOpacity="0.3" strokeLinejoin="round" />
-      <path d={forma.d} fill={c} />
-      {forma.centro && <path d={forma.centro} fill="#fff" opacity="0.6" />}
+      <g filter="drop-shadow(0 2px 2px rgba(40, 30, 60, 0.3))">
+        {forma.capas.map((capa, i) => (
+          <path key={`s${i}`} d={capa.d} fill="#fff" stroke="#fff" strokeWidth="10" strokeLinejoin="round" />
+        ))}
+      </g>
+      {forma.capas.map((capa, i) => (
+        <path key={i} d={capa.d} fill={colores[capa.c] ?? capa.c} />
+      ))}
     </>
   );
 }
 
-export function IconoSello({ forma, color, size = 40 }) {
+export function IconoSello({ forma, rgb, size = 40 }) {
   const idArcoiris = useId();
-  const c = color === 'arcoiris' ? `url(#${idArcoiris})` : color;
+  const arcoiris = `url(#${idArcoiris})`;
+  const colores = rgb
+    ? { base: aHex(rgb), oscuro: aHex(mezclar(rgb, [0, 0, 0], 0.35)), claro: aHex(mezclar(rgb, [255, 255, 255], 0.55)) }
+    : { base: arcoiris, oscuro: arcoiris, claro: arcoiris };
+  const trio = forma.startsWith('surtido') ? TRIO_SURTIDO[forma.split(':')[1]] ?? TRIO_SURTIDO.cosas : null;
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-      {color === 'arcoiris' && (
+    <svg width={size} height={size} viewBox="-6 -6 112 112" aria-hidden="true" focusable="false">
+      {!rgb && (
         <defs>
           <linearGradient id={idArcoiris} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#E53935" />
@@ -221,13 +267,41 @@ export function IconoSello({ forma, color, size = 40 }) {
           </linearGradient>
         </defs>
       )}
-      {forma === 'surtido'
-        ? SURTIDO.map((f) => (
-          <g key={f.id} transform={`translate(${f.x} ${f.y}) scale(${f.s})`}>
-            <Forma forma={FORMA[f.id]} c={c} />
+      {trio
+        ? trio.map((id, i) => (
+          <g key={id} transform={`translate(${LUGARES_TRIO[i].x} ${LUGARES_TRIO[i].y}) scale(${LUGARES_TRIO[i].s})`}>
+            <Figura forma={FORMA_POR_ID[id]} colores={colores} />
           </g>
         ))
-        : <Forma forma={FORMA[forma]} c={c} />}
+        : <Figura forma={FORMA_POR_ID[forma]} colores={colores} />}
+    </svg>
+  );
+}
+
+// ---------- Muestra de cada polvo de la varita ----------
+// Unas particulas fijas con la forma y los colores de la variante (el color
+// elegido para las que no traen paleta propia). Fondo oscuro suave para que
+// se vean la nieve y la plata.
+const PARTICULAS = [[14, 16, 4], [32, 10, 3], [40, 26, 4.5], [22, 32, 3.5], [8, 36, 2.5], [30, 40, 3], [44, 42, 2.5]];
+const DESTELLO = (x, y, s) => `M${x} ${y - s} Q${x} ${y} ${x + s} ${y} Q${x} ${y} ${x} ${y + s} Q${x} ${y} ${x - s} ${y} Q${x} ${y} ${x} ${y - s} Z`;
+const ESTRELLITA = (x, y, s) => `M${x} ${y - s * 1.4} L${x + s * 0.4} ${y - s * 0.4} L${x + s * 1.4} ${y - s * 0.3} L${x + s * 0.6} ${y + s * 0.3} L${x + s * 0.9} ${y + s * 1.3} L${x} ${y + s * 0.7} L${x - s * 0.9} ${y + s * 1.3} L${x - s * 0.6} ${y + s * 0.3} L${x - s * 1.4} ${y - s * 0.3} L${x - s * 0.4} ${y - s * 0.4} Z`;
+const CORAZONCITO = (x, y, s) => `M${x} ${y + s} C${x - s * 2} ${y - s * 0.4} ${x - s} ${y - s * 1.6} ${x} ${y - s * 0.6} C${x + s} ${y - s * 1.6} ${x + s * 2} ${y - s * 0.4} ${x} ${y + s} Z`;
+
+export function MuestraPolvo({ variante, rgb, size = 44 }) {
+  const v = VARIANTES_BRILLO.find((x) => x.id === variante) ?? VARIANTES_BRILLO[0];
+  const base = rgb ?? [229, 57, 53];
+  const paleta = v.paleta ?? [base, mezclar(base, [255, 255, 255], 0.4), [255, 255, 255], mezclar(base, [0, 0, 0], 0.2)];
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" focusable="false" className="colorear-muestra-polvo">
+      <rect width="48" height="48" rx="12" fill="#3B2F5C" opacity="0.88" />
+      {PARTICULAS.map(([x, y, s], i) => {
+        const color = aHex(paleta[i % paleta.length]);
+        if (v.forma === 'confeti') return <rect key={i} x={x - s} y={y - s / 2} width={s * 2} height={s} fill={color} transform={`rotate(${i * 37} ${x} ${y})`} />;
+        if (v.forma === 'corazon') return <path key={i} d={CORAZONCITO(x, y, s)} fill={color} />;
+        if (v.forma === 'estrella') return <path key={i} d={ESTRELLITA(x, y, s)} fill={color} />;
+        if (v.forma === 'copo') return <path key={i} d={`M${x - s} ${y} H${x + s} M${x - s / 2} ${y - s * 0.87} L${x + s / 2} ${y + s * 0.87} M${x + s / 2} ${y - s * 0.87} L${x - s / 2} ${y + s * 0.87}`} stroke={color} strokeWidth="1.3" strokeLinecap="round" />;
+        return i % 2 === 0 ? <path key={i} d={DESTELLO(x, y, s * 1.5)} fill={color} /> : <circle key={i} cx={x} cy={y} r={s * 0.7} fill={color} />;
+      })}
     </svg>
   );
 }
