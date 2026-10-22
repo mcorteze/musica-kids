@@ -7,6 +7,13 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Caducidad por último uso (2026-10-22, pedido)
+- localStorage vence a los 7 días SIN USO (leer o escribir cuenta), ya no
+  a los 7 días de guardado. caducidad.js intercepta getItem/setItem/
+  removeItem (solo claves musica-kids-) y guarda los usos en lotes
+  (3 s, y al pasar a segundo plano o cerrar). Excepciones sin cambio.
+  Colorear sigue en 48 h desde que se empieza. Prueba: caducidad.mjs.
+
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una
   línea de 'pintar' → el juego se veía con fondo de menú. Corregido.
@@ -17,8 +24,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   producción y de desarrollo (Colorear, festejo Memorice y Pintar por
   números, paletas). Todo ok.
 - No hecho (requiere decisión o material): marcas de agua de las láminas,
-  dividir MenuActividades.jsx, caducidad por último uso (contradice la
-  regla pedida: 1 semana desde que se guarda), pares ΔE 9–12, imagen de la
+  dividir MenuActividades.jsx, pares ΔE 9–12, imagen de la
   tarjeta en inglés, publicar Colorear/Simón.
 
 ## Pintar por números: colores repetidos (2026-10-22)
