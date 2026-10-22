@@ -38,6 +38,10 @@ musica-kids/
 - `npm run build` — Build de produccion
 - `npm run deploy` — Deploy manual a GitHub Pages (respaldo)
 - `npm run build && npm run deploy` — Build + Deploy manual
+- `npm run pruebas` — Pruebas de interfaz con Chrome (herramientas/pruebas/): arma un
+  build de producción y uno de desarrollo (StrictMode) en una carpeta temporal y prueba
+  Colorear, el festejo al ganar y las paletas de Pintar por números. Correrlas antes de
+  dar por terminado un cambio en esas pantallas.
 
 ## Deploy
 

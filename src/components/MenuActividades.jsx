@@ -3239,11 +3239,11 @@ export default function MenuActividades({ onOpenChange }) {
   } else if (vista === 'pintar') {
     mostrarVolver = true;
     tituloHeader = devPin ? 'Modo desarrollador' : temaPinId ? temaPin.nombre : 'Pintar por números (descontinuado)';
+    colorHeader = devPin ? undefined : temaPin?.header;
   } else if (vista === 'pixel') {
     mostrarVolver = true;
     tituloHeader = devPix ? 'Modo desarrollador' : temaPixId ? temaPix.nombre : 'Pintar por números';
     colorHeader = devPix ? undefined : temaPix?.header;
-    colorHeader = devPin ? undefined : temaPin?.header;
   } else if (vista === 'simon') {
     mostrarVolver = true;
     tituloHeader = grupoSimon ? grupoSimon.name : 'Simón dice';

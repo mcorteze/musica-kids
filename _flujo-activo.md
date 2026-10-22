@@ -7,6 +7,20 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Oportunidades de mejora implementadas (2026-10-22)
+- Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una
+  línea de 'pintar' → el juego se veía con fondo de menú. Corregido.
+- Colorear: deshacer por zonas (respaldoRef + rectángulo del trazo, ~KB por
+  paso en vez de la hoja entera); 25 pasos; resolución 1800 (antes 1200) y
+  zoom máx. 4x; hasta 5 "Mi color" recientes.
+- herramientas/pruebas/ + `npm run pruebas`: 69 chequeos en build de
+  producción y de desarrollo (Colorear, festejo Memorice y Pintar por
+  números, paletas). Todo ok.
+- No hecho (requiere decisión o material): marcas de agua de las láminas,
+  dividir MenuActividades.jsx, caducidad por último uso (contradice la
+  regla pedida: 1 semana desde que se guarda), pares ΔE 9–12, imagen de la
+  tarjeta en inglés, publicar Colorear/Simón.
+
 ## Pintar por números: colores repetidos (2026-10-22)
 - Causa: los grupos se separaban por representantes (ΔE ≥ 12) pero el color
   final de cada grupo (el más común de sus celdas) no se volvía a comparar:

@@ -45,9 +45,11 @@ const TAMANOS_RAPIDOS = [8, 16, 26, 40, 56];
 
 // Resolucion interna del lienzo: lado largo fijo, sin importar el tamaño de
 // la lamina (las hay de 236 px y de 2048 px). Alcanza para imprimir y no
-// pesa demasiado en tablets (cada paso de deshacer guarda el lienzo entero).
-const LADO_LARGO = 1200;
-const MAX_DESHACER = 12;
+// pesa demasiado en tablets.
+// 1800 (antes 1200): con zoom, 1200 se veia borroso. Deshacer guarda solo la
+// zona que toco cada trazo, asi la resolucion mayor no se come la memoria.
+const LADO_LARGO = 1800;
+const MAX_DESHACER = 25;
 const MINIATURA = 320;
 const ESPERA_GUARDADO_MS = 800;
 // Igual al gap de .colorear-centro en ColorearJuego.css.
@@ -55,9 +57,12 @@ const SEPARACION = 14;
 // Tamaño del dibujo de la herramienta que hace de cursor (laptop).
 const CURSOR = 44;
 // Zoom de la hoja (mano y rueda del mouse): de la hoja entera a 5x.
-const ZOOM_MAX = 5;
+// 4x: mas alla, aun a 1800 px el trazo se ve borroso en una tablet.
+const ZOOM_MAX = 4;
 // Doble toque con la mano: acerca a esto (o vuelve a la hoja entera).
 const ZOOM_TOQUE = 2.5;
+// Colores elegidos en la paleta completa que quedan a mano en la paleta.
+const MIS_COLORES = 5;
 const VISTA_INICIAL = { x: 0, y: 0, s: 1 };
 
 const ESCALA_HERRAMIENTA = Object.fromEntries(HERRAMIENTAS.map((h) => [h.id, h.escala]));
@@ -257,6 +262,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   onGuardadoRef.current = onGuardado;
   const trazoRef = useRef(null);
   const deshacerRef = useRef([]);
+  // La hoja como estaba antes del trazo en curso (ver registrarCambio).
+  const respaldoRef = useRef(null);
   // Lo deshecho, para rehacerlo. Se vacia con cualquier cambio nuevo.
   const rehacerRef = useRef([]);
   const temporizadorRef = useRef(null);
@@ -268,9 +275,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // sello o la goma) y forma del sello ('surtido' = va alternando todas).
   const [ultimoLapiz, setUltimoLapiz] = useState('crayon');
   const [formaSello, setFormaSello] = useState('surtido');
-  // colorId: uno de COLORES o 'propio' (elegido en "Mas colores").
+  // colorId: uno de COLORES o 'propio:<r,g,b>' (elegido en la paleta
+  // completa). coloresPropios: los ultimos MIS_COLORES elegidos ahi, el mas
+  // reciente primero; quedan en la paleta para volver a usarlos.
   const [colorId, setColorId] = useState('rojo');
-  const [colorPropio, setColorPropio] = useState(null);
+  const [coloresPropios, setColoresPropios] = useState([]);
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
@@ -296,7 +305,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   }, [menu, confirmarBorrar, onCapaAbierta]);
 
   const esGoma = herramienta === 'goma';
-  const rgb = colorId === 'propio' ? colorPropio : COLORES.find((c) => c.id === colorId).rgb;
+  const rgb = colorId.startsWith('propio:')
+    ? colorId.slice(7).split(',').map(Number)
+    : COLORES.find((c) => c.id === colorId).rgb;
   // Color con que se dibujan los iconos, la muestra y el cursor.
   const colorIcono = rgb ? css(rgb) : 'arcoiris';
 
@@ -315,11 +326,16 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       canvasTrazoRef.current.width = ancho;
       canvasTrazoRef.current.height = alto;
       capaRef.current = canvas;
+      const respaldo = document.createElement('canvas');
+      respaldo.width = ancho;
+      respaldo.height = alto;
+      respaldoRef.current = respaldo;
       if (guardado?.capa) {
         const capa = await createImageBitmap(guardado.capa);
         if (!vivo) return;
         canvas.getContext('2d').drawImage(capa, 0, 0, ancho, alto);
       }
+      sincronizarRespaldo();
       setDimensiones({ ancho, alto });
     });
     return () => {
@@ -412,20 +428,46 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     };
   }, [confirmarBorrar]);
 
-  const fotoLienzo = () => {
+  // ----- Deshacer / rehacer por zonas -----
+  // Antes se guardaba la hoja entera en cada paso (~10 MB a 1800 px, y se
+  // copiaba al apoyar el dedo, lo que demoraba el inicio del trazo). Ahora
+  // respaldoRef es una copia de la hoja como estaba ANTES del trazo en curso;
+  // al soltar se guarda solo el rectangulo que toco el trazo, sacado del
+  // respaldo, y el respaldo se pone al dia en esa zona. Paso = { x, y, datos }.
+  const sincronizarRespaldo = (zona) => {
+    const respaldo = respaldoRef.current;
     const canvas = canvasRef.current;
-    return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+    if (!respaldo || !canvas) return;
+    const ctx = respaldo.getContext('2d');
+    const { x, y, w, h } = zona ?? { x: 0, y: 0, w: canvas.width, h: canvas.height };
+    ctx.clearRect(x, y, w, h);
+    ctx.drawImage(canvas, x, y, w, h, x, y, w, h);
   };
 
-  // Antes de cada cambio nuevo (trazo o borrar todo): guarda el estado para
-  // deshacer y descarta lo que habia para rehacer.
-  const recordarParaDeshacer = () => {
+  // Zona del trazo (minimo/maximo de sus puntos) + margen por el grosor, el
+  // halo del neon/pincel y las chispas o sellos, ajustada a la hoja.
+  const zonaDeTrazo = (caja, ancho) => {
+    const canvas = canvasRef.current;
+    const m = Math.ceil(ancho * 1.7 + 6);
+    const x = Math.max(0, Math.floor(caja.x0 - m));
+    const y = Math.max(0, Math.floor(caja.y0 - m));
+    const x1 = Math.min(canvas.width, Math.ceil(caja.x1 + m));
+    const y1 = Math.min(canvas.height, Math.ceil(caja.y1 + m));
+    return { x, y, w: Math.max(1, x1 - x), h: Math.max(1, y1 - y) };
+  };
+
+  // Registra un cambio ya hecho en la hoja: la zona como estaba antes (del
+  // respaldo) va a deshacer, se vacia rehacer y el respaldo se pone al dia.
+  const registrarCambio = (zona) => {
+    const respaldo = respaldoRef.current;
+    if (!respaldo) return;
     const pila = deshacerRef.current;
-    pila.push(fotoLienzo());
+    pila.push({ x: zona.x, y: zona.y, datos: respaldo.getContext('2d').getImageData(zona.x, zona.y, zona.w, zona.h) });
     if (pila.length > MAX_DESHACER) pila.shift();
     rehacerRef.current = [];
     setPuedeDeshacer(true);
     setPuedeRehacer(false);
+    sincronizarRespaldo(zona);
   };
 
   const punto = (e) => {
@@ -560,9 +602,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const capa = canvasTrazoRef.current;
       capa.getContext('2d').clearRect(0, 0, capa.width, capa.height);
     }
-    const antes = deshacerRef.current.pop();
-    if (antes) canvasRef.current.getContext('2d').putImageData(antes, 0, 0);
-    setPuedeDeshacer(deshacerRef.current.length > 0);
+    // La hoja vuelve a como estaba antes del trazo (el respaldo).
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(respaldoRef.current, 0, 0);
   };
 
   // Doble toque con la mano: acerca a ZOOM_TOQUE ahi, o vuelve a la hoja entera.
@@ -669,7 +713,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (trazoRef.current !== null || !dimensiones) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    recordarParaDeshacer();
     const canvas = canvasRef.current;
     const escala = canvas.width / canvas.getBoundingClientRect().width;
     const trazo = empezarTrazo(herramienta, rgb, tamano * escala, formaSello);
@@ -683,7 +726,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     }
     const p = punto(e);
     pintarTramo(destino.getContext('2d'), trazo, p, p);
-    trazoRef.current = { pointerId: e.pointerId, ultimo: p, trazo, destino, capa };
+    trazoRef.current = { pointerId: e.pointerId, ultimo: p, trazo, destino, capa, caja: { x0: p.x, y0: p.y, x1: p.x, y1: p.y } };
   };
 
   const alMover = (e) => {
@@ -696,6 +739,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const p = punto(ev);
       pintarTramo(ctx, actual.trazo, actual.ultimo, p);
       actual.ultimo = p;
+      const { caja } = actual;
+      caja.x0 = Math.min(caja.x0, p.x);
+      caja.y0 = Math.min(caja.y0, p.y);
+      caja.x1 = Math.max(caja.x1, p.x);
+      caja.y1 = Math.max(caja.y1, p.y);
     }
   };
 
@@ -704,17 +752,21 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!actual || actual.pointerId !== e.pointerId) return;
     trazoRef.current = null;
     if (actual.capa) fundirCapa(canvasRef.current.getContext('2d'), canvasTrazoRef.current, actual.trazo.herramienta);
+    registrarCambio(zonaDeTrazo(actual.caja, actual.trazo.ancho));
     programarGuardado();
   };
 
   // Mueve un paso entre las dos pilas: lo que sale de "desde" se pinta y el
   // estado actual pasa a "hacia".
   const moverPaso = (desde, hacia) => {
-    const estado = desde.current.pop();
-    if (!estado) return;
-    hacia.current.push(fotoLienzo());
+    const paso = desde.current.pop();
+    if (!paso) return;
+    const { x, y, datos } = paso;
+    const ctx = canvasRef.current.getContext('2d');
+    hacia.current.push({ x, y, datos: ctx.getImageData(x, y, datos.width, datos.height) });
     if (hacia.current.length > MAX_DESHACER) hacia.current.shift();
-    canvasRef.current.getContext('2d').putImageData(estado, 0, 0);
+    ctx.putImageData(datos, x, y);
+    respaldoRef.current.getContext('2d').putImageData(datos, x, y);
     setPuedeDeshacer(deshacerRef.current.length > 0);
     setPuedeRehacer(rehacerRef.current.length > 0);
     programarGuardado();
@@ -724,9 +776,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   const borrarTodo = async () => {
     setConfirmarBorrar(false);
-    recordarParaDeshacer();
     const canvas = canvasRef.current;
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height });
     clearTimeout(temporizadorRef.current);
     pendienteRef.current = false;
     await borrarDibujo(id);
@@ -782,8 +834,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setMenu(null);
   };
   const elegirColorPropio = (valor) => {
-    setColorPropio(valor);
-    elegirColor('propio');
+    const clave = valor.join(',');
+    setColoresPropios((lista) => [valor, ...lista.filter((c) => c.join(',') !== clave)].slice(0, MIS_COLORES));
+    elegirColor(`propio:${clave}`);
   };
 
   const punta = PUNTAS[herramienta];
@@ -1015,14 +1068,18 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                     etiqueta={c.nombre}
                   />
                 ))}
-                {colorPropio && (
-                  <Gota
-                    rgb={colorPropio}
-                    activo={!esGoma && colorId === 'propio'}
-                    onClick={() => elegirColor('propio')}
-                    etiqueta="Mi color"
-                  />
-                )}
+                {coloresPropios.map((valor) => {
+                  const cid = `propio:${valor.join(',')}`;
+                  return (
+                    <Gota
+                      key={cid}
+                      rgb={valor}
+                      activo={!esGoma && colorId === cid}
+                      onClick={() => elegirColor(cid)}
+                      etiqueta="Mi color"
+                    />
+                  );
+                })}
                 {/* Selector de color: la rueda abre la paleta completa (sin
                     boton "+": se enredaba con la rueda, pedido explicito). */}
                 <button
@@ -1047,7 +1104,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               <div className="colorear-espectro">
                 {ESPECTRO.map((valor) => {
                   const clave = valor.join(',');
-                  const activo = colorId === 'propio' && colorPropio?.join(',') === clave;
+                  const activo = colorId === `propio:${clave}`;
                   return (
                     <button
                       type="button"
