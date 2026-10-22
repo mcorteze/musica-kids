@@ -131,7 +131,7 @@ PintarJuego (`calcular`, `nitida`) → victoria "Te faltan N" + "Otra lámina"
 ideal: 20–45 cuadros por lado.
 Durante el juego (2026-10-21): celdas de 52–80 px (zoom 2,5x con piso fijo),
 números SIN 0 delante, stepper de números en el encabezado, ayuda que lleva
-la vista a la celda pendiente más cercana tras 15 s sin pintar, y el avance
+la vista a la celda pendiente más cercana tras 20 s sin pintar, y el avance
 de la lámina en curso se guarda por tema (se retoma al volver a entrar).
 
 ## Modo desarrollador (PintarDev.jsx)

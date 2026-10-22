@@ -21,7 +21,7 @@ const CELDA_MAX_ZOOM = 80;
 const FUENTE_CELDA = 0.48;
 // Sin pintar ninguna celda durante este tiempo, la lámina se desplaza sola
 // hasta la celda pendiente del número en curso más cercana a la vista.
-const AYUDA_MS = 15000;
+const AYUDA_MS = 20000;
 
 // Espera antes de avisar que la lámina está terminada (deja ver cómo se
 // quita la cuadrícula). El modal de victoria además trae su propio retardo
