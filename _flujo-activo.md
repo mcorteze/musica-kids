@@ -7,6 +7,11 @@ jugables (Moana, Toy Story, Frozen, Paw Patrol), 13 láminas, 5 niveles
 (14/20/28/36/44). De tablet para arriba. Láminas nuevas: skill
 skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 
+## Pintar: zoom, ayuda, progreso, stepper (2026-10-21)
+- Celdas 52–80 px (antes 64–96), números sin 0, stepper en el header (celular:
+  solo los cercanos), ayuda a los 15 s sin pintar, avance guardado por tema.
+  Verificado (laptop y celular). Commit + push 2026-10-21.
+
 ## Favicon nuevo (2026-10-21)
 - public/favicon.svg: corcheas blancas + estrella sobre degradado rosado de
   la app (reemplaza el rayo por defecto de Vite). Commit + push 2026-10-21.

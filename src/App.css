@@ -1786,6 +1786,63 @@ body {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.85), 0 1px 2px rgba(255, 255, 255, 0.9);
 }
 
+/* Stepper de Pintar por numeros (StepperPintar en MenuActividades.jsx): un
+   circulo por numero de la lamina unidos por una linea. Hechos = violeta,
+   el que toca = mas grande con anillo, los que vienen = gris claro. */
+.pintar-stepper {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.pintar-stepper-paso {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  color: #8a8aa2;
+  font-size: 15px;
+  font-weight: 800;
+  transition: background-color 0.25s ease, color 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+
+.pintar-stepper-paso.hecho {
+  background: #7C3AED;
+  color: #ffffff;
+}
+
+.pintar-stepper-paso.actual {
+  width: 36px;
+  height: 36px;
+  background: #ffffff;
+  color: #2f2f45;
+  font-size: 19px;
+  box-shadow: 0 0 0 3px #7C3AED, 0 3px 10px rgba(124, 58, 237, 0.35);
+}
+
+.pintar-stepper-linea {
+  flex: none;
+  width: 10px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.pintar-stepper-linea.hecho {
+  background: #7C3AED;
+}
+
+/* Celular: solo los numeros cercanos al actual, para que quepa. */
+@media (max-width: 640px) {
+  .pintar-stepper-paso.lejos,
+  .pintar-stepper-linea.lejos {
+    display: none;
+  }
+}
+
 /* Dentro de una partida, el volver reemplaza el titulo "Memorice" (pedido
    explicito: menos texto fijo, mas control util a mano en el mismo lugar). */
 .memory-titulo-fila {

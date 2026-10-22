@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect, cloneElement, Children } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, useLayoutEffect, cloneElement, Children, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 // Iconos SVG en vez de emojis en los modales de victoria: algunas tablets
 // no tienen esos emojis y mostraban un simbolo desconocido.
@@ -1561,6 +1561,54 @@ function guardarCompletadasPixel(temaId, lista) {
   }
 }
 
+// Lámina a medias por tema ({ lamina, total, pintadas: [índices] }): si se
+// cierra la ventana a mitad de una lámina, al volver a entrar al MISMO tema
+// se retoma esa lámina con lo ya pintado.
+function progresoKeyPixel(temaId) {
+  return `musica-kids-pixel-progreso-${temaId}`;
+}
+
+function leerProgresoPixel(temaId) {
+  try {
+    const p = JSON.parse(localStorage.getItem(progresoKeyPixel(temaId)));
+    return p && typeof p.lamina === 'string' && Number.isInteger(p.total) && Array.isArray(p.pintadas) ? p : null;
+  } catch {
+    return null;
+  }
+}
+
+function guardarProgresoPixel(temaId, progreso) {
+  try {
+    if (progreso) localStorage.setItem(progresoKeyPixel(temaId), JSON.stringify(progreso));
+    else localStorage.removeItem(progresoKeyPixel(temaId));
+  } catch {
+    // Sin localStorage el avance dura lo que dure la sesion.
+  }
+}
+
+// Stepper del encabezado en Pintar por números: un círculo por número de la
+// lámina, unidos por una línea; los ya pintados en violeta, el que toca más
+// grande con anillo, los que vienen en gris. En celular solo se ven los
+// cercanos al actual (.lejos), para que quepa.
+function StepperPintar({ actual, total }) {
+  const enCurso = actual ?? total + 1;
+  return (
+    <div className="pintar-stepper" aria-label={actual ? `Número ${actual} de ${total}` : 'Lámina terminada'}>
+      {Array.from({ length: total }, (_, k) => {
+        const n = k + 1;
+        const estado = n < enCurso ? ' hecho' : n === enCurso ? ' actual' : '';
+        const lejos = Math.abs(n - Math.min(enCurso, total)) > 2 ? ' lejos' : '';
+        return (
+          <Fragment key={n}>
+            {k > 0 && <span className={`pintar-stepper-linea${n <= enCurso ? ' hecho' : ''}${lejos}`} aria-hidden="true" />}
+            <span className={`pintar-stepper-paso${estado}${lejos}`}>{n}</span>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function MenuActividades({ onOpenChange }) {
   // 'menu' = las 2 tarjetas raiz. 'memorice'/'imprimir' = cada seccion.
   const [vista, setVista] = useState('menu');
@@ -1731,6 +1779,10 @@ export default function MenuActividades({ onOpenChange }) {
   const [ganoPix, setGanoPix] = useState(false);
   const [completadasPix, setCompletadasPix] = useState([]);
   const [devPix, setDevPix] = useState(false);
+  // Avance guardado con el que se retoma la lámina al entrar al tema (null =
+  // lámina desde cero) y número en curso / total para el stepper del header.
+  const [progresoPix, setProgresoPix] = useState(null);
+  const [estadoPix, setEstadoPix] = useState(null);
 
   const tema = temaId ? TEMAS.find((t) => t.id === temaId) : null;
   const cargando = Boolean(temaId) && fotosTema === null;
@@ -2838,9 +2890,17 @@ export default function MenuActividades({ onOpenChange }) {
     const t = TEMAS_PIXEL.find((x) => x.id === id);
     if (!t || t.laminas.length === 0) return;
     const completadas = leerCompletadasPixel(id);
+    // Lámina a medias de este tema (si todavía existe y no está terminada):
+    // se retoma; si no, una al azar entre las que faltan.
+    const guardado = leerProgresoPixel(id);
+    const retomar = guardado && t.laminas.some((l) => l.id === guardado.lamina) && !completadas.includes(guardado.lamina)
+      ? guardado
+      : null;
     setTemaPixId(id);
     setCompletadasPix(completadas);
-    setLaminaPixId(elegirAlAzarPendiente(t.laminas, null, completadas));
+    setLaminaPixId(retomar ? retomar.lamina : elegirAlAzarPendiente(t.laminas, null, completadas));
+    setProgresoPix(retomar);
+    setEstadoPix(null);
     setPartidaPix((p) => p + 1);
     setGanoPix(false);
   }, []);
@@ -2849,9 +2909,17 @@ export default function MenuActividades({ onOpenChange }) {
     if (!temaPix) return;
     const completadas = completadasPix.includes(laminaPixId) ? completadasPix : [...completadasPix, laminaPixId];
     setLaminaPixId(elegirAlAzarPendiente(temaPix.laminas, laminaPixId, completadas));
+    setProgresoPix(null);
+    setEstadoPix(null);
     setPartidaPix((p) => p + 1);
     setGanoPix(false);
   }, [temaPix, laminaPixId, completadasPix]);
+
+  // Cada avance de la lámina en curso se guarda (para retomarla).
+  const guardarAvancePix = useCallback((pintadas, total) => {
+    if (!temaPixId || !laminaPixId) return;
+    guardarProgresoPixel(temaPixId, { lamina: laminaPixId, total, pintadas });
+  }, [temaPixId, laminaPixId]);
 
   // Láminas del tema que faltan por terminar (contando la recién ganada).
   const faltanPix = temaPix
@@ -2866,6 +2934,8 @@ export default function MenuActividades({ onOpenChange }) {
     const siguiente = [...completadasPix, laminaPixId];
     setCompletadasPix(siguiente);
     guardarCompletadasPixel(temaPixId, siguiente);
+    // Terminada: ya no hay nada que retomar.
+    guardarProgresoPixel(temaPixId, null);
   }, [ganoPix, temaPixId, laminaPixId, completadasPix]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
@@ -3121,6 +3191,9 @@ export default function MenuActividades({ onOpenChange }) {
                 )}
                 {vista === 'rompecabezas' && temaRompId && !cargandoRomp && (
                   <span className="memory-nivel-badge">Nivel {nivelIdxRomp + 1}</span>
+                )}
+                {vista === 'pixel' && !devPix && laminaPix && estadoPix && (
+                  <StepperPintar actual={estadoPix.actual} total={estadoPix.total} />
                 )}
                 {vista === 'rompecabezas' && catalogoRomp && (
                   <button
@@ -4513,6 +4586,9 @@ export default function MenuActividades({ onOpenChange }) {
                     nivel={null}
                     calcular={laminaDePixelArt}
                     nitida
+                    progreso={progresoPix}
+                    onProgreso={guardarAvancePix}
+                    onEstado={setEstadoPix}
                     onCompletado={marcarGanoPix}
                   />
                 </>

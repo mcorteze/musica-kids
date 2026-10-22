@@ -12,12 +12,16 @@ const CELDA_MAX = 64;
 // NUNCA menos de CELDA_MIN_JUEGO (en láminas de muchos cuadros o pantallas
 // chicas el 3x relativo seguía dejando celdas diminutas) ni más de
 // CELDA_MAX_ZOOM. Se desplaza con dos dedos (o rueda/barras con mouse). Al
-// terminar vuelve a 1x para ver la imagen completa.
-const ZOOM = 3;
-const CELDA_MIN_JUEGO = 64;
-const CELDA_MAX_ZOOM = 96;
-// Número de la celda: proporción del lado (64 px → número de ~30 px).
+// terminar vuelve a 1x para ver la imagen completa. (2026-10-21: un poco más
+// alejado que el primer ajuste 3x / 64-96 px, que costaba recorrer.)
+const ZOOM = 2.5;
+const CELDA_MIN_JUEGO = 52;
+const CELDA_MAX_ZOOM = 80;
+// Número de la celda: proporción del lado (52 px → número de ~25 px).
 const FUENTE_CELDA = 0.48;
+// Sin pintar ninguna celda durante este tiempo, la lámina se desplaza sola
+// hasta la celda pendiente del número en curso más cercana a la vista.
+const AYUDA_MS = 15000;
 
 // Espera antes de avisar que la lámina está terminada (deja ver cómo se
 // quita la cuadrícula). El modal de victoria además trae su propio retardo
@@ -26,7 +30,7 @@ const COMPLETADO_MS = 400;
 
 // Pintar por números: la imagen se convierte en una cuadrícula de celdas
 // grises numeradas (utils/pintarNumeros.js) y se pinta un número a la vez,
-// en orden obligado 01 → 02 → 03...: solo las celdas del número en curso se
+// en orden obligado 1 → 2 → 3...: solo las celdas del número en curso se
 // pueden pintar (se ven en un gris más oscuro) y al terminarlas se pasa solo
 // al siguiente. Se pinta tocando o arrastrando el dedo por encima. Al
 // terminar se quita la cuadrícula para ver la imagen entera y se llama a
@@ -35,8 +39,11 @@ const COMPLETADO_MS = 400;
 // montar (key) para reiniciar el juego.
 // Opcionales (solo "Pintar pixel art"): calcular(img) arma la lámina en vez de
 // pixelar al nivel (utils/pintarPixel.js) y nitida muestra la imagen de fondo
-// sin suavizado (pixel art de pocos pixeles ampliado).
-export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nitida }) {
+// sin suavizado (pixel art de pocos pixeles ampliado). progreso
+// ({ total, pintadas: [índices] }) retoma una lámina a medias; onProgreso
+// (pintadas, total) avisa cada avance para guardarlo; onEstado({ actual,
+// total }) avisa el número en curso (el stepper del encabezado).
+export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nitida, progreso, onProgreso, onEstado }) {
   const [lamina, setLamina] = useState(null);
   const [pintadas, setPintadas] = useState(null);
   // Celda del tamaño que cabe entera (1x); mientras se pinta se amplía.
@@ -57,13 +64,18 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
         if (!vivo) return;
         const l = calcular ? calcular(img) : cuadricularImagen(img, nivel.lado, nivel.colores);
         setLamina({ ...l, src: m.default });
-        setPintadas(l.celdas.map((n) => n === null));
+        // Progreso guardado de ESTA lámina (mismo total de celdas: si la
+        // lámina se recreó, el guardado ya no sirve y se parte de cero).
+        const guardadas = progreso && progreso.total === l.celdas.length ? new Set(progreso.pintadas) : null;
+        setPintadas(l.celdas.map((n, i) => n === null || Boolean(guardadas?.has(i))));
       };
       img.src = m.default;
     });
     return () => {
       vivo = false;
     };
+    // progreso solo se lee al cargar la lámina.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagen, nivel, calcular]);
 
   // Celdas que faltan por número (índice = número).
@@ -91,6 +103,22 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     const t = setTimeout(onCompletado, COMPLETADO_MS);
     return () => clearTimeout(t);
   }, [terminado, onCompletado]);
+
+  // Avisos al padre: avance (para retomarlo si se cierra la ventana) y número
+  // en curso (stepper del encabezado).
+  useEffect(() => {
+    if (!lamina || !pintadas || !onProgreso) return;
+    const hechas = [];
+    pintadas.forEach((p, i) => {
+      if (p && lamina.celdas[i] !== null) hechas.push(i);
+    });
+    onProgreso(hechas, lamina.celdas.length);
+  }, [lamina, pintadas, onProgreso]);
+
+  useEffect(() => {
+    if (!lamina || !onEstado) return;
+    onEstado({ actual: numeroActual, total: lamina.paleta.length });
+  }, [lamina, numeroActual, onEstado]);
 
   // Celda más grande que cabe en el espacio disponible, sin scroll.
   useLayoutEffect(() => {
@@ -146,32 +174,65 @@ export default function PintarJuego({ imagen, nivel, onCompletado, calcular, nit
     });
   }, [lamina, numeroActual, tamCelda]);
 
-  // Con el número nuevo: si ninguna de sus celdas está a la vista (lámina
-  // ampliada), se desplaza sola hasta la primera, centrada.
-  useLayoutEffect(() => {
+  // Lleva la vista hasta la celda pendiente del número en curso más cercana
+  // al centro de lo que se está viendo (centrada). soloSiNoSeVe: no se mueve
+  // si ya hay alguna a la vista.
+  const irAlMasCercano = useCallback((soloSiNoSeVe) => {
     const area = areaRef.current;
     const tablero = tableroRef.current;
-    if (!area || !tablero || !lamina || numeroActual === null || !tamCelda) return;
+    if (!area || !tablero || !lamina || !pintadas || numeroActual === null || !tamCelda) return;
     const paso = tamCelda + GAP_CELDAS;
     const vista = area.getBoundingClientRect();
     const base = tablero.getBoundingClientRect();
-    let primera = null;
+    const cx = vista.left + vista.width / 2;
+    const cy = vista.top + vista.height / 2;
+    let mejor = null;
+    let mejorDist = Infinity;
     for (let i = 0; i < lamina.celdas.length; i++) {
       if (lamina.celdas[i] !== numeroActual || pintadas[i]) continue;
       const x = base.left + BORDE_TABLERO + (i % lamina.columnas) * paso;
       const y = base.top + BORDE_TABLERO + Math.floor(i / lamina.columnas) * paso;
-      if (x + tamCelda > vista.left && x < vista.right && y + tamCelda > vista.top && y < vista.bottom) return;
-      if (!primera) primera = [x, y];
+      const seVe = x + tamCelda > vista.left && x < vista.right && y + tamCelda > vista.top && y < vista.bottom;
+      if (seVe && soloSiNoSeVe) return;
+      const d = Math.hypot(x + tamCelda / 2 - cx, y + tamCelda / 2 - cy);
+      if (d < mejorDist) {
+        mejor = [x, y];
+        mejorDist = d;
+      }
     }
-    if (!primera) return;
+    if (!mejor) return;
     area.scrollTo({
-      left: area.scrollLeft + primera[0] - vista.left - vista.width / 2 + tamCelda / 2,
-      top: area.scrollTop + primera[1] - vista.top - vista.height / 2 + tamCelda / 2,
+      left: area.scrollLeft + mejor[0] - cx + tamCelda / 2,
+      top: area.scrollTop + mejor[1] - cy + tamCelda / 2,
       behavior: 'smooth',
     });
+  }, [lamina, pintadas, numeroActual, tamCelda]);
+
+  // Con el número nuevo (o al cambiar el tamaño): si ninguna de sus celdas
+  // está a la vista, se desplaza sola hasta la más cercana.
+  useLayoutEffect(() => {
+    irAlMasCercano(true);
     // Solo al cambiar de número o de tamaño, no con cada celda pintada.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numeroActual, tamCelda, lamina]);
+
+  // Ayuda: AYUDA_MS sin pintar ninguna celda nueva → se desplaza hasta la
+  // más cercana del número en curso (y repite cada AYUDA_MS mientras siga
+  // sin avanzar). Cada celda pintada reinicia la cuenta.
+  const irAlMasCercanoRef = useRef(irAlMasCercano);
+  irAlMasCercanoRef.current = irAlMasCercano;
+  useEffect(() => {
+    if (!lamina || terminado) return;
+    let t;
+    const programar = () => {
+      t = setTimeout(() => {
+        irAlMasCercanoRef.current(false);
+        programar();
+      }, AYUDA_MS);
+    };
+    programar();
+    return () => clearTimeout(t);
+  }, [lamina, pintadas, terminado]);
 
   // Un dedo pinta; al apoyar el segundo se deja de pintar y los dos
   // desplazan la lámina ampliada (el tablero no deja al navegador hacerlo:

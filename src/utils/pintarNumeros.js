@@ -172,8 +172,9 @@ export function cuadricularImagen(img, lado, maxColores) {
   };
 }
 
-// Texto de un número como en la lámina: siempre 2 dígitos (01, 02...).
+// Texto de un número como en la lámina: 1, 2, 3... (sin 0 delante).
 export function numeroLamina(n) {
-  return String(n).padStart(2, '0');
+  // Sin 0 delante ("1", no "01"): a un preescolar el 0 lo confunde.
+  return String(n);
 }
 
