@@ -313,10 +313,18 @@ function lineaConGrano(ctx, trazo, tipo, a, b, ancho, rgb) {
 // sellos). trazo.resto guarda lo avanzado desde la ultima marca.
 function cadaPaso(trazo, a, b, paso, marcar) {
   const d = Math.hypot(b.x - a.x, b.y - a.y);
+  // Tramo de largo 0: solo el toque inicial deja marca. En una pantalla
+  // tactil el dedo quieto sigue mandando "movimientos" sin moverse (cambios
+  // de presion): antes cada uno estampaba otra figura encima, girada al
+  // azar, y una patita salia difusa (lo mismo acumulaba de mas la varita).
   if (d === 0) {
-    marcar(a);
+    if (!trazo.marcoInicial) {
+      trazo.marcoInicial = true;
+      marcar(a);
+    }
     return;
   }
+  trazo.marcoInicial = true;
   for (let t = paso - trazo.resto; t <= d; t += paso) {
     marcar({ x: a.x + (b.x - a.x) * (t / d), y: a.y + (b.y - a.y) * (t / d) });
   }

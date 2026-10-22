@@ -121,6 +121,17 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   (3 s, y al pasar a segundo plano o cerrar). Excepciones sin cambio.
   Colorear sigue en 48 h desde que se empieza. Prueba: caducidad.mjs.
 
+## Colorear: ajustes (2026-10-22, pedido)
+- Sello: un toque deja UNA figura aunque el dedo quieto mande
+  "movimientos" (antes cada movimiento sin avance estampaba otra: la
+  huellita se veía difusa). Fix en cadaPaso (marcoInicial).
+- Zoom hasta 6x (antes 4x).
+- Dibujos vencen a los 7 días SIN USO (antes 48 h desde que se empieza):
+  campo `usado` en IndexedDB; abrirlo o pintarlo renueva el plazo.
+- Botón "Guardar imagen" (descarga) visible en la barra, junto a
+  "Imprimir o guardar"; sigue también en Mis dibujos y en el diálogo.
+- Prueba: herramientas/pruebas/colorear-ajustes.mjs. Suite 149/149.
+
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una
   línea de 'pintar' → el juego se veía con fondo de menú. Corregido.

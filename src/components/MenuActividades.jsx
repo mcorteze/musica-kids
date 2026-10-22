@@ -1914,7 +1914,7 @@ export default function MenuActividades({ onOpenChange }) {
   const irAColorear = useCallback(() => setVista('colorear'), []);
 
   // ===== Colorear =====
-  // Lo vencido (48 h) se borra apenas abre la app, no solo al entrar a Colorear.
+  // Lo vencido (7 dias sin uso) se borra apenas abre la app, no solo al entrar a Colorear.
   useEffect(() => {
     limpiarDibujosVencidos();
   }, []);

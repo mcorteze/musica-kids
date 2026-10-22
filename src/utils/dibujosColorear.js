@@ -3,19 +3,21 @@
 // Se guarda solo la capa de color (PNG con transparencia), no la lamina: la
 // lamina ya viene con la app. Mas una miniatura chica (JPEG) para las grillas.
 //
-// Vencimiento (pedido explicito): cada dibujo se borra a las 48 horas de
-// haberlo EMPEZADO (no se renueva al seguir pintando), asi nada queda mas de
-// dos dias. Lo vencido no se muestra nunca y se elimina al abrir la app
+// Vencimiento: cada dibujo se borra a los 7 dias SIN USO — sin abrirlo ni
+// pintarlo — (pedido explicito 2026-10-22; antes eran 48 h desde que se
+// empezaba). Igual que el resto de lo guardado en el navegador
+// (utils/caducidad.js): lo que el niño retoma no se pierde, lo abandonado
+// se va. Lo vencido no se muestra nunca y se elimina al abrir la app
 // (limpiarDibujosVencidos) y cada vez que se leen los dibujos.
 //
-// Registro: { id, creado, actualizado, capa: Blob, miniatura: Blob,
+// Registro: { id, creado, actualizado, usado, capa: Blob, miniatura: Blob,
 //   historia: [trazos y borrados, para "Ver cómo lo pinté"] (puede faltar en
-//   dibujos viejos) }. Los brillos que titilan salen de la historia.
+//   dibujos viejos) }. usado = ultima vez que se abrio o pinto.
 // id = ruta de la lamina dentro de src/assets (ej. "paw-patrol-gallery/01-paw-patrol.jpg").
 
 const DB_NOMBRE = 'musica-kids-colorear';
 const STORE = 'dibujos';
-export const VIGENCIA_MS = 48 * 60 * 60 * 1000;
+export const VIGENCIA_MS = 7 * 24 * 60 * 60 * 1000;
 
 let dbPromesa = null;
 
@@ -46,7 +48,9 @@ function operar(modo, fn) {
   }));
 }
 
-const vencido = (registro) => Date.now() - registro.creado > VIGENCIA_MS;
+// Ultimo uso (los guardados antes de 'usado' cuentan desde su ultimo guardado).
+export const ultimoUso = (registro) => registro.usado ?? registro.actualizado ?? registro.creado;
+const vencido = (registro) => Date.now() - ultimoUso(registro) > VIGENCIA_MS;
 
 // Todos los dibujos vigentes, el mas reciente primero. Borra los vencidos.
 export async function leerDibujos() {
@@ -62,6 +66,7 @@ export async function leerDibujos() {
   }
 }
 
+// Abrir un dibujo cuenta como uso: se anota (y renueva sus 7 dias).
 export async function leerDibujo(id) {
   try {
     const registro = await operar('readonly', (store) => store.get(id));
@@ -70,19 +75,20 @@ export async function leerDibujo(id) {
       await borrarDibujo(id);
       return null;
     }
-    return registro;
+    const usado = { ...registro, usado: Date.now() };
+    await operar('readwrite', (store) => store.put(usado));
+    return usado;
   } catch {
     return null;
   }
 }
 
-// Conserva la fecha de creacion original (el plazo de 48 h no se renueva).
 export async function guardarDibujo(id, capa, miniatura, historia = null) {
   try {
     const anterior = await operar('readonly', (store) => store.get(id));
     const ahora = Date.now();
     const creado = anterior && !vencido(anterior) ? anterior.creado : ahora;
-    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, capa, miniatura, historia }));
+    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, usado: ahora, capa, miniatura, historia }));
   } catch {
     // Sin espacio o sin IndexedDB: el dibujo sigue en pantalla, solo no se guarda.
   }

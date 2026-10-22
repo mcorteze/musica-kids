@@ -10,6 +10,7 @@
 import { construir, crearInforme, lanzar } from './comun.mjs';
 import { probarColorear } from './colorear.mjs';
 import { probarColorearExtras } from './colorear-extras.mjs';
+import { probarColorearAjustes } from './colorear-ajustes.mjs';
 import { probarJuegos } from './juegos.mjs';
 import { probarPaletas } from './paletas.mjs';
 import { probarCaducidad } from './caducidad.mjs';
@@ -28,6 +29,8 @@ try {
     await probarColorear(browser, carpeta, chequear);
     console.log('-- Colorear: sellos, varita, espejo, terminé, marcos');
     await probarColorearExtras(browser, carpeta, chequear);
+    console.log('-- Colorear: sello táctil, zoom 6x, descarga, vencimiento');
+    await probarColorearAjustes(browser, carpeta, chequear);
     console.log('-- Festejo al ganar');
     await probarJuegos(browser, carpeta, chequear);
     console.log('-- Caducidad del guardado');

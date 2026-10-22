@@ -7,8 +7,8 @@
 // - las marcas de canciones (me gusta, corazon, estrella, unicornio);
 // - el trabajo del modo desarrollador (el interruptor mismo y los borradores
 //   de las herramientas: cuadriculas, marcas, propuestas).
-// Lo pintado en Colorear vive en IndexedDB y vence aparte, a las 48 h de
-// empezado (utils/dibujosColorear.js).
+// Lo pintado en Colorear vive en IndexedDB y vence aparte con la misma regla
+// (7 dias sin abrirlo ni pintarlo, utils/dibujosColorear.js).
 //
 // Las claves no llevan fecha propia: FECHAS_KEY guarda { clave: ultimo uso }.
 // El uso se anota interceptando getItem/setItem/removeItem de localStorage

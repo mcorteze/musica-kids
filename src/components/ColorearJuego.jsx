@@ -16,7 +16,7 @@ import {
   LuVolume2,
   LuVolumeX,
 } from 'react-icons/lu';
-import { borrarDibujo, guardarDibujo, leerDibujo, VIGENCIA_MS } from '../utils/dibujosColorear';
+import { borrarDibujo, guardarDibujo, leerDibujo, ultimoUso, VIGENCIA_MS } from '../utils/dibujosColorear';
 import {
   COLORES,
   ESPECTRO,
@@ -51,7 +51,7 @@ import './ColorearJuego.css';
 // utils/formasSello.js). Dibujos de herramientas: ColorearIconos.jsx.
 // Sonidos: utils/sonidosColorear.js. Marcos: utils/marcosColorear.js.
 // Lo pintado se guarda solo en el dispositivo (utils/dibujosColorear.js) y
-// se borra a las 48 h de empezado, con su historia de trazos para "Ver cómo
+// se borra a los 7 dias sin usarlo, con su historia de trazos para "Ver cómo
 // lo pinté".
 //
 // Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
@@ -82,8 +82,9 @@ const ESPERA_GUARDADO_MS = 800;
 const SEPARACION = 14;
 // Tamaño del dibujo de la herramienta que hace de cursor (laptop).
 const CURSOR = 44;
-// 4x: mas alla, aun a 1800 px el trazo se ve borroso en una tablet.
-const ZOOM_MAX = 4;
+// 6x (antes 4x, pedido explicito: acercarse mas para los detalles). Desde
+// ~4x el borde del trazo y de laminas chicas se ve algo blando.
+const ZOOM_MAX = 6;
 // Doble toque con la mano: acerca a esto (o vuelve a la hoja entera).
 const ZOOM_TOQUE = 2.5;
 // Colores elegidos en la paleta completa que quedan a mano en la paleta.
@@ -163,12 +164,14 @@ const leerSonido = () => {
   }
 };
 
-// Texto para quien cuida al niño en "Mis dibujos": cuanto le queda.
-function textoVence(creado) {
-  const horas = Math.max(0, Math.ceil((creado + VIGENCIA_MS - Date.now()) / 3600000));
+// Texto para quien cuida al niño en "Mis dibujos": cuanto le queda si no
+// se vuelve a abrir (abrirlo o pintarlo renueva los 7 dias).
+function textoVence(registro) {
+  const horas = Math.max(0, Math.ceil((ultimoUso(registro) + VIGENCIA_MS - Date.now()) / 3600000));
   if (horas <= 1) return 'Se borra en menos de 1 hora';
   if (horas < 24) return `Se borra en ${horas} horas`;
-  return horas < 48 ? 'Se borra mañana' : 'Se borra en 2 días';
+  const dias = Math.ceil(horas / 24);
+  return dias === 1 ? 'Se borra mañana' : `Se borra en ${dias} días`;
 }
 
 // Dibujo guardado (capa + lamina) en una sola imagen, del tamaño del lienzo.
@@ -282,7 +285,7 @@ export function MisDibujos({ dibujos, miniaturas, onElegir, onImprimir, onGuarda
             >
               <img src={miniaturas[d.id]} alt="" />
             </button>
-            <span className="colorear-mio-vence">{textoVence(d.creado)}</span>
+            <span className="colorear-mio-vence">{textoVence(d)}</span>
             <div className="colorear-mio-acciones">
               <button type="button" className="colorear-accion" onClick={() => onImprimir(d)} aria-label="Imprimir" title="Imprimir">
                 <PrinterOutlined />
@@ -1497,6 +1500,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
             <button type="button" className="colorear-accion" onClick={() => setConfirmarBorrar(true)} aria-label="Borrar todo" title="Borrar todo">
               <DeleteOutlined />
+            </button>
+            {/* Guardar imagen directo (pedido explicito: dentro de "Imprimir o
+                guardar" no se encontraba); usa el ultimo marco elegido. */}
+            <button type="button" className="colorear-accion" onClick={guardarImagen} aria-label="Guardar imagen" title="Guardar imagen">
+              <LuDownload />
             </button>
             <button type="button" className="colorear-accion" onClick={() => setDialogo('imprimir')} aria-label="Imprimir o guardar" title="Imprimir o guardar">
               <PrinterOutlined />
