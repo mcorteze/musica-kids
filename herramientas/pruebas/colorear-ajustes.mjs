@@ -138,4 +138,17 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   await espera(500);
   chequear('sin dibujos vigentes no aparece "Mis dibujos"', !(await p.$('button[aria-label="Mis dibujos"]')));
   await p.close();
+
+  // Publicado (2026-10-23): se ve y se abre sin el modo desarrollador.
+  const pub = await paginaNueva(browser, chequear, { width: 390, height: 844 }, 'colorear publicado');
+  await abrirActividades(pub, carpeta, { modoDev: false });
+  const tarjeta = await pub.$('.memory-picker-tile[aria-label="Colorear"]');
+  const visible = tarjeta && await tarjeta.evaluate((el) => el.getBoundingClientRect().width > 0);
+  chequear('Colorear se ve sin el modo desarrollador', visible);
+  if (visible) {
+    await tarjeta.click();
+    await espera(500);
+    chequear('Colorear se abre sin el modo desarrollador', await pub.$('button[aria-label="Colorear Paw Patrol"]'));
+  }
+  await pub.close();
 }

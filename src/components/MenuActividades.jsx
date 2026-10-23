@@ -3603,9 +3603,10 @@ export default function MenuActividades({ onOpenChange }) {
                       </span>
                       <span className="memory-picker-nombre">Encuentra las diferencias</span>
                     </button>
+                    {/* Colorear: publicado el 2026-10-23 (antes solo modo desarrollador). */}
                     <button
                       type="button"
-                      className="memory-picker-tile memory-solo-dev"
+                      className="memory-picker-tile"
                       onClick={irAColorear}
                       aria-label="Colorear"
                     >
