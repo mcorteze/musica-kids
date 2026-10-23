@@ -167,14 +167,14 @@
   mix-blend-mode: multiply;
 }
 
-/* Mano: los gestos van al marco (pellizco y arrastre, sin scroll del
-   navegador) y el cursor del mouse es la mano del sistema. */
+/* Puntero: los gestos van al marco (pellizco y arrastre, sin scroll del
+   navegador); el cursor es la flecha y, al arrastrar la hoja, la mano. */
 .colorear-hoja {
   touch-action: none;
 }
 
 .colorear-hoja--mano .colorear-canvas {
-  cursor: grab;
+  cursor: default;
 }
 
 .colorear-hoja--mano:active .colorear-canvas {
@@ -331,7 +331,8 @@
   z-index: 10;
   bottom: calc(100% + 12px);
   left: 50%;
-  translate: -50% 0;
+  /* --correr-x/y: lo que el JSX lo corre para que no salga de la pantalla. */
+  translate: calc(-50% + var(--correr-x, 0px)) var(--correr-y, 0px);
   max-width: calc(100vw - 32px);
   padding: 14px;
   border-radius: 24px;
@@ -432,6 +433,46 @@
   margin-top: 0;
   padding-top: 0;
   border-top: none;
+}
+
+/* Menu de herramienta: tipos arriba y ajustes (colores, tamaño, Listo)
+   abajo; en horizontal, lado a lado (ver la media query). */
+.colorear-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.colorear-panel-ajustes {
+  display: flex;
+  flex-direction: column;
+}
+
+.colorear-panel-pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.colorear-listo {
+  appearance: none;
+  cursor: pointer;
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 22px;
+  background: #0B4F73;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(11, 79, 115, 0.3);
+}
+
+.colorear-listo svg {
+  font-size: 19px;
 }
 
 /* ----- Texto: SVG encima de las lineas de la lamina ----- */
@@ -1297,13 +1338,35 @@
     font-size: 17px;
   }
 
+  /* Celular vertical: el menu sube como una hoja desde abajo, encima de
+     la barra (gana todo el alto; se cierra con Listo). */
   .colorear-desplegable {
     padding: 10px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    translate: 0 var(--correr-y, 0px);
+    max-width: none;
+    max-height: calc(100dvh - 70px);
+  }
+
+  .colorear-panel .colorear-seccion {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .colorear-panel-tipos .colorear-lapices,
+  .colorear-panel-tipos .colorear-fuentes {
+    justify-content: center;
   }
 
   .colorear-lapices {
     grid-template-columns: repeat(5, 64px);
     gap: 3px;
+  }
+
+  .colorear-panel .colorear-util {
+    height: 72px;
   }
 
   .colorear-util-nombre {
@@ -1379,14 +1442,84 @@
     border-left-color: #0B4F73;
   }
 
+  /* Menu de herramienta lado a lado: asi no hace falta desplazarse. */
+  .colorear-panel {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .colorear-panel-tipos + .colorear-panel-ajustes {
+    padding-left: 14px;
+    border-left: 2px solid rgba(8, 40, 66, 0.08);
+  }
+
+  .colorear-panel-ajustes > .colorear-seccion:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /* Listo abajo a la derecha de la columna de ajustes. */
+  .colorear-panel-pie {
+    margin-top: auto;
+    padding-top: 12px;
+  }
+
   .colorear-desplegable {
     max-height: calc(100dvh - 90px);
     bottom: auto;
     top: 50%;
     left: calc(100% + 12px);
-    translate: 0 -50%;
+    translate: var(--correr-x, 0px) calc(-50% + var(--correr-y, 0px));
     max-width: none;
     transform-origin: left center;
+  }
+}
+
+/* Horizontal angosto: el menu de herramienta en dos columnas no cabia a
+   la derecha de la barra; tipos de a 4 y gotas mas chicas. */
+@media screen and (orientation: landscape) and (min-width: 700px) and (max-width: 1100px) {
+  .colorear-desplegable {
+    padding: 10px;
+  }
+
+  .colorear-panel {
+    gap: 10px;
+  }
+
+  .colorear-panel-tipos + .colorear-panel-ajustes {
+    padding-left: 10px;
+  }
+
+  .colorear-panel .colorear-lapices,
+  .colorear-desplegable--sellos .colorear-lapices,
+  .colorear-desplegable--varita .colorear-lapices {
+    grid-template-columns: repeat(4, 64px);
+    gap: 3px;
+  }
+
+  .colorear-panel .colorear-util {
+    height: 68px;
+  }
+
+  .colorear-panel .colorear-util svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .colorear-panel .colorear-colores {
+    grid-template-columns: repeat(6, 34px);
+    gap: 6px;
+  }
+
+  .colorear-panel .colorear-color {
+    width: 34px;
+    height: 34px;
+  }
+
+  .colorear-fuentes {
+    grid-template-columns: repeat(2, 76px);
   }
 }
 

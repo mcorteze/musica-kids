@@ -8,8 +8,9 @@ import {
   LuEllipsis,
   LuFastForward,
   LuFlipHorizontal2,
-  LuHand,
+  LuCheck,
   LuMic,
+  LuMousePointer2,
   LuPencil,
   LuPlay,
   LuRedo2,
@@ -68,9 +69,12 @@ import './ColorearJuego.css';
 // escribe uno nuevo; tocar un texto lo selecciona (arrastrar = mover, dos
 // toques o el lapiz = editar, papelero = borrar con confirmacion). Los
 // textos son objetos aparte (utils/textosColorear.js), no pintura.
-// Texto se usa UNA vez (pedido explicito): tras escribir o seleccionar,
-// vuelve la herramienta anterior y el texto queda seleccionado; tocar la
-// hoja solo lo suelta (ni escribe ni pinta). Los selectores
+// Texto se usa UNA vez (pedido explicito): tras escribir o tocar un texto
+// se pasa al Puntero con el texto seleccionado. Puntero (antes "mano",
+// pedido explicito 2026-10-23): toca, arrastra y edita textos; en la hoja
+// vacia mueve y acerca la hoja como la mano. Cada menu de herramienta
+// trae "Listo" abajo a la derecha y no se desplaza: en horizontal va en
+// dos columnas (tipos | colores, tamaño y Listo). Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
 // y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
@@ -687,6 +691,29 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     return () => observador.disconnect();
   }, [dimensiones]);
 
+  // El panel abierto nunca sale de la pantalla: se mide y, si se pasa de
+  // un borde, se corre (variables --correr-x/y del CSS). En horizontal
+  // angosto puede quedar sobre parte de la barra; se cierra con Listo.
+  useLayoutEffect(() => {
+    const panel = menu && barraRef.current?.querySelector('.colorear-desplegable');
+    if (!panel) return;
+    panel.style.removeProperty('--correr-x');
+    panel.style.removeProperty('--correr-y');
+    // Se mide sin la animacion de apertura (empieza achicado y mediria de menos).
+    panel.style.animation = 'none';
+    const r = panel.getBoundingClientRect();
+    panel.style.animation = '';
+    const margen = 8;
+    let dx = 0;
+    let dy = 0;
+    if (r.right > innerWidth - margen) dx = innerWidth - margen - r.right;
+    if (r.left + dx < margen) dx = margen - r.left;
+    if (r.bottom > innerHeight - margen) dy = innerHeight - margen - r.bottom;
+    if (r.top + dy < margen) dy = margen - r.top;
+    if (dx) panel.style.setProperty('--correr-x', `${Math.round(dx)}px`);
+    if (dy) panel.style.setProperty('--correr-y', `${Math.round(dy)}px`);
+  }, [menu, caja]);
+
   // El panel abierto se retrae al tocar fuera de la barra (incluida la hoja:
   // ese toque solo cierra, no pinta — ver alApoyar) o con Escape.
   useEffect(() => {
@@ -1042,6 +1069,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   const gestoApoyar = (e) => {
     if (e.target.closest('button') || repitiendoRef.current) return;
+    if (gestosRef.current.size === 0 && e.target.closest('.colorear-textos--activos .colorear-texto')) return;
     const tactil = e.pointerType === 'touch';
     if (!mano && !tactil) return;
     const p = puntoMarco(e);
@@ -1123,7 +1151,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   // ----- Pintar -----
   const alApoyar = (e) => {
-    // Con la mano, durante un pellizco o repitiendo el dibujo, no se pinta.
+    // Con el Puntero, tocar la hoja vacia suelta el texto seleccionado.
+    if (mano && seleccionado) setSeleccionado(null);
+    // Con el Puntero, durante un pellizco o repitiendo el dibujo, no se pinta.
     if (mano || pellizcoRef.current || repitiendoRef.current) return;
     // Con un panel abierto, tocar la hoja solo lo retrae (lo cierra el
     // listener de "tocar fuera"); no se pinta.
@@ -1482,10 +1512,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // ----- Textos -----
   const enTexto = herramienta === 'texto' && !mano;
   // Los textos se tocan con Texto activo o mientras hay uno seleccionado.
-  const textosTocables = enTexto || Boolean(seleccionado);
-  // Texto ya se uso: vuelve la herramienta anterior (sin soltar la seleccion).
+  const textosTocables = enTexto || mano || Boolean(seleccionado);
+  // Texto ya se uso: pasa al Puntero (sin soltar la seleccion) para tomar y
+  // mover el texto; al soltar el Puntero vuelve la herramienta de antes.
   const dejarTexto = () => {
-    if (herramienta === 'texto') setHerramienta(previaTextoRef.current);
+    if (herramienta !== 'texto') return;
+    setHerramienta(previaTextoRef.current);
+    setMano(true);
   };
   // Tamaño de letra en px del lienzo para un valor de la barra de tamaño
   // (en pantalla, ~2,4 veces el valor: con el valor inicial, ~50px).
@@ -1670,6 +1703,23 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     }
     alternarMenu('texto');
   };
+
+  // "Listo": cierra el menu de la herramienta (siempre a la vista, abajo a
+  // la derecha; pedido explicito).
+  const botonListo = (
+    <div className="colorear-panel-pie">
+      <button
+        type="button"
+        className="colorear-listo"
+        onClick={() => {
+          sonidoClic();
+          setMenu(null);
+        }}
+      >
+        <LuCheck /> Listo
+      </button>
+    </div>
+  );
 
   // Secciones que se repiten en los menus de las herramientas.
   const seccionColores = (
@@ -1991,10 +2041,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               className={`colorear-selector colorear-selector--simple colorear-selector--mano${mano ? ' colorear-selector--en-uso' : ''}`}
               onClick={alternarMano}
               aria-pressed={mano}
-              aria-label="Mano: acercar y mover la hoja"
-              title="Mano: acercar y mover la hoja"
+              aria-label="Puntero: tomar y mover textos, mover la hoja"
+              title="Puntero"
             >
-              <LuHand />
+              <LuMousePointer2 />
             </button>
           </div>
 
@@ -2050,115 +2100,138 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           )}
 
           {menu === 'lapices' && (
-            <div className="colorear-desplegable colorear-desplegable--lapices" role="menu" aria-label="Lápices">
-              <div className="colorear-lapices">
-                {LAPICES.map((h) => (
-                  <button
-                    type="button"
-                    key={h.id}
-                    role="menuitemradio"
-                    aria-checked={herramienta === h.id}
-                    className={`colorear-util${herramienta === h.id ? ' colorear-util--activo' : ''}`}
-                    onClick={() => elegirHerramienta(h.id)}
-                  >
-                    <IconoHerramienta herramienta={h.id} color={colorIcono} size={48} />
-                    <span className="colorear-util-nombre">{h.nombre}</span>
-                  </button>
-                ))}
+            <div className="colorear-desplegable colorear-panel colorear-desplegable--lapices" role="menu" aria-label="Lápices">
+              <div className="colorear-panel-tipos">
+                <div className="colorear-lapices">
+                  {LAPICES.map((h) => (
+                    <button
+                      type="button"
+                      key={h.id}
+                      role="menuitemradio"
+                      aria-checked={herramienta === h.id}
+                      className={`colorear-util${herramienta === h.id ? ' colorear-util--activo' : ''}`}
+                      onClick={() => elegirHerramienta(h.id)}
+                    >
+                      <IconoHerramienta herramienta={h.id} color={colorIcono} size={48} />
+                      <span className="colorear-util-nombre">{h.nombre}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              {seccionColores}
-              {seccionTamano}
+              <div className="colorear-panel-ajustes">
+                {seccionColores}
+                {seccionTamano}
+                {botonListo}
+              </div>
             </div>
           )}
 
           {menu === 'sellos' && (
-            <div className="colorear-desplegable colorear-desplegable--sellos" role="menu" aria-label="Sellos">
-              <div className="colorear-pestanas" role="tablist">
-                {GRUPOS_SELLO.map((g) => (
-                  <button
-                    type="button"
-                    key={g.id}
-                    role="tab"
-                    aria-selected={grupoSello === g.id}
-                    className={`colorear-pestana${grupoSello === g.id ? ' colorear-pestana--activa' : ''}`}
-                    onClick={() => setGrupoSello(g.id)}
-                  >
-                    {g.nombre}
-                  </button>
-                ))}
+            <div className="colorear-desplegable colorear-panel colorear-desplegable--sellos" role="menu" aria-label="Sellos">
+              <div className="colorear-panel-tipos">
+                <div className="colorear-pestanas" role="tablist">
+                  {GRUPOS_SELLO.map((g) => (
+                    <button
+                      type="button"
+                      key={g.id}
+                      role="tab"
+                      aria-selected={grupoSello === g.id}
+                      className={`colorear-pestana${grupoSello === g.id ? ' colorear-pestana--activa' : ''}`}
+                      onClick={() => setGrupoSello(g.id)}
+                    >
+                      {g.nombre}
+                    </button>
+                  ))}
+                </div>
+                <div className="colorear-lapices">
+                  {[`surtido:${grupoSello}`, ...FORMAS_SELLO.filter((f) => f.grupo === grupoSello).map((f) => f.id)].map((forma) => (
+                    <button
+                      type="button"
+                      key={forma}
+                      role="menuitemradio"
+                      aria-checked={formaSello === forma}
+                      className={`colorear-util${formaSello === forma ? ' colorear-util--activo' : ''}`}
+                      onClick={() => elegirForma(forma)}
+                    >
+                      <IconoSello forma={forma} rgb={rgb} size={44} />
+                      <span className="colorear-util-nombre">{NOMBRE_FORMA[forma]}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="colorear-lapices">
-                {[`surtido:${grupoSello}`, ...FORMAS_SELLO.filter((f) => f.grupo === grupoSello).map((f) => f.id)].map((forma) => (
-                  <button
-                    type="button"
-                    key={forma}
-                    role="menuitemradio"
-                    aria-checked={formaSello === forma}
-                    className={`colorear-util${formaSello === forma ? ' colorear-util--activo' : ''}`}
-                    onClick={() => elegirForma(forma)}
-                  >
-                    <IconoSello forma={forma} rgb={rgb} size={44} />
-                    <span className="colorear-util-nombre">{NOMBRE_FORMA[forma]}</span>
-                  </button>
-                ))}
+              <div className="colorear-panel-ajustes">
+                {seccionColores}
+                {seccionTamano}
+                {botonListo}
               </div>
-              {seccionColores}
-              {seccionTamano}
             </div>
           )}
 
           {menu === 'varita' && (
-            <div className="colorear-desplegable colorear-desplegable--varita" role="menu" aria-label="Varita mágica">
-              <div className="colorear-lapices">
-                {VARIANTES_BRILLO.map((v) => (
-                  <button
-                    type="button"
-                    key={v.id}
-                    role="menuitemradio"
-                    aria-checked={varianteBrillo === v.id}
-                    className={`colorear-util${varianteBrillo === v.id ? ' colorear-util--activo' : ''}`}
-                    onClick={() => elegirVariante(v.id)}
-                  >
-                    <MuestraPolvo variante={v.id} rgb={rgb} size={46} />
-                    <span className="colorear-util-nombre">{v.nombre}</span>
-                  </button>
-                ))}
+            <div className="colorear-desplegable colorear-panel colorear-desplegable--varita" role="menu" aria-label="Varita mágica">
+              <div className="colorear-panel-tipos">
+                <div className="colorear-lapices">
+                  {VARIANTES_BRILLO.map((v) => (
+                    <button
+                      type="button"
+                      key={v.id}
+                      role="menuitemradio"
+                      aria-checked={varianteBrillo === v.id}
+                      className={`colorear-util${varianteBrillo === v.id ? ' colorear-util--activo' : ''}`}
+                      onClick={() => elegirVariante(v.id)}
+                    >
+                      <MuestraPolvo variante={v.id} rgb={rgb} size={46} />
+                      <span className="colorear-util-nombre">{v.nombre}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              {/* Mágico, Corazoncitos y Estrellitas usan el color elegido. */}
-              {seccionColores}
-              {seccionTamano}
+              <div className="colorear-panel-ajustes">
+                {/* Mágico, Corazoncitos y Estrellitas usan el color elegido. */}
+                {seccionColores}
+                {seccionTamano}
+                {botonListo}
+              </div>
             </div>
           )}
 
           {menu === 'texto' && (
-            <div className="colorear-desplegable colorear-desplegable--texto" role="menu" aria-label="Texto">
-              <div className="colorear-fuentes">
-                {FUENTES.map((f) => {
-                  const activa = (textoSeleccionado?.fuente ?? fuente) === f.id;
-                  return (
-                    <button
-                      type="button"
-                      key={f.id}
-                      role="menuitemradio"
-                      aria-checked={activa}
-                      className={`colorear-util colorear-fuente${activa ? ' colorear-util--activo' : ''}`}
-                      onClick={() => elegirFuente(f.id)}
-                      aria-label={`Letra ${f.nombre}`}
-                    >
-                      <span className="colorear-fuente-muestra" style={{ fontFamily: f.familia, fontWeight: f.peso }}>Abc</span>
-                      <span className="colorear-util-nombre">{f.nombre}</span>
-                    </button>
-                  );
-                })}
+            <div className="colorear-desplegable colorear-panel colorear-desplegable--texto" role="menu" aria-label="Texto">
+              <div className="colorear-panel-tipos">
+                <div className="colorear-fuentes">
+                  {FUENTES.map((f) => {
+                    const activa = (textoSeleccionado?.fuente ?? fuente) === f.id;
+                    return (
+                      <button
+                        type="button"
+                        key={f.id}
+                        role="menuitemradio"
+                        aria-checked={activa}
+                        className={`colorear-util colorear-fuente${activa ? ' colorear-util--activo' : ''}`}
+                        onClick={() => elegirFuente(f.id)}
+                        aria-label={`Letra ${f.nombre}`}
+                      >
+                        <span className="colorear-fuente-muestra" style={{ fontFamily: f.familia, fontWeight: f.peso }}>Abc</span>
+                        <span className="colorear-util-nombre">{f.nombre}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              {seccionColores}
-              {seccionTamano}
+              <div className="colorear-panel-ajustes">
+                {seccionColores}
+                {seccionTamano}
+                {botonListo}
+              </div>
             </div>
           )}
 
           {menu === 'goma' && (
-            <div className="colorear-desplegable colorear-desplegable--goma" role="menu" aria-label="Goma">
-              {seccionTamano}
+            <div className="colorear-desplegable colorear-panel colorear-desplegable--goma" role="menu" aria-label="Goma">
+              <div className="colorear-panel-ajustes">
+                {seccionTamano}
+                {botonListo}
+              </div>
             </div>
           )}
 

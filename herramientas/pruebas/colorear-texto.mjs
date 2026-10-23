@@ -36,8 +36,8 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   await espera(400);
   chequear('aparece el texto', (await textos()).length === 1, JSON.stringify(await textos()));
   chequear('queda seleccionado con botonera', await p.$('.colorear-texto-acciones') && await p.$('.colorear-texto-seleccion'));
-  // Texto se usa una vez: vuelve la herramienta anterior (pedido explicito).
-  chequear('tras escribir, Texto se desmarca y vuelve el lápiz', !(await p.$('.colorear-selector--en-uso[aria-label="Texto"]')) && await p.$('.colorear-selector--en-uso[aria-label^="Lápiz"]'));
+  // Texto se usa una vez: tras escribir pasa al Puntero (pedido explicito).
+  chequear('tras escribir, Texto se desmarca y queda el Puntero', !(await p.$('.colorear-selector--en-uso[aria-label="Texto"]')) && await p.$('.colorear-selector--en-uso[aria-label^="Puntero"]'));
   const antesMover = (await textos())[0];
   const caja = await (await p.$('.colorear-texto')).boundingBox();
   await arrastrar(caja.x + caja.width / 2, caja.y + caja.height / 2, caja.x + caja.width / 2 - 100, caja.y + caja.height / 2 + 300);

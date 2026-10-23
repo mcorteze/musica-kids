@@ -177,6 +177,13 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   Ningún texto sale de la hoja (encajarTexto: se corre y, si es más ancho,
   se achica; los guardados se acomodan al abrir). Pintar con otra
   herramienta pasa por debajo del texto (decisión de diseño, se mantiene).
+- 2026-10-23: la mano pasó a ser el Puntero (flecha): toma, arrastra y
+  edita textos; en la hoja vacía mueve/acerca la hoja como la mano. Tras
+  escribir un texto se pasa solo al Puntero. Cada menú de herramienta trae
+  "Listo" abajo a la derecha y NO se desplaza: horizontal = dos columnas
+  (tipos | colores, tamaño, Listo), compacto ≤1100px; celular vertical =
+  hoja desde abajo sobre la barra; el JSX corre el menú para que no salga
+  de la pantalla (--correr-x/y). Verificado en 11 pantallas.
 - PENDIENTE (propuesto, sin aprobar): mejoras de fluidez de la acuarela
   (guardado sin trabar, fundir solo la zona, pincel suave precalculado,
   capa del trazo fija). Medido a 6x: 201 ms al soltar y 504 ms al guardar.

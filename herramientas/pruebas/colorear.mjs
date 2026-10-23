@@ -167,14 +167,24 @@ export async function probarColorear(browser, carpeta, chequear) {
     const p = await paginaNueva(browser, chequear, viewportDe(w, h), `colorear ${nombre}`);
     await abrirLaminaColorear(p, carpeta);
     const problemas = [];
-    for (const sel of ['.colorear-selector[aria-label^="Lápiz"]', '.colorear-selector[aria-label^="Sello"]', '.colorear-selector[aria-label^="Varita"]', '.colorear-selector[aria-label="Goma"]']) {
+    for (const sel of ['.colorear-selector[aria-label^="Lápiz"]', '.colorear-selector[aria-label^="Sello"]', '.colorear-selector[aria-label^="Varita"]', '.colorear-selector[aria-label="Texto"]', '.colorear-selector[aria-label="Goma"]']) {
       await p.click(sel);
-      await espera(250);
-      problemas.push(...await fueraDePantalla(p, '.colorear-barra, .colorear-hoja, .colorear-desplegable'));
-      await p.keyboard.press('Escape');
+      await espera(300);
+      // El sello con su pestaña de mas figuras.
+      if (sel.includes('Sello')) {
+        await p.$$eval('.colorear-pestana', (els) => els[0].click());
+        await espera(150);
+      }
+      problemas.push(...await fueraDePantalla(p, '.colorear-barra, .colorear-hoja, .colorear-desplegable, .colorear-listo'));
+      // Sin desplazamiento dentro del menu (pedido explicito) y con Listo.
+      const menu = await p.$eval('.colorear-desplegable', (d) => ({ scroll: d.scrollHeight > d.clientHeight + 1 || d.scrollWidth > d.clientWidth + 1, listo: Boolean(d.querySelector('.colorear-listo')) }));
+      if (menu.scroll) problemas.push(`${sel} con scroll`);
+      if (!menu.listo) problemas.push(`${sel} sin Listo`);
+      await p.click('.colorear-listo');
       await espera(200);
+      if (await p.$('.colorear-desplegable')) problemas.push(`${sel}: Listo no cierra`);
     }
-    chequear(`todo cabe en ${nombre}`, problemas.length === 0, problemas.join(', '));
+    chequear(`todo cabe en ${nombre} (menús sin scroll, con Listo)`, problemas.length === 0, problemas.join(', '));
     await p.close();
   }
 }
