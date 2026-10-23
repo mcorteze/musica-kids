@@ -188,8 +188,9 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await page.click('[aria-label="Más opciones"]');
   await page.click('.colorear-mas-opcion[aria-label="Imprimir o guardar"]');
   await page.waitForSelector('.colorear-dialogo--imprimir');
-  await espera(1200);
-  chequear('imprimir/guardar ofrece 6 marcos con vista previa', (await page.$$('.colorear-marco')).length === 6 && (await page.$$('.colorear-marco-vista img')).length === 6);
+  await page.waitForFunction(() => document.querySelectorAll('.colorear-marco-vista img').length === 14, { timeout: 8000 }).catch(() => {});
+  chequear('imprimir/guardar ofrece 14 marcos con vista previa', (await page.$$('.colorear-marco')).length === 14 && (await page.$$('.colorear-marco-vista img')).length === 14);
+  chequear('están los marcos temáticos', await page.$$eval('.colorear-marco', (bs) => ['Paw Patrol', 'Gatitos', 'Reino de hielo', 'Toy Story', 'Mar tropical', 'Princesas', 'Dinosaurios', 'Espacio'].every((n) => bs.some((b) => b.textContent.includes(n)))));
   await page.click('.colorear-marco:nth-child(3)');
   await page.$$eval('.colorear-dialogo--imprimir button', (bs) => bs.find((b) => b.textContent.includes('Guardar imagen')).click());
   let archivo = null;

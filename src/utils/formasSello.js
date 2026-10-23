@@ -192,7 +192,52 @@ export const FORMAS_SELLO = [
   ] },
 ];
 
-export const FORMA_POR_ID = Object.fromEntries(FORMAS_SELLO.map((f) => [f.id, f]));
+// Figuras solo de los marcos de imprimir (temáticos, pedido explicito
+// 2026-10-23): no aparecen en el panel de sellos.
+export const FORMAS_MARCO = [
+  // Estrella de sheriff: 6 puntas con bolitas en las puntas.
+  { id: 'sheriff', capas: [
+    ...capas('base', estrella(50, 50, 44, 24, 6), ...Array.from({ length: 6 }, (_, i) => {
+      const a = ((-90 + i * 60) * Math.PI) / 180;
+      return circulo(+(50 + Math.cos(a) * 44).toFixed(1), +(50 + Math.sin(a) * 44).toFixed(1), 6);
+    })),
+    ...capas('oscuro', circulo(50, 50, 14)),
+    ...capas('claro', circulo(50, 50, 9)),
+  ] },
+  // Ola con su cresta de espuma.
+  { id: 'ola', capas: [
+    ...capas('base', 'M4 90 L4 62 C10 34 40 18 60 32 C72 42 68 62 54 62 C46 62 43 54 49 50 C38 48 34 60 41 69 C50 80 72 76 82 62 C88 54 94 55 96 59 L96 90 Z'),
+    ...capas('claro', 'M14 50 C22 34 40 26 54 32 C42 32 30 38 22 50 Z'),
+  ] },
+  // Flor tropical: cinco petalos grandes, centro y estambre.
+  { id: 'hibisco', capas: [
+    ...capas('base', ...Array.from({ length: 5 }, (_, i) => {
+      const a = ((-90 + i * 72) * Math.PI) / 180;
+      return circulo(+(50 + Math.cos(a) * 22).toFixed(1), +(50 + Math.sin(a) * 22).toFixed(1), 21);
+    })),
+    ...capas('oscuro', circulo(50, 50, 11)),
+    { d: barra(50, 50, 30, 4, -55), c: '#FFD54F' },
+    { d: circulo(67, 25, 5), c: '#FFD54F' },
+  ] },
+  // Huella de dinosaurio: tres dedos y la planta.
+  { id: 'huella-dino', capas: capas('base',
+    elipse(50, 68, 22, 20),
+    'M50 6 C57 18 59 34 55 48 L45 48 C41 34 43 18 50 6 Z',
+    'M14 22 C26 26 36 38 40 52 L31 56 C22 46 15 35 14 22 Z',
+    'M86 22 C74 26 64 38 60 52 L69 56 C78 46 85 35 86 22 Z',
+  ) },
+  // Planeta con anillo (el anillo pasa por delante en la mitad de abajo).
+  { id: 'planeta', capas: [
+    ...capas('oscuro', elipse(50, 54, 47, 11)),
+    ...capas('base', circulo(50, 50, 26)),
+    ...capas('oscuro', 'M3 54 A47 11 0 0 0 97 54 A47 6 0 0 1 3 54 Z'),
+    ...capas('claro', circulo(41, 40, 7)),
+  ] },
+  // Destello de cuatro puntas.
+  { id: 'destello', capas: capas('base', 'M50 4 C53 38 62 47 96 50 C62 53 53 62 50 96 C47 62 38 53 4 50 C38 47 47 38 50 4 Z') },
+];
+
+export const FORMA_POR_ID = Object.fromEntries([...FORMAS_SELLO, ...FORMAS_MARCO].map((f) => [f.id, f]));
 
 // "surtido:<grupo>" = va eligiendo al azar entre las figuras de ese grupo.
 export const formasDeSurtido = (forma) => {

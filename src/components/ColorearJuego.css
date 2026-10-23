@@ -930,14 +930,19 @@
 }
 
 .colorear-dialogo--imprimir {
-  width: min(94%, 460px);
+  width: min(94%, 520px);
 }
 
 .colorear-marcos {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 10px;
   width: 100%;
+  /* 14 marcos: la lista se desplaza dentro del dialogo. */
+  max-height: min(52vh, 440px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
 }
 
 .colorear-marco {
