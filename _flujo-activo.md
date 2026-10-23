@@ -152,6 +152,13 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   llevado a la caja de 100, PATITA_PAW); la "Huellita" anterior pasó
   a llamarse "Patita de gato" (id 'huella' se conserva por las
   historias guardadas). 30 figuras.
+- 2026-10-23: Colorear publicado (sin modo dev). Barra agrupada (pedido):
+  acciones de menos uso en "Más" (⋯); sin botones de color ni tamaño:
+  cada herramienta los trae en su menú (lápiz: tipos+colores+tamaño;
+  sello: figuras+colores+tamaño; varita: polvos+colores+tamaño; goma:
+  tamaño). Tamaño = solo la barra (sin vista previa ni atajos). Elegir
+  dentro de un menú no lo cierra; la paleta completa vuelve al menú de
+  origen. Menú con scroll interno si no cabe a lo alto.
 
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una

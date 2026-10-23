@@ -102,6 +102,7 @@ try {
   await p.click('.colorear-selector[aria-label^="Varita"]');
   await espera(200);
   await p.$$eval('.colorear-desplegable--varita .colorear-util', (els) => els.find((e) => e.textContent === 'Oro').click());
+  await p.keyboard.press('Escape');
   await espera(200);
   anotar('Colorear: pintando con la varita', await medir(p, () => arrastrar(p, cx(0.1), cy(0.35), cx(0.9), cy(0.4), 60)));
   for (let i = 0; i < 6; i++) await arrastrar(p, cx(0.1), cy(0.45 + i * 0.04), cx(0.9), cy(0.45 + i * 0.04), 25);
@@ -111,6 +112,7 @@ try {
   await p.click('.colorear-selector[aria-label^="Lápiz"]');
   await espera(200);
   await p.$$eval('.colorear-desplegable--lapices .colorear-util', (els) => els.find((e) => e.textContent === 'Neón').click());
+  await p.keyboard.press('Escape');
   await espera(200);
   anotar('Colorear: trazo largo de neón', await medir(p, () => arrastrar(p, cx(0.1), cy(0.8), cx(0.9), cy(0.85), 140)));
   await p.mouse.move(cx(0.5), cy(0.5));

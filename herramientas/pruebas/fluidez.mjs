@@ -39,6 +39,7 @@ export async function probarFluidez(browser, carpeta, chequear) {
     await page.click('.colorear-selector[aria-label^="Varita"]');
     await espera(200);
     await page.$$eval('.colorear-desplegable--varita .colorear-util', (els) => els.find((e) => e.textContent === 'Oro').click());
+    await page.keyboard.press('Escape');
     await espera(150);
     const h = await (await page.$('.colorear-canvas')).boundingBox();
     for (let i = 0; i < 3; i++) {

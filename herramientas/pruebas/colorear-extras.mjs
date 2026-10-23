@@ -38,6 +38,7 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await page.click('.colorear-pestana:nth-child(2)');
   await espera(150);
   await page.$$eval('.colorear-desplegable--sellos .colorear-util', (els) => els.find((e) => e.textContent === 'Mariquita').click());
+  await page.keyboard.press('Escape');
   await espera(200);
   chequear('el botón del sello muestra la figura elegida', (await page.$eval('.colorear-selector[aria-label^="Sello"]', (b) => b.getAttribute('aria-label'))) === 'Sello: Mariquita');
   await page.mouse.move(hoja.x + hoja.width * 0.3, hoja.y + hoja.height * 0.15);
@@ -52,6 +53,7 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await espera(250);
   chequear('la varita ofrece 8 polvos', (await page.$$('.colorear-desplegable--varita .colorear-util')).length === 8);
   await page.$$eval('.colorear-desplegable--varita .colorear-util', (els) => els.find((e) => e.textContent === 'Oro').click());
+  await page.keyboard.press('Escape');
   await espera(200);
   await page.mouse.move(hoja.x + hoja.width * 0.1, hoja.y + hoja.height * 0.35);
   await page.mouse.down();
@@ -69,11 +71,15 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
 
   // La goma tambien se lleva los brillos que titilan (y deshacer los devuelve).
   const contarTitilan = () => page.$$eval('.colorear-titila', (els) => els.length);
+  // Tamaño: la barra del menu abierto (input controlado por React).
+  const fijarTamano = (v) => page.$eval('.colorear-desplegable input[type="range"]', (el, valor) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, valor);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, v);
   const antesGoma = await contarTitilan();
   await page.click('.colorear-selector[aria-label="Goma"]');
-  await page.click('.colorear-selector[aria-label="Tamaño"]');
   await espera(150);
-  await page.click('.colorear-tamano-rapido:nth-child(5)');
+  await fijarTamano(56);
   await page.keyboard.press('Escape');
   await espera(150);
   for (let i = 0; i <= 14; i++) await linea(0.03, 0.3 + i * 0.016, 0.97, 0.3 + i * 0.016, 20);
@@ -85,6 +91,7 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await page.click('.colorear-selector[aria-label^="Lápiz"]');
   await espera(200);
   await page.$$eval('.colorear-desplegable--lapices .colorear-util', (els) => els.find((e) => e.textContent === 'Destacador').click());
+  await page.keyboard.press('Escape');
   await espera(150);
   for (let i = 0; i < 4; i++) await linea(0.05, 0.33 + i * 0.04, 0.95, 0.33 + i * 0.04);
   await espera(300);
@@ -94,9 +101,8 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await espera(300);
   chequear('deshacer la goma devuelve los brillos que titilan', (await contarTitilan()) === antesGoma, `${await contarTitilan()} de ${antesGoma}`);
   await page.click('.colorear-selector[aria-label="Goma"]');
-  await page.click('.colorear-selector[aria-label="Tamaño"]');
   await espera(150);
-  await page.click('.colorear-tamano-rapido:nth-child(3)');
+  await fijarTamano(26);
   await page.keyboard.press('Escape');
   await espera(150);
 
@@ -106,6 +112,7 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   const nombres = await page.$$eval('.colorear-desplegable--lapices .colorear-util-nombre', (els) => els.map((e) => e.textContent));
   chequear('los lápices traen rayas, puntitos, cuadros y estrellitas', ['Rayas', 'Puntitos', 'Cuadros', 'Estrellitas'].every((n) => nombres.includes(n)));
   await page.$$eval('.colorear-desplegable--lapices .colorear-util', (els) => els.find((e) => e.textContent === 'Rayas').click());
+  await page.keyboard.press('Escape');
   await espera(150);
   const antesRayas = await pintado(page);
   await linea(0.1, 0.6, 0.9, 0.6);
@@ -118,6 +125,7 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   await page.click('.colorear-selector[aria-label^="Lápiz"]');
   await espera(150);
   await page.click('.colorear-util:nth-child(3)');
+  await page.keyboard.press('Escape');
   await espera(150);
   await linea(0.1, 0.78, 0.25, 0.78);
   const reflejo = await page.evaluate(() => {

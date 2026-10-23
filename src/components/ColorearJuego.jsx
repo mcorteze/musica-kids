@@ -54,10 +54,12 @@ import './ColorearJuego.css';
 // lo pinté".
 //
 // Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
-// compacta — herramientas (lapiz, sello, varita, goma, mano), estilo (color,
-// tamaño) y acciones (deshacer, rehacer y "Más": borrar, ver como se
+// compacta — herramientas (lapiz, sello, varita, goma, mano) y acciones (deshacer, rehacer y "Más": borrar, ver como se
 // pinto, guardar imagen, imprimir; agrupadas para que la barra quepa en una
-// fila en tablet, pedido explicito 2026-10-23). Los selectores
+// fila en tablet, pedido explicito 2026-10-23). Color y tamaño no tienen
+// boton propio: van dentro del menu de cada herramienta (lapiz: tipos,
+// colores y tamaño; sello: figuras, colores y tamaño; varita: polvos,
+// colores y tamaño; goma: tamaño), pedido explicito 2026-10-23. Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
 // y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
@@ -69,7 +71,6 @@ import './ColorearJuego.css';
 const TAMANO_MIN = 6;
 const TAMANO_MAX = 60;
 const TAMANO_INICIAL = 22;
-const TAMANOS_RAPIDOS = [8, 16, 26, 40, 56];
 
 // Resolucion interna del lienzo: lado largo fijo, sin importar el tamaño de
 // la lamina (las hay de 236 px y de 2048 px). Alcanza para imprimir y no
@@ -396,7 +397,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
-  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'varita' | 'colores' | 'espectro' | 'tamano' | null.
+  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'varita' | 'goma' | 'espectro' | 'mas' | null.
   const [menu, setMenu] = useState(null);
   // Toque en la hoja que solo retrajo un panel: no debe pintar. (React
   // puede re-renderizar entre el listener que cierra y el del canvas, asi
@@ -1182,22 +1183,28 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // ----- Elegir herramientas, colores y opciones -----
-  const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (nombre === 'colores' && m === 'espectro') ? null : nombre));
+  // La paleta completa ("espectro") se abre desde la seccion de colores de
+  // un menu y al cerrarla vuelve a ese menu; mientras, el boton de esa
+  // herramienta sigue marcado como abierto (menuBase).
+  const volverEspectroRef = useRef(null);
+  const menuBase = menu === 'espectro' ? volverEspectroRef.current : menu;
+  const alternarMenu = (nombre) => setMenu((m) => (m === nombre || (m === 'espectro' && volverEspectroRef.current === nombre) ? null : nombre));
+  const abrirEspectro = () => {
+    volverEspectroRef.current = menu;
+    setMenu('espectro');
+  };
 
-  // Ultima herramienta de pintar (lapiz, sello o varita): a ella vuelve la
-  // goma al tocarla de nuevo o al elegir un color (la goma no usa color).
-  const ultimaPintarRef = useRef('crayon');
   // Elegir cualquier herramienta (o color) apaga la mano: es para pintar.
   const usarHerramienta = (h) => {
     setMano(false);
-    if (h !== 'goma') ultimaPintarRef.current = h;
     if (GRUPO_HERRAMIENTA[h] === 'lapiz') setUltimoLapiz(h);
     setHerramienta(h);
   };
+  // Elegir dentro de un menu no lo cierra: ahi mismo se elige tipo, color y
+  // tamaño. Se cierra al tocar la hoja, fuera o el mismo boton.
   const elegirHerramienta = (h) => {
     sonidoClic();
     usarHerramienta(h);
-    setMenu(null);
   };
   // Botones de lapiz, sello y varita: se activan al tocarlos y despliegan su panel.
   const tocarLapiz = () => {
@@ -1217,46 +1224,74 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     sonidoClic();
     setFormaSello(forma);
     usarHerramienta('sellos');
-    setMenu(null);
   };
   const elegirVariante = (v) => {
     sonidoClic();
     setVarianteBrillo(v);
     usarHerramienta('brillos');
-    setMenu(null);
   };
-  const alternarGoma = () => {
+  const tocarGoma = () => {
     sonidoClic();
-    setMenu(null);
-    usarHerramienta(esGoma ? ultimaPintarRef.current : 'goma');
+    usarHerramienta('goma');
+    alternarMenu('goma');
   };
   const elegirColor = (cid) => {
     sonidoClic();
     setColorId(cid);
     setMano(false);
-    if (esGoma) usarHerramienta(ultimaPintarRef.current);
-    setMenu(null);
   };
   const elegirColorPropio = (valor) => {
     const clave = valor.join(',');
     setColoresPropios((lista) => [valor, ...lista.filter((c) => c.join(',') !== clave)].slice(0, MIS_COLORES));
     elegirColor(`propio:${clave}`);
+    setMenu(volverEspectroRef.current);
   };
 
   const punta = PUNTAS[herramienta];
   const escalaCursor = CURSOR / 48;
   const anchoReal = Math.max(4, tamano * (ESCALA_HERRAMIENTA[herramienta] ?? 1));
-  const colorMuestra = esGoma ? '#F48FB1' : rgb ? css(rgb) : null;
-  // Trazo marcado en el icono del selector de tamaño: fino, medio o grueso.
-  const nivelGrosor = tamano <= 16 ? 0 : tamano <= 34 ? 1 : 2;
-  const muestra = (diametro) => (
-    <span
-      className={`colorear-muestra${colorMuestra ? '' : ' colorear-arcoiris'}`}
-      style={{ width: diametro, height: diametro, ...(colorMuestra && { background: colorMuestra }) }}
-    />
+  // Secciones que se repiten en los menus de las herramientas.
+  const seccionColores = (
+    <div className="colorear-seccion">
+      <div className="colorear-colores">
+        {COLORES.map((c) => (
+          <Gota key={c.id} rgb={c.rgb} activo={colorId === c.id} onClick={() => elegirColor(c.id)} etiqueta={c.nombre} />
+        ))}
+        {coloresPropios.map((valor) => {
+          const cid = `propio:${valor.join(',')}`;
+          return <Gota key={cid} rgb={valor} activo={colorId === cid} onClick={() => elegirColor(cid)} etiqueta="Mi color" />;
+        })}
+        {/* La rueda abre la paleta completa (sin boton "+": se enredaba con
+            la rueda, pedido explicito). */}
+        <button
+          type="button"
+          className="colorear-color colorear-rueda"
+          onClick={abrirEspectro}
+          aria-label="Elegir otro color"
+          title="Elegir otro color"
+        />
+      </div>
+    </div>
   );
+  // Tamaño: solo la barra (pedido explicito: la vista previa y los atajos
+  // de tamaño sobraban).
+  const seccionTamano = (
+    <div className="colorear-seccion">
+      <span className="colorear-tamano-pista">
+        <input
+          type="range"
+          min={TAMANO_MIN}
+          max={TAMANO_MAX}
+          value={tamano}
+          onChange={(e) => setTamano(Number(e.target.value))}
+          aria-label="Tamaño"
+        />
+      </span>
+    </div>
+  );
+
   const enUso = (grupo) => (!mano && GRUPO_HERRAMIENTA[herramienta] === grupo ? ' colorear-selector--en-uso' : '');
-  const abierto = (...nombres) => (nombres.includes(menu) ? ' colorear-selector--abierto' : '');
+  const abierto = (nombre) => (menuBase === nombre ? ' colorear-selector--abierto' : '');
 
   return (
     <div className={`colorear-lienzo${repitiendo ? ' colorear-lienzo--repitiendo' : ''}`} ref={zonaRef}>
@@ -1383,7 +1418,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               className={`colorear-selector${enUso('lapiz')}${abierto('lapices')}`}
               onClick={tocarLapiz}
               aria-haspopup="true"
-              aria-expanded={menu === 'lapices'}
+              aria-expanded={menuBase === 'lapices'}
               aria-label={`Lápiz: ${NOMBRE_HERRAMIENTA[ultimoLapiz]}`}
               title="Lápices"
             >
@@ -1396,7 +1431,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               className={`colorear-selector${enUso('sello')}${abierto('sellos')}`}
               onClick={tocarSello}
               aria-haspopup="true"
-              aria-expanded={menu === 'sellos'}
+              aria-expanded={menuBase === 'sellos'}
               aria-label={`Sello: ${NOMBRE_FORMA[formaSello]}`}
               title="Sellos"
             >
@@ -1409,7 +1444,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               className={`colorear-selector${enUso('varita')}${abierto('varita')}`}
               onClick={tocarVarita}
               aria-haspopup="true"
-              aria-expanded={menu === 'varita'}
+              aria-expanded={menuBase === 'varita'}
               aria-label={`Varita mágica: ${variante.nombre}`}
               title="Varita mágica"
             >
@@ -1419,9 +1454,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </button>
             <button
               type="button"
-              className={`colorear-selector colorear-selector--simple${enUso('goma')}`}
-              onClick={alternarGoma}
-              aria-pressed={!mano && esGoma}
+              className={`colorear-selector${enUso('goma')}${abierto('goma')}`}
+              onClick={tocarGoma}
+              aria-haspopup="true"
+              aria-expanded={menuBase === 'goma'}
               aria-label="Goma"
               title="Goma"
             >
@@ -1436,64 +1472,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               title="Mano: acercar y mover la hoja"
             >
               <LuHand />
-            </button>
-          </div>
-
-          <div className="colorear-barra-grupo colorear-barra-grupo--separado colorear-barra-grupo--estilo">
-            <button
-              type="button"
-              className={`colorear-selector${abierto('colores', 'espectro')}`}
-              onClick={() => alternarMenu('colores')}
-              aria-haspopup="true"
-              aria-expanded={menu === 'colores' || menu === 'espectro'}
-              aria-label="Color"
-              title="Elegir color"
-            >
-              <span
-                key={colorId}
-                className={`colorear-selector-gota colorear-icono-vivo${rgb ? '' : ' colorear-arcoiris'}`}
-                style={rgb ? { '--gota': css(rgb) } : undefined}
-              />
-            </button>
-            <button
-              type="button"
-              className={`colorear-selector${abierto('tamano')}`}
-              onClick={() => alternarMenu('tamano')}
-              aria-haspopup="true"
-              aria-expanded={menu === 'tamano'}
-              aria-label="Tamaño"
-              title="Elegir tamaño"
-            >
-              {/* Icono de grosor de linea (patron de las apps de dibujo):
-                  tres trazos de fino a grueso; el del tamaño actual va en
-                  el color elegido. Un circulo solo se confundia con el
-                  selector de color (pedido explicito). */}
-              <svg width="40" height="34" viewBox="0 0 40 34" aria-hidden="true" focusable="false">
-                {(rgb || esGoma) ? null : (
-                  <defs>
-                    {/* userSpaceOnUse: en una linea horizontal la caja tiene
-                        alto 0 y el degradado relativo no se pinta. */}
-                    <linearGradient id="colorear-grosor-arcoiris" gradientUnits="userSpaceOnUse" x1="5" x2="35" y1="0" y2="0">
-                      <stop offset="0" stopColor="#E53935" />
-                      <stop offset="0.33" stopColor="#FDD835" />
-                      <stop offset="0.66" stopColor="#43A047" />
-                      <stop offset="1" stopColor="#1E88E5" />
-                    </linearGradient>
-                  </defs>
-                )}
-                {[[6, 2.5], [16, 5.5], [27, 9]].map(([y, grosor], i) => (
-                  <line
-                    key={y}
-                    x1="5"
-                    x2="35"
-                    y1={y}
-                    y2={y}
-                    strokeWidth={grosor}
-                    strokeLinecap="round"
-                    stroke={i === nivelGrosor ? (colorMuestra ?? 'url(#colorear-grosor-arcoiris)') : '#B5C3D0'}
-                  />
-                ))}
-              </svg>
             </button>
           </div>
 
@@ -1565,6 +1543,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                   </button>
                 ))}
               </div>
+              {seccionColores}
+              {seccionTamano}
             </div>
           )}
 
@@ -1599,6 +1579,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                   </button>
                 ))}
               </div>
+              {seccionColores}
+              {seccionTamano}
             </div>
           )}
 
@@ -1619,50 +1601,22 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                   </button>
                 ))}
               </div>
+              {/* Mágico, Corazoncitos y Estrellitas usan el color elegido. */}
+              {seccionColores}
+              {seccionTamano}
             </div>
           )}
 
-          {menu === 'colores' && (
-            <div className="colorear-desplegable colorear-desplegable--colores" role="menu" aria-label="Colores">
-              <div className="colorear-colores">
-                {COLORES.map((c) => (
-                  <Gota
-                    key={c.id}
-                    rgb={c.rgb}
-                    activo={!esGoma && colorId === c.id}
-                    onClick={() => elegirColor(c.id)}
-                    etiqueta={c.nombre}
-                  />
-                ))}
-                {coloresPropios.map((valor) => {
-                  const cid = `propio:${valor.join(',')}`;
-                  return (
-                    <Gota
-                      key={cid}
-                      rgb={valor}
-                      activo={!esGoma && colorId === cid}
-                      onClick={() => elegirColor(cid)}
-                      etiqueta="Mi color"
-                    />
-                  );
-                })}
-                {/* Selector de color: la rueda abre la paleta completa (sin
-                    boton "+": se enredaba con la rueda, pedido explicito). */}
-                <button
-                  type="button"
-                  className="colorear-color colorear-rueda"
-                  onClick={() => setMenu('espectro')}
-                  aria-label="Elegir otro color"
-                  title="Elegir otro color"
-                />
-              </div>
+          {menu === 'goma' && (
+            <div className="colorear-desplegable colorear-desplegable--goma" role="menu" aria-label="Goma">
+              {seccionTamano}
             </div>
           )}
 
           {menu === 'espectro' && (
             <div className="colorear-desplegable colorear-desplegable--espectro" role="menu" aria-label="Más colores">
               <div className="colorear-desplegable-titulo">
-                <button type="button" className="colorear-desplegable-volver" onClick={() => setMenu('colores')} aria-label="Volver a los colores">
+                <button type="button" className="colorear-desplegable-volver" onClick={() => setMenu(volverEspectroRef.current)} aria-label="Volver a los colores">
                   <LeftOutlined />
                 </button>
                 <span>Elige un color</span>
@@ -1686,34 +1640,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </div>
           )}
 
-          {menu === 'tamano' && (
-            <div className="colorear-desplegable colorear-desplegable--tamano" role="menu" aria-label="Tamaño">
-              <div className="colorear-tamano-vista">{muestra(Math.min(anchoReal, 60))}</div>
-              <span className="colorear-tamano-pista">
-                <input
-                  type="range"
-                  min={TAMANO_MIN}
-                  max={TAMANO_MAX}
-                  value={tamano}
-                  onChange={(e) => setTamano(Number(e.target.value))}
-                  aria-label="Tamaño"
-                />
-              </span>
-              <div className="colorear-tamanos-rapidos">
-                {TAMANOS_RAPIDOS.map((t) => (
-                  <button
-                    type="button"
-                    key={t}
-                    className={`colorear-tamano-rapido${tamano === t ? ' colorear-tamano-rapido--activo' : ''}`}
-                    onClick={() => setTamano(t)}
-                    aria-label={`Tamaño ${t}`}
-                  >
-                    {muestra(Math.max(6, t * 0.55))}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

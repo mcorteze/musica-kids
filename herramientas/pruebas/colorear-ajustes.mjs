@@ -26,6 +26,7 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   await t.$$eval('.colorear-pestana', (els) => els.find((e) => e.textContent === 'Animales').click());
   await espera(150);
   await t.$$eval('.colorear-desplegable--sellos .colorear-util', (els) => els.find((e) => e.textContent === 'Patita de gato').click());
+  await t.keyboard.press('Escape');
   await espera(200);
   const cdp = await t.createCDPSession();
   const m = await (await t.$('.colorear-hoja')).boundingBox();

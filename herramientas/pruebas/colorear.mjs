@@ -29,7 +29,12 @@ export async function probarColorear(browser, carpeta, chequear) {
   chequear('el lápiz despliega su panel', await page.$('.colorear-desplegable--lapices'));
   await page.click('.colorear-util:nth-child(3)');
   await espera(200);
-  chequear('elegir un lápiz retrae el panel', !(await page.$('.colorear-desplegable')));
+  // Color y tamaño viven en el mismo menu: elegir un lapiz no lo cierra.
+  chequear('el menú del lápiz trae tipos, colores y tamaño', await page.$('.colorear-desplegable--lapices .colorear-colores') && await page.$('.colorear-desplegable--lapices input[type="range"]'));
+  chequear('el tamaño es solo la barra (sin vista previa ni atajos)', !(await page.$('.colorear-tamano-vista, .colorear-tamano-rapido')));
+  chequear('la barra ya no tiene botones de color ni tamaño', !(await page.$('.colorear-barra > .colorear-barra-grupo .colorear-selector[aria-label="Color"], .colorear-selector[aria-label="Tamaño"]')));
+  await page.keyboard.press('Escape');
+  await espera(150);
 
   await linea(0.3);
   const uno = await pintado(page);
@@ -65,19 +70,19 @@ export async function probarColorear(browser, carpeta, chequear) {
   chequear('deshacer recupera lo borrado', (await pintado(page)) === antesBorrar);
 
   // Colores propios: dos elegidos en la paleta completa quedan en la paleta.
+  // La paleta completa vuelve al menu desde el que se abrio.
+  await page.click('.colorear-selector[aria-label^="Lápiz"]');
+  await espera(200);
   for (const celda of [12 + 5, 24 + 9]) {
-    await page.click('.colorear-selector[aria-label="Color"]');
-    await espera(200);
     await page.click('.colorear-rueda');
     await espera(200);
     const celdas = await page.$$('.colorear-espectro-celda');
     await celdas[celda].click();
     await espera(200);
   }
-  await page.click('.colorear-selector[aria-label="Color"]');
-  await espera(200);
+  chequear('la paleta completa vuelve al menú del lápiz', await page.$('.colorear-desplegable--lapices'));
   chequear('los colores elegidos quedan en la paleta', (await page.$$('[aria-label="Mi color"]')).length === 2);
-  chequear('no hay botón +', !(await page.$('.colorear-mas')));
+  chequear('no hay botón +', await page.$$eval('.colorear-colores button', (bs) => bs.every((b) => b.textContent.trim() !== '+')));
   await page.keyboard.press('Escape');
   await espera(200);
   chequear('Escape cierra el panel sin cerrar Actividades', !(await page.$('.colorear-desplegable')) && await page.$('.colorear-barra'));
@@ -162,7 +167,7 @@ export async function probarColorear(browser, carpeta, chequear) {
     const p = await paginaNueva(browser, chequear, viewportDe(w, h), `colorear ${nombre}`);
     await abrirLaminaColorear(p, carpeta);
     const problemas = [];
-    for (const sel of ['.colorear-selector[aria-label^="Lápiz"]', '.colorear-selector[aria-label^="Sello"]', '.colorear-selector[aria-label="Color"]', '.colorear-selector[aria-label="Tamaño"]']) {
+    for (const sel of ['.colorear-selector[aria-label^="Lápiz"]', '.colorear-selector[aria-label^="Sello"]', '.colorear-selector[aria-label^="Varita"]', '.colorear-selector[aria-label="Goma"]']) {
       await p.click(sel);
       await espera(250);
       problemas.push(...await fueraDePantalla(p, '.colorear-barra, .colorear-hoja, .colorear-desplegable'));
