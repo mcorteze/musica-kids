@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { abrirActividades, abrirLaminaColorear, espera, paginaNueva, pintado } from './comun.mjs';
 
-const FIGURAS_ESPERADAS = 29;
+const FIGURAS_ESPERADAS = 30;
 
 export async function probarColorearExtras(browser, carpeta, chequear) {
   const page = await paginaNueva(browser, chequear, { width: 1366, height: 768 }, 'colorear extras');

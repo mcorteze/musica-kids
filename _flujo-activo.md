@@ -77,7 +77,7 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
 - Pruebas: herramientas/pruebas/fluidez.mjs (135 chequeos en total).
 
 ## Colorear embellecido (2026-10-22, pedido: "implementar todo")
-- Sellos: 29 figuras en 3 grupos con pestañas (utils/formasSello.js: capas
+- Sellos: 30 figuras en 3 grupos con pestañas (utils/formasSello.js: capas
   SVG 100×100, 'base'/'oscuro'/'claro' o color fijo → mariquita, abeja,
   arcoíris...). Se estampan como PEGATINA (silueta blanca con sombra +
   reflejo). Surtido por grupo ('surtido:<grupo>'), con tamaño y giro
@@ -148,6 +148,10 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   historia (h.ap); vuelven solo si se deshace la goma.
 - Descargas con nombre único: grupo-número_AAAA-MM-DD_HH-MM-SS.png
   (hoja en blanco: hoja-en-blanco_fecha.png). Suite 155/155.
+- Sellos: patita de Paw Patrol = la MISMA de Simón dice (GiPawPrint
+  llevado a la caja de 100, PATITA_PAW); la "Huellita" anterior pasó
+  a llamarse "Patita de gato" (id 'huella' se conserva por las
+  historias guardadas). 30 figuras.
 
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una
