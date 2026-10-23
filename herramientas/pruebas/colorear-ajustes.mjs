@@ -80,7 +80,8 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   mkdirSync(descargas, { recursive: true });
   const cdp2 = await page.createCDPSession();
   await cdp2.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: descargas });
-  await page.click('.colorear-accion[aria-label="Guardar imagen"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Guardar imagen"]');
   let archivo = null;
   for (let i = 0; i < 30 && !archivo; i++) {
     await espera(200);

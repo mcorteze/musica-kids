@@ -48,13 +48,15 @@ export async function probarColorear(browser, carpeta, chequear) {
   chequear('un trazo nuevo vacía rehacer', await page.$eval('[aria-label="Rehacer"]', (b) => b.disabled));
 
   const antesBorrar = await pintado(page);
-  await page.click('[aria-label="Borrar todo"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Borrar todo"]');
   await espera(400);
   chequear('borrar todo pide confirmación', await page.$('.colorear-dialogo'));
   await page.click('.colorear-dialogo-btn:not(.colorear-dialogo-btn--peligro)');
   await espera(200);
   chequear('"No, volver" conserva el dibujo', (await pintado(page)) === antesBorrar);
-  await page.click('[aria-label="Borrar todo"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Borrar todo"]');
   await espera(300);
   await page.click('.colorear-dialogo-btn--peligro');
   await espera(300);

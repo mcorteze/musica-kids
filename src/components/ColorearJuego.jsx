@@ -5,6 +5,7 @@ import { DeleteOutlined, LeftOutlined, PrinterOutlined } from '@ant-design/icons
 import {
   LuBrush,
   LuDownload,
+  LuEllipsis,
   LuFastForward,
   LuFlipHorizontal2,
   LuHand,
@@ -54,8 +55,9 @@ import './ColorearJuego.css';
 //
 // Distribucion (pedido explicito, patron de las apps de dibujo): UNA barra
 // compacta — herramientas (lapiz, sello, varita, goma, mano), estilo (color,
-// tamaño) y acciones (deshacer, rehacer, borrar, ver como se pinto,
-// guardar imagen, imprimir). Los selectores
+// tamaño) y acciones (deshacer, rehacer y "Más": borrar, ver como se
+// pinto, guardar imagen, imprimir; agrupadas para que la barra quepa en una
+// fila en tablet, pedido explicito 2026-10-23). Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
 // y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
@@ -1502,28 +1504,49 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             <button type="button" className="colorear-accion" onClick={rehacer} disabled={!puedeRehacer} aria-label="Rehacer" title="Rehacer">
               <LuRedo2 />
             </button>
-            <button type="button" className="colorear-accion" onClick={() => setConfirmarBorrar(true)} aria-label="Borrar todo" title="Borrar todo">
-              <DeleteOutlined />
-            </button>
             <button
               type="button"
-              className="colorear-accion"
-              onClick={() => setDialogo('repetir')}
-              disabled={!sePuedeRepetir}
-              aria-label="Ver cómo lo pinté"
-              title="Ver cómo lo pinté"
+              className={`colorear-accion${menu === 'mas' ? ' colorear-accion--abierta' : ''}`}
+              onClick={() => alternarMenu('mas')}
+              aria-haspopup="true"
+              aria-expanded={menu === 'mas'}
+              aria-label="Más opciones"
+              title="Más opciones"
             >
-              <LuPlay />
-            </button>
-            {/* Guardar imagen directo (pedido explicito: dentro de "Imprimir o
-                guardar" no se encontraba); usa el ultimo marco elegido. */}
-            <button type="button" className="colorear-accion" onClick={guardarImagen} aria-label="Guardar imagen" title="Guardar imagen">
-              <LuDownload />
-            </button>
-            <button type="button" className="colorear-accion" onClick={() => setDialogo('imprimir')} aria-label="Imprimir o guardar" title="Imprimir o guardar">
-              <PrinterOutlined />
+              <LuEllipsis />
             </button>
           </div>
+
+          {/* "Más": las acciones de menos uso, con su nombre (el niño no lee
+              iconos sueltos). Guardar imagen usa el ultimo marco elegido. */}
+          {menu === 'mas' && (
+            <div className="colorear-desplegable colorear-desplegable--mas" role="menu" aria-label="Más opciones">
+              <div className="colorear-mas">
+                {[
+                  ['Ver cómo lo pinté', <LuPlay key="i" />, () => setDialogo('repetir'), !sePuedeRepetir],
+                  ['Guardar imagen', <LuDownload key="i" />, guardarImagen, false],
+                  ['Imprimir o guardar', <PrinterOutlined key="i" />, () => setDialogo('imprimir'), false],
+                  ['Borrar todo', <DeleteOutlined key="i" />, () => setConfirmarBorrar(true), false],
+                ].map(([nombre, icono, accion, apagado]) => (
+                  <button
+                    type="button"
+                    key={nombre}
+                    role="menuitem"
+                    className="colorear-util colorear-mas-opcion"
+                    disabled={apagado}
+                    onClick={() => {
+                      setMenu(null);
+                      accion();
+                    }}
+                    aria-label={nombre}
+                  >
+                    <span className="colorear-mas-icono">{icono}</span>
+                    <span className="colorear-util-nombre">{nombre}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {menu === 'lapices' && (
             <div className="colorear-desplegable colorear-desplegable--lapices" role="menu" aria-label="Lápices">

@@ -139,13 +139,15 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   // ---------- Ver cómo lo pinté (barra, con confirmacion) ----------
   const final = await pintado(page);
   chequear('ya no está el botón "¡Terminé!"', !(await page.$('[aria-label="¡Terminé!"]')));
-  await page.click('.colorear-accion[aria-label="Ver cómo lo pinté"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Ver cómo lo pinté"]');
   await page.waitForSelector('.colorear-dialogo--repetir', { timeout: 4000 });
   chequear('"Ver cómo lo pinté" pregunta antes de empezar', !(await page.$('.colorear-vista--repitiendo')));
   await page.$$eval('.colorear-dialogo--repetir button', (bs) => bs.find((b) => b.textContent.includes('Ahora no')).click());
   await espera(200);
   chequear('"Ahora no" cierra sin repetir', !(await page.$('.colorear-dialogo--repetir')) && !(await page.$('.colorear-vista--repitiendo')));
-  await page.click('.colorear-accion[aria-label="Ver cómo lo pinté"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Ver cómo lo pinté"]');
   await page.waitForSelector('.colorear-dialogo--repetir', { timeout: 4000 });
   await page.$$eval('.colorear-dialogo--repetir button', (bs) => bs.find((b) => b.textContent.includes('Sí, ver')).click());
   await espera(300);
@@ -175,7 +177,8 @@ export async function probarColorearExtras(browser, carpeta, chequear) {
   mkdirSync(descargas, { recursive: true });
   const cdp = await page.createCDPSession();
   await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: descargas });
-  await page.click('.colorear-accion[aria-label="Imprimir o guardar"]');
+  await page.click('[aria-label="Más opciones"]');
+  await page.click('.colorear-mas-opcion[aria-label="Imprimir o guardar"]');
   await page.waitForSelector('.colorear-dialogo--imprimir');
   await espera(1200);
   chequear('imprimir/guardar ofrece 6 marcos con vista previa', (await page.$$('.colorear-marco')).length === 6 && (await page.$$('.colorear-marco-vista img')).length === 6);
