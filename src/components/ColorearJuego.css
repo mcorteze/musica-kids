@@ -714,7 +714,10 @@
    Base: .memory-victoria-overlay + .memory-niveles-modal (App.css). Fijo a
    la pantalla: en "Mis dibujos" la lista tiene scroll y un overlay absoluto
    podria quedar fuera de la vista. */
-.colorear-dialogo-overlay {
+/* Con la clase base (.memory-victoria-overlay, App.css, que se carga
+   despues): si no, ganaba su absolute + z-index 2 y los botones de la hoja
+   (espejo, sonido) quedaban encima del dialogo. */
+.memory-victoria-overlay.colorear-dialogo-overlay {
   position: fixed;
   z-index: 30;
 }
@@ -1056,17 +1059,20 @@
   color: #fff;
 }
 
-.colorear-dialogo--imprimir {
-  width: min(94%, 520px);
+.colorear-dialogo.colorear-dialogo--imprimir {
+  /* Crece con la pantalla (pedido explicito: en escritorio quedaba angosto
+     y con scroll sobrando espacio). */
+  width: min(94%, 940px);
+  max-height: 92%;
 }
 
 .colorear-marcos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 10px;
   width: 100%;
-  /* 14 marcos: la lista se desplaza dentro del dialogo. */
-  max-height: min(52vh, 440px);
+  /* 14 marcos: si no caben, la lista se desplaza dentro del dialogo. */
+  max-height: calc(92dvh - 190px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 2px;
