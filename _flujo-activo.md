@@ -169,6 +169,14 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   Nunito), colores (arcoíris = letra por letra), tamaño. Deshacer, guardado
   (campo textos), imprimir/descargar/miniatura, Mis dibujos y repetición.
   La goma no borra textos. Prueba: colorear-texto.mjs.
+- 2026-10-23: Texto se usa una vez (vuelve la herramienta anterior; texto
+  queda seleccionado; tocar la hoja solo lo suelta). Herramienta elegida:
+  fondo celeste + aro; las demás sin fondo. Dictado por voz en "Escribe tu
+  texto" (micrófono a la derecha; SpeechRecognition es-CL; sin soporte no
+  aparece). Con Texto activo, tocar un texto (todo su recuadro) lo edita.
+  Ningún texto sale de la hoja (encajarTexto: se corre y, si es más ancho,
+  se achica; los guardados se acomodan al abrir). Pintar con otra
+  herramienta pasa por debajo del texto (decisión de diseño, se mantiene).
 - PENDIENTE (propuesto, sin aprobar): mejoras de fluidez de la acuarela
   (guardado sin trabar, fundir solo la zona, pincel suave precalculado,
   capa del trazo fija). Medido a 6x: 201 ms al soltar y 504 ms al guardar.

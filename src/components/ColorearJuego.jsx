@@ -9,6 +9,7 @@ import {
   LuFastForward,
   LuFlipHorizontal2,
   LuHand,
+  LuMic,
   LuPencil,
   LuPlay,
   LuRedo2,
@@ -19,7 +20,7 @@ import {
   LuVolumeX,
 } from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, ultimoUso, VIGENCIA_MS } from '../utils/dibujosColorear';
-import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, letrasArcoiris } from '../utils/textosColorear';
+import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, encajarTexto, letrasArcoiris } from '../utils/textosColorear';
 import {
   COLORES,
   ESPECTRO,
@@ -278,10 +279,59 @@ function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar })
   );
 }
 
+// Dictado por voz (pedido explicito 2026-10-23): reconocimiento de voz del
+// navegador (Chrome/Android: necesita internet y pide permiso del microfono
+// la primera vez). Sin soporte, el boton no aparece.
+const Reconocedor = typeof window !== 'undefined' ? window.SpeechRecognition ?? window.webkitSpeechRecognition : null;
+const MAX_TEXTO = 40;
+
 // Escribir o editar un texto: un campo grande con "Listo" (en la tablet
-// abre el teclado). Vacio al editar = se quita el texto.
+// abre el teclado) y, a la derecha, el microfono para dictarlo. Vacio al
+// editar = se quita el texto.
 function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
   const [valor, setValor] = useState(inicial);
+  const [escuchando, setEscuchando] = useState(false);
+  const [aviso, setAviso] = useState('');
+  const reconocedorRef = useRef(null);
+
+  // Al cerrar el dialogo, se deja de escuchar.
+  useEffect(() => () => reconocedorRef.current?.abort(), []);
+
+  const dictar = () => {
+    if (escuchando) {
+      reconocedorRef.current?.stop();
+      return;
+    }
+    setAviso('');
+    const rec = new Reconocedor();
+    rec.lang = 'es-CL';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    // Lo dictado se suma a lo que ya estaba escrito; mientras se habla se
+    // ve el texto provisorio.
+    const base = valor.trim();
+    rec.onresult = (e) => {
+      const dicho = [...e.results].map((r) => r[0].transcript).join('').trim();
+      setValor(`${base}${base && dicho ? ' ' : ''}${dicho}`.slice(0, MAX_TEXTO));
+    };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') setAviso('Permite usar el micrófono para dictar.');
+      else if (e.error === 'network') setAviso('Para dictar se necesita internet.');
+      else if (e.error === 'no-speech') setAviso('No se escuchó nada. Prueba otra vez.');
+    };
+    rec.onend = () => {
+      setEscuchando(false);
+      reconocedorRef.current = null;
+    };
+    reconocedorRef.current = rec;
+    try {
+      rec.start();
+      setEscuchando(true);
+    } catch {
+      setAviso('No se pudo usar el micrófono.');
+    }
+  };
+
   return (
     <Dialogo etiqueta="Escribe tu texto" onCerrar={onCancelar} className="colorear-dialogo--texto">
       <h3>{editando ? 'Cambia tu texto' : 'Escribe tu texto'}</h3>
@@ -289,18 +339,34 @@ function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
         className="colorear-texto-form"
         onSubmit={(e) => {
           e.preventDefault();
+          reconocedorRef.current?.abort();
           onListo(valor);
         }}
       >
-        <input
-          className="colorear-texto-campo"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          maxLength={40}
-          placeholder="Tu texto"
-          aria-label="Texto"
-          autoFocus
-        />
+        <div className="colorear-texto-fila">
+          <input
+            className="colorear-texto-campo"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            maxLength={MAX_TEXTO}
+            placeholder={escuchando ? 'Te escucho...' : 'Tu texto'}
+            aria-label="Texto"
+            autoFocus
+          />
+          {Reconocedor && (
+            <button
+              type="button"
+              className={`colorear-texto-mic${escuchando ? ' colorear-texto-mic--escuchando' : ''}`}
+              onClick={dictar}
+              aria-pressed={escuchando}
+              aria-label={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
+              title={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
+            >
+              <LuMic />
+            </button>
+          )}
+        </div>
+        {aviso && <p className="colorear-texto-aviso">{aviso}</p>}
         <div className="colorear-dialogo-botones">
           <button type="button" className="colorear-dialogo-btn" onClick={onCancelar}>
             Cancelar
@@ -581,7 +647,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       // Dibujo con capa pero sin historia (anterior a "Ver cómo lo pinté"):
       // no se puede repetir.
       historiaRef.current = guardado?.capa ? guardado.historia ?? null : [];
-      ponerTextos(guardado?.textos ?? []);
+      const guardados = guardado?.textos ?? [];
+      await cargarFuentes(guardados);
+      if (!vivo) return;
+      // Textos cortados por el borde (de antes de encajarTexto) vuelven adentro.
+      ponerTextos(guardados.map((t) => encajarTexto(t, ancho, alto)));
       puntosHistoriaRef.current = (historiaRef.current ?? []).reduce((t, e) => t + (e.p?.length ?? 0) / 2, 0);
       setVersionHistoria((v) => v + 1);
       sincronizarRespaldo();
@@ -1449,9 +1519,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     }
     programarGuardado();
   };
+  // Todo cambio de un texto lo deja entero dentro de la hoja.
+  const encajar = (t) => encajarTexto(t, canvasRef.current.width, canvasRef.current.height);
   const cambiarSeleccionado = (cambios, fusionar) => {
     if (!seleccionado) return;
-    cambiarTextos(textosRef.current.map((t) => (t.id === seleccionado ? { ...t, ...cambios } : t)), fusionar);
+    cambiarTextos(textosRef.current.map((t) => (t.id === seleccionado ? encajar({ ...t, ...cambios }) : t)), fusionar);
   };
 
   const seleccionarTexto = (t) => {
@@ -1474,12 +1546,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         cambiarTextos(textosRef.current.filter((t) => t.id !== pedido.id));
         setSeleccionado(null);
       } else {
-        cambiarTextos(textosRef.current.map((t) => (t.id === pedido.id ? { ...t, texto: limpio } : t)));
+        cambiarTextos(textosRef.current.map((t) => (t.id === pedido.id ? encajar({ ...t, texto: limpio }) : t)));
       }
       return;
     }
     if (!limpio) return;
-    const nuevo = {
+    const nuevo = encajar({
       id: `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
       x: pedido.x,
       y: pedido.y,
@@ -1487,7 +1559,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       rgb: rgb ? [...rgb] : null,
       tam: tamDeBarra(tamano),
       fuente,
-    };
+    });
     cambiarTextos([...textosRef.current, nuevo]);
     setSeleccionado(nuevo.id);
   };
@@ -1504,7 +1576,23 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!textosTocables || repitiendoRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    arrastreTextoRef.current = { id: t.id, pointerId: e.pointerId, inicio: punto(e), x0: t.x, y0: t.y, x: t.x, y: t.y, movido: false, nodo: e.currentTarget };
+    // Limites del centro para que el texto no salga de la hoja.
+    const dentro = encajar({ ...t, x: -1e6, y: -1e6 });
+    const lejos = encajar({ ...t, x: 1e6, y: 1e6 });
+    arrastreTextoRef.current = {
+      id: t.id,
+      pointerId: e.pointerId,
+      inicio: punto(e),
+      x0: t.x,
+      y0: t.y,
+      x: t.x,
+      y: t.y,
+      limites: [dentro.x, dentro.y, lejos.x, lejos.y],
+      movido: false,
+      nodo: e.currentTarget,
+      // Con la herramienta Texto activa, un toque edita el texto (pedido explicito).
+      conTexto: enTexto,
+    };
     if (seleccionado !== t.id) seleccionarTexto(t);
     dejarTexto();
   };
@@ -1522,9 +1610,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!a.movido && Math.hypot(dx, dy) < 10 * escalaLienzo()) return;
     if (!a.movido) setArrastrando(true);
     a.movido = true;
-    const canvas = canvasRef.current;
-    a.x = redondear(Math.min(canvas.width, Math.max(0, a.x0 + dx)));
-    a.y = redondear(Math.min(canvas.height, Math.max(0, a.y0 + dy)));
+    const [x0, y0, x1, y1] = a.limites;
+    a.x = redondear(Math.min(x1, Math.max(x0, a.x0 + dx)));
+    a.y = redondear(Math.min(y1, Math.max(y0, a.y0 + dy)));
     a.nodo.setAttribute('transform', `translate(${a.x} ${a.y})`);
   };
   const soltarTexto = (e) => {
@@ -1534,6 +1622,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setArrastrando(false);
     if (a.movido) {
       cambiarTextos(textosRef.current.map((t) => (t.id === a.id ? { ...t, x: a.x, y: a.y } : t)));
+      return;
+    }
+    if (a.conTexto) {
+      abrirEdicion(a.id);
       return;
     }
     const ahora = performance.now();

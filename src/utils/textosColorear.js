@@ -42,6 +42,32 @@ export async function cargarFuentes(textos = []) {
   }));
 }
 
+// Medida aproximada del texto en px del lienzo (con su borde blanco).
+let ctxMedir = null;
+export function medirTexto(t) {
+  if (!ctxMedir) ctxMedir = document.createElement('canvas').getContext('2d');
+  const f = fuenteDe(t);
+  ctxMedir.font = `${f.peso} ${t.tam}px ${f.familia}`;
+  const borde = bordeTexto(t.tam);
+  return { w: ctxMedir.measureText(t.texto).width + borde, h: t.tam * 1.2 + borde };
+}
+
+// Deja el texto entero dentro de la hoja (ancho x alto, px del lienzo):
+// si es mas ancho que la hoja lo achica, y corre el centro hacia adentro
+// (pedido explicito: un texto cortado por el borde no se podia tomar).
+export function encajarTexto(t, ancho, alto) {
+  let texto = t;
+  let { w, h } = medirTexto(texto);
+  const maxAncho = ancho * 0.96;
+  if (w > maxAncho) {
+    texto = { ...texto, tam: Math.max(8, Math.floor((texto.tam * maxAncho) / w)) };
+    ({ w, h } = medirTexto(texto));
+  }
+  const x = Math.round(Math.min(ancho - w / 2, Math.max(w / 2, texto.x)) * 10) / 10;
+  const y = Math.round(Math.min(alto - h / 2, Math.max(h / 2, texto.y)) * 10) / 10;
+  return x === texto.x && y === texto.y && texto === t ? t : { ...texto, x, y };
+}
+
 // Dibuja los textos en un canvas cuyo ancho es k veces el del lienzo.
 export function dibujarTextos(ctx, textos = [], k = 1) {
   for (const t of textos) {

@@ -128,12 +128,96 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   await espera(200);
   const c4 = await (await p.$('.colorear-texto')).boundingBox();
   await tocar(c4.x + c4.width / 2, c4.y + c4.height / 2);
+  await espera(400);
+  // Con Texto activo el toque abre la edicion; al cancelar, el texto queda
+  // seleccionado con su botonera.
+  await p.click('.colorear-dialogo--texto button[type="button"]:not(.colorear-texto-mic)');
   await espera(300);
+  chequear('al cancelar la edición el texto queda seleccionado', await p.$('.colorear-texto-acciones'));
   await p.click('.colorear-texto-acciones button[aria-label="Borrar texto"]');
   await espera(300);
   chequear('borrar pide confirmación', await p.$('.colorear-dialogo'));
   await p.click('.colorear-dialogo-btn--peligro');
   await espera(300);
   chequear('borrar quita el texto', (await textos()).length === 0);
+
+  // Texto largo escrito junto al borde: queda entero dentro de la hoja.
+  await p.click('.colorear-selector[aria-label="Texto"]');
+  await espera(200);
+  await p.keyboard.press('Escape');
+  await espera(200);
+  await tocar(m.x + m.width * 0.95, m.y + m.height * 0.5);
+  await espera(400);
+  await p.type('.colorear-texto-campo', 'Este es un texto muy muy largo');
+  await p.click('.colorear-dialogo--texto button[type="submit"]');
+  await espera(400);
+  const hoja = await (await p.$('.colorear-hoja')).boundingBox();
+  const largo = await (await p.$('.colorear-texto text')).boundingBox();
+  chequear('un texto largo queda entero dentro de la hoja', largo.x >= hoja.x - 1 && largo.x + largo.width <= hoja.x + hoja.width + 1, `${Math.round(largo.x)}-${Math.round(largo.x + largo.width)} en ${Math.round(hoja.x)}-${Math.round(hoja.x + hoja.width)}`);
+  // Con Texto activo, tocar el recuadro del texto (aunque sea entre letras,
+  // arriba a la izquierda) lo edita en vez de escribir uno nuevo.
+  await tocar(m.x + m.width * 0.5, m.y + m.height * 0.9);
+  await espera(300);
+  await p.click('.colorear-selector[aria-label="Texto"]');
+  await espera(200);
+  await p.keyboard.press('Escape');
+  await espera(200);
+  await tocar(largo.x + 3, largo.y + 3);
+  await espera(400);
+  chequear('con Texto, tocar un texto lo edita (no escribe otro)', (await p.$eval('.colorear-texto-campo', (i) => i.value).catch(() => null)) === 'Este es un texto muy muy largo');
+  await p.click('.colorear-dialogo--texto button[type="button"]:not(.colorear-texto-mic)');
+  await espera(300);
+  chequear('sigue habiendo un solo texto', (await textos()).length === 1);
   await p.close();
+
+  // Dictado por voz: el reconocimiento del navegador se simula (en la prueba
+  // no hay microfono ni servicio). Dice "hola" y despues "mamá".
+  const v = await paginaNueva(browser, chequear, viewportDe(800, 1180), 'colorear dictado');
+  await v.evaluateOnNewDocument(() => {
+    window.__permiso = true;
+    const Falso = class {
+      start() {
+        setTimeout(() => {
+          if (!window.__permiso) {
+            this.onerror?.({ error: 'not-allowed' });
+            this.onend?.();
+            return;
+          }
+          const r = (t, final) => Object.assign([{ transcript: t }], { isFinal: final });
+          this.onresult?.({ results: [r('hola', false)] });
+          setTimeout(() => {
+            this.onresult?.({ results: [r('hola mamá', true)] });
+            this.onend?.();
+          }, 150);
+        }, 100);
+      }
+      stop() { this.onend?.(); }
+      abort() {}
+    };
+    // Chrome trae el suyo (con y sin prefijo): se reemplazan los dos.
+    for (const nombre of ['SpeechRecognition', 'webkitSpeechRecognition']) {
+      Object.defineProperty(window, nombre, { value: Falso, configurable: true, writable: true });
+    }
+  });
+  await abrirLaminaColorear(v, carpeta, { limpiarColorear: true });
+  const mv = await (await v.$('.colorear-hoja')).boundingBox();
+  await v.click('.colorear-selector[aria-label="Texto"]');
+  await espera(200);
+  await v.keyboard.press('Escape');
+  await espera(200);
+  await v.mouse.click(mv.x + mv.width * 0.5, mv.y + mv.height * 0.4);
+  await espera(400);
+  chequear('el diálogo trae el micrófono a la derecha del campo', await v.$('.colorear-texto-fila .colorear-texto-mic'));
+  await v.type('.colorear-texto-campo', 'Te quiero');
+  await v.click('.colorear-texto-mic');
+  await espera(150);
+  chequear('el micrófono se marca mientras escucha', await v.$('.colorear-texto-mic--escuchando'));
+  await espera(500);
+  chequear('lo dictado se suma a lo escrito', (await v.$eval('.colorear-texto-campo', (i) => i.value)) === 'Te quiero hola mamá', await v.$eval('.colorear-texto-campo', (i) => i.value));
+  chequear('al terminar deja de escuchar', !(await v.$('.colorear-texto-mic--escuchando')));
+  await v.evaluate(() => { window.__permiso = false; });
+  await v.click('.colorear-texto-mic');
+  await espera(400);
+  chequear('sin permiso avisa cómo dictar', (await v.$eval('.colorear-texto-aviso', (e) => e.textContent).catch(() => '')).includes('micrófono'));
+  await v.close();
 }
