@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DeleteOutlined, LeftOutlined, PrinterOutlined } from '@ant-design/icons';
 // Flechas en gancho para deshacer/rehacer: la flecha circular de antd
 // (UndoOutlined) se confundia con "recargar" (pedido explicito).
@@ -9,14 +9,17 @@ import {
   LuFastForward,
   LuFlipHorizontal2,
   LuHand,
+  LuPencil,
   LuPlay,
   LuRedo2,
   LuShrink,
+  LuType,
   LuUndo2,
   LuVolume2,
   LuVolumeX,
 } from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, ultimoUso, VIGENCIA_MS } from '../utils/dibujosColorear';
+import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, letrasArcoiris } from '../utils/textosColorear';
 import {
   COLORES,
   ESPECTRO,
@@ -59,7 +62,11 @@ import './ColorearJuego.css';
 // fila en tablet, pedido explicito 2026-10-23). Color y tamaño no tienen
 // boton propio: van dentro del menu de cada herramienta (lapiz: tipos,
 // colores y tamaño; sello: figuras, colores y tamaño; varita: polvos,
-// colores y tamaño; goma: tamaño), pedido explicito 2026-10-23. Los selectores
+// colores y tamaño; goma: tamaño), pedido explicito 2026-10-23.
+// Texto (pedido explicito 2026-10-23): boton "Texto"; tocar la hoja
+// escribe uno nuevo; tocar un texto lo selecciona (arrastrar = mover, dos
+// toques o el lapiz = editar, papelero = borrar con confirmacion). Los
+// textos son objetos aparte (utils/textosColorear.js), no pintura. Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
 // y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
@@ -132,7 +139,8 @@ function aBlob(canvas, tipo, calidad) {
 }
 
 // Lamina + color en una sola imagen (para la miniatura, imprimir y guardar).
-function componer(capa, lamina, ancho, alto) {
+// textos: en px del lienzo (de ancho anchoLienzo); van encima de la lamina.
+function componer(capa, lamina, ancho, alto, textos = [], anchoLienzo = ancho) {
   const c = document.createElement('canvas');
   c.width = ancho;
   c.height = alto;
@@ -142,6 +150,8 @@ function componer(capa, lamina, ancho, alto) {
   ctx.drawImage(capa, 0, 0, ancho, alto);
   ctx.globalCompositeOperation = 'multiply';
   ctx.drawImage(lamina, 0, 0, ancho, alto);
+  ctx.globalCompositeOperation = 'source-over';
+  dibujarTextos(ctx, textos, ancho / anchoLienzo);
   return c;
 }
 
@@ -190,20 +200,20 @@ function textoVence(registro) {
 }
 
 // Dibujo guardado (capa + lamina) en una sola imagen, del tamaño del lienzo.
-async function dibujoCompleto(capaBlob, src) {
-  const [lamina, capa] = await Promise.all([cargarImagen(src), capaBlob ? createImageBitmap(capaBlob) : null]);
+async function dibujoCompleto(capaBlob, src, textos = []) {
+  const [lamina, capa] = await Promise.all([cargarImagen(src), capaBlob ? createImageBitmap(capaBlob) : null, cargarFuentes(textos)]);
   const escala = LADO_LARGO / Math.max(lamina.naturalWidth, lamina.naturalHeight);
   const ancho = Math.round(lamina.naturalWidth * escala);
   const alto = Math.round(lamina.naturalHeight * escala);
-  return componer(capa ?? document.createElement('canvas'), lamina, ancho, alto);
+  return componer(capa ?? document.createElement('canvas'), lamina, ancho, alto, textos);
 }
 
-export function imprimirDibujo(capaBlob, src, imprimir) {
-  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => imprimir(URL.createObjectURL(blob)), 'image/png'));
+export function imprimirDibujo(capaBlob, src, imprimir, textos) {
+  dibujoCompleto(capaBlob, src, textos).then((final) => final.toBlob((blob) => imprimir(URL.createObjectURL(blob)), 'image/png'));
 }
 
-export function guardarImagenDibujo(capaBlob, src, id) {
-  dibujoCompleto(capaBlob, src).then((final) => final.toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png'));
+export function guardarImagenDibujo(capaBlob, src, id, textos) {
+  dibujoCompleto(capaBlob, src, textos).then((final) => final.toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png'));
 }
 
 // ---------- Dialogo base: mismo overlay y tarjeta que "Elige un nivel" de
@@ -216,8 +226,20 @@ function Dialogo({ etiqueta, onCerrar, rol = 'dialog', className = '', children 
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
   }, [onCerrar]);
+  // Tocar el fondo cierra solo si el toque EMPEZO en el fondo: el "clic"
+  // que deja el mismo toque que abrio el dialogo (escribir un texto) caia
+  // sobre el fondo recien aparecido y lo cerraba.
+  const desdeFondoRef = useRef(false);
   return (
-    <div className="memory-victoria-overlay colorear-dialogo-overlay" onClick={onCerrar}>
+    <div
+      className="memory-victoria-overlay colorear-dialogo-overlay"
+      onPointerDown={(e) => {
+        desdeFondoRef.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (desdeFondoRef.current && e.target === e.currentTarget) onCerrar();
+      }}
+    >
       <div
         className={`memory-niveles-modal colorear-dialogo ${className}`}
         role={rol}
@@ -249,6 +271,42 @@ function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar })
           Sí, borrar
         </button>
       </div>
+    </Dialogo>
+  );
+}
+
+// Escribir o editar un texto: un campo grande con "Listo" (en la tablet
+// abre el teclado). Vacio al editar = se quita el texto.
+function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
+  const [valor, setValor] = useState(inicial);
+  return (
+    <Dialogo etiqueta="Escribe tu texto" onCerrar={onCancelar} className="colorear-dialogo--texto">
+      <h3>{editando ? 'Cambia tu texto' : 'Escribe tu texto'}</h3>
+      <form
+        className="colorear-texto-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onListo(valor);
+        }}
+      >
+        <input
+          className="colorear-texto-campo"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          maxLength={40}
+          placeholder="Tu texto"
+          aria-label="Texto"
+          autoFocus
+        />
+        <div className="colorear-dialogo-botones">
+          <button type="button" className="colorear-dialogo-btn" onClick={onCancelar}>
+            Cancelar
+          </button>
+          <button type="submit" className="colorear-dialogo-btn colorear-dialogo-btn--principal">
+            Listo
+          </button>
+        </div>
+      </form>
     </Dialogo>
   );
 }
@@ -397,7 +455,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [tamano, setTamano] = useState(TAMANO_INICIAL);
   const [puedeDeshacer, setPuedeDeshacer] = useState(false);
   const [puedeRehacer, setPuedeRehacer] = useState(false);
-  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'varita' | 'goma' | 'espectro' | 'mas' | null.
+  // Panel desplegado de la barra: 'lapices' | 'sellos' | 'varita' | 'texto' | 'goma' | 'espectro' | 'mas' | null.
   const [menu, setMenu] = useState(null);
   // Toque en la hoja que solo retrajo un panel: no debe pintar. (React
   // puede re-renderizar entre el listener que cierra y el del canvas, asi
@@ -414,6 +472,30 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const cuadroRepeticionRef = useRef(null);
   // Mano: con ella activa la hoja se acerca (pellizco) y se desplaza (arrastre).
   const [mano, setMano] = useState(false);
+  // Textos sobre la hoja (ver utils/textosColorear.js). textosRef: la lista
+  // al dia para leerla en handlers sin esperar el re-render.
+  const [textos, setTextos] = useState([]);
+  const textosRef = useRef([]);
+  const ponerTextos = (lista) => {
+    textosRef.current = lista;
+    setTextos(lista);
+  };
+  const [fuente, setFuente] = useState('redonda');
+  // Texto seleccionado (id), su caja medida en el SVG y el dialogo de
+  // escribir: { id?: texto que se edita, x, y: donde va uno nuevo }.
+  const [seleccionado, setSeleccionado] = useState(null);
+  const [cajaSeleccion, setCajaSeleccion] = useState(null);
+  const [escribiendo, setEscribiendo] = useState(null);
+  const [borrarTexto, setBorrarTexto] = useState(false);
+  const nodosTextoRef = useRef({});
+  const arrastreTextoRef = useRef(null);
+  const toqueTextoRef = useRef(null);
+  const [arrastrando, setArrastrando] = useState(false);
+  // Ultimo paso de deshacer que se puede seguir fusionando (barra de tamaño).
+  const fusionTextoRef = useRef(null);
+  const ultimoToqueTextoRef = useRef({ id: null, t: 0 });
+  // Textos de la repeticion ("Ver cómo lo pinté").
+  const [textosRepeticion, setTextosRepeticion] = useState([]);
   const [zoom, setZoom] = useState(1);
   const [espejo, setEspejo] = useState(false);
   const [sonido, setSonido] = useState(leerSonido);
@@ -425,9 +507,19 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // Con un panel, un dialogo o la repeticion abiertos, el Escape del drawer
   // no cierra todo (lo cierra este componente).
   useEffect(() => {
-    onCapaAbierta?.(Boolean(menu || confirmarBorrar || dialogo || repitiendo));
+    onCapaAbierta?.(Boolean(menu || confirmarBorrar || dialogo || repitiendo || escribiendo || borrarTexto || seleccionado));
     return () => onCapaAbierta?.(false);
-  }, [menu, confirmarBorrar, dialogo, repitiendo, onCapaAbierta]);
+  }, [menu, confirmarBorrar, dialogo, repitiendo, escribiendo, borrarTexto, seleccionado, onCapaAbierta]);
+
+  // Escape suelta el texto seleccionado (si no hay un panel o dialogo encima).
+  useEffect(() => {
+    if (!seleccionado || menu || escribiendo || borrarTexto) return undefined;
+    const escape = (e) => {
+      if (e.key === 'Escape') setSeleccionado(null);
+    };
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [seleccionado, menu, escribiendo, borrarTexto]);
 
   useEffect(() => {
     silenciar(!sonido);
@@ -484,6 +576,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       // Dibujo con capa pero sin historia (anterior a "Ver cómo lo pinté"):
       // no se puede repetir.
       historiaRef.current = guardado?.capa ? guardado.historia ?? null : [];
+      ponerTextos(guardado?.textos ?? []);
       puntosHistoriaRef.current = (historiaRef.current ?? []).reduce((t, e) => t + (e.p?.length ?? 0) / 2, 0);
       setVersionHistoria((v) => v + 1);
       sincronizarRespaldo();
@@ -547,9 +640,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const lamina = laminaRef.current;
     if (!canvas || !lamina) return;
     const escala = MINIATURA / Math.max(canvas.width, canvas.height);
-    const mini = componer(canvas, lamina, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
+    const lista = textosRef.current;
+    await cargarFuentes(lista);
+    const mini = componer(canvas, lamina, Math.round(canvas.width * escala), Math.round(canvas.height * escala), lista, canvas.width);
     const [capa, miniatura] = await Promise.all([aBlob(canvas, 'image/png'), aBlob(mini, 'image/jpeg', 0.82)]);
-    await guardarDibujo(id, capa, miniatura, historiaRef.current);
+    await guardarDibujo(id, capa, miniatura, historiaRef.current, lista);
     onGuardadoRef.current?.();
   }, [id]);
 
@@ -576,13 +671,18 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!conMiniatura || !laminaRef.current) return undefined;
     const canvas = canvasRef.current;
     const escala = MINIATURA / Math.max(canvas.width, canvas.height);
-    const mini = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
     let url = null;
-    mini.toBlob((blob) => {
-      url = URL.createObjectURL(blob);
-      setMiniaturaDialogo(url);
-    }, 'image/jpeg', 0.85);
+    let vivo = true;
+    cargarFuentes(textosRef.current).then(() => {
+      if (!vivo) return;
+      const mini = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala), textosRef.current, canvas.width);
+      mini.toBlob((blob) => {
+        url = URL.createObjectURL(blob);
+        if (vivo) setMiniaturaDialogo(url);
+      }, 'image/jpeg', 0.85);
+    });
     return () => {
+      vivo = false;
       if (url) URL.revokeObjectURL(url);
       setMiniaturaDialogo(null);
     };
@@ -593,12 +693,15 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (dialogo !== 'imprimir' || !laminaRef.current) return undefined;
     const canvas = canvasRef.current;
     const escala = (MINIATURA * 0.7) / Math.max(canvas.width, canvas.height);
-    const base = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala));
     const urls = {};
     let vivo = true;
-    Promise.all(MARCOS.map((m) => aBlob(conMarco(base, m.id), 'image/jpeg', 0.85).then((blob) => {
-      urls[m.id] = URL.createObjectURL(blob);
-    }))).then(() => {
+    cargarFuentes(textosRef.current).then(() => {
+      if (!vivo) return null;
+      const base = componer(canvas, laminaRef.current, Math.round(canvas.width * escala), Math.round(canvas.height * escala), textosRef.current, canvas.width);
+      return Promise.all(MARCOS.map((m) => aBlob(conMarco(base, m.id), 'image/jpeg', 0.85).then((blob) => {
+        urls[m.id] = URL.createObjectURL(blob);
+      })));
+    }).then(() => {
       if (vivo) setVistasMarcos({ ...urls });
     });
     return () => {
@@ -650,11 +753,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // Registra un cambio ya hecho en la hoja: la zona como estaba antes (del
   // respaldo) va a deshacer, se vacia rehacer, se anota en la historia y el
   // respaldo se pone al dia.
-  const registrarCambio = (zona, hist) => {
+  const registrarCambio = (zona, hist, textosAntes) => {
     const respaldo = respaldoRef.current;
     if (!respaldo) return;
     const pila = deshacerRef.current;
-    pila.push({ x: zona.x, y: zona.y, datos: respaldo.getContext('2d').getImageData(zona.x, zona.y, zona.w, zona.h), hist });
+    pila.push({ x: zona.x, y: zona.y, datos: respaldo.getContext('2d').getImageData(zona.x, zona.y, zona.w, zona.h), hist, ...(textosAntes && { textos: textosAntes }) });
     if (pila.length > MAX_DESHACER) pila.shift();
     rehacerRef.current = [];
     setPuedeDeshacer(true);
@@ -679,7 +782,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const cursor = cursorRef.current;
     if (!cursor) return;
     // Con la mano, el cursor es la mano del sistema (grab/grabbing en CSS).
-    if (e.pointerType !== 'mouse' || mano || repitiendoRef.current) {
+    // Con Texto, el cursor de texto del sistema (CSS).
+    if (e.pointerType !== 'mouse' || mano || repitiendoRef.current || herramienta === 'texto') {
       cursor.style.display = 'none';
       return;
     }
@@ -774,7 +878,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const pintarVista = () => {
     cuadroRef.current = null;
     const v = vistaActualRef.current;
-    if (vistaRef.current) vistaRef.current.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
+    if (vistaRef.current) {
+      vistaRef.current.style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.s})`;
+      // La botonera del texto seleccionado se des-escala con esto (no crece con el zoom).
+      vistaRef.current.style.setProperty('--escala-vista', v.s);
+    }
   };
 
   // final: ademas actualiza el boton de porcentaje (re-render).
@@ -947,6 +1055,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       ignorarToqueRef.current = false;
       return;
     }
+    // Texto: el toque se resuelve al soltar (si no fue un pellizco): suelta
+    // el texto seleccionado o abre el dialogo para escribir uno nuevo ahi.
+    if (herramienta === 'texto') {
+      e.preventDefault();
+      if (dimensiones) toqueTextoRef.current = { pointerId: e.pointerId, p: punto(e) };
+      return;
+    }
     // Un solo dedo a la vez: un segundo dedo no mancha.
     if (trazoRef.current !== null || !dimensiones) return;
     e.preventDefault();
@@ -1014,6 +1129,14 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   const alSoltar = (e) => {
+    const toque = toqueTextoRef.current;
+    if (toque && toque.pointerId === e.pointerId) {
+      toqueTextoRef.current = null;
+      if (pellizcoRef.current || e.type === 'pointercancel') return;
+      if (seleccionado) setSeleccionado(null);
+      else setEscribiendo({ x: toque.p.x, y: toque.p.y, texto: '' });
+      return;
+    }
     const actual = trazoRef.current;
     if (!actual || actual.pointerId !== e.pointerId) return;
     trazoRef.current = null;
@@ -1029,15 +1152,26 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // Mueve un paso entre las dos pilas: lo que sale de "desde" se pinta y el
   // estado actual pasa a "hacia". La historia sigue al paso: deshacer saca
   // su entrada, rehacer la vuelve a poner.
+  // Un paso puede traer pintura (datos de una zona), textos (la lista como
+  // estaba) o los dos ("Borrar todo").
   const moverPaso = (desde, hacia) => {
     const paso = desde.current.pop();
     if (!paso) return;
     const { x, y, datos, hist } = paso;
-    const ctx = canvasRef.current.getContext('2d');
-    hacia.current.push({ x, y, datos: ctx.getImageData(x, y, datos.width, datos.height), hist });
+    const inverso = { hist };
+    if (datos) {
+      const ctx = canvasRef.current.getContext('2d');
+      Object.assign(inverso, { x, y, datos: ctx.getImageData(x, y, datos.width, datos.height) });
+      ctx.putImageData(datos, x, y);
+      respaldoRef.current.getContext('2d').putImageData(datos, x, y);
+    }
+    if (paso.textos) {
+      inverso.textos = textosRef.current;
+      ponerTextos(paso.textos);
+      setSeleccionado(null);
+    }
+    hacia.current.push(inverso);
     if (hacia.current.length > MAX_DESHACER) hacia.current.shift();
-    ctx.putImageData(datos, x, y);
-    respaldoRef.current.getContext('2d').putImageData(datos, x, y);
     if (historiaRef.current) {
       if (desde === deshacerRef) historiaRef.current.pop();
       else historiaRef.current.push(hist);
@@ -1054,7 +1188,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setConfirmarBorrar(false);
     const canvas = canvasRef.current;
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height }, { t: 'borrar' });
+    const textosAntes = textosRef.current;
+    ponerTextos([]);
+    setSeleccionado(null);
+    registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height }, { t: 'borrar' }, textosAntes);
     clearTimeout(temporizadorRef.current);
     pendienteRef.current = false;
     await borrarDibujo(id);
@@ -1062,18 +1199,19 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // Imprimir o guardar, con el marco elegido, a la resolucion del lienzo.
-  const dibujoConMarco = () => {
+  const dibujoConMarco = async () => {
     const canvas = canvasRef.current;
-    return conMarco(componer(canvas, laminaRef.current, canvas.width, canvas.height), marco);
+    await cargarFuentes(textosRef.current);
+    return conMarco(componer(canvas, laminaRef.current, canvas.width, canvas.height, textosRef.current), marco);
   };
   const imprimirConMarco = () => {
     if (!laminaRef.current) return;
-    dibujoConMarco().toBlob((blob) => onImprimir(URL.createObjectURL(blob)), 'image/png');
+    dibujoConMarco().then((final) => final.toBlob((blob) => onImprimir(URL.createObjectURL(blob)), 'image/png'));
     setDialogo(null);
   };
   const guardarImagen = () => {
     if (!laminaRef.current) return;
-    dibujoConMarco().toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png');
+    dibujoConMarco().then((final) => final.toBlob((blob) => descargar(blob, nombreDescarga(id)), 'image/png'));
     setDialogo(null);
   };
 
@@ -1101,6 +1239,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const lienzo = repeticionRef.current;
     const ctx = lienzo.getContext('2d');
     ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+    setTextosRepeticion([]);
     const capa = document.createElement('canvas');
     capa.width = lienzo.width;
     capa.height = lienzo.height;
@@ -1118,7 +1257,14 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
         const h = lista[i];
         if (h.t === 'borrar') {
           ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+          setTextosRepeticion([]);
           i += 1;
+          continue;
+        }
+        if (h.t === 'textos') {
+          setTextosRepeticion(h.l);
+          i += 1;
+          presupuesto -= 20;
           continue;
         }
         const n = h.p.length / 2;
@@ -1197,6 +1343,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // Elegir cualquier herramienta (o color) apaga la mano: es para pintar.
   const usarHerramienta = (h) => {
     setMano(false);
+    if (h !== 'texto') setSeleccionado(null);
     if (GRUPO_HERRAMIENTA[h] === 'lapiz') setUltimoLapiz(h);
     setHerramienta(h);
   };
@@ -1239,6 +1386,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     sonidoClic();
     setColorId(cid);
     setMano(false);
+    // Con un texto seleccionado, tambien se lo cambia a el.
+    if (herramienta === 'texto' && seleccionado) {
+      const nuevo = cid.startsWith('propio:') ? cid.slice(7).split(',').map(Number) : COLORES.find((c) => c.id === cid).rgb;
+      cambiarSeleccionado({ rgb: nuevo ? [...nuevo] : null });
+    }
   };
   const elegirColorPropio = (valor) => {
     const clave = valor.join(',');
@@ -1247,9 +1399,168 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setMenu(volverEspectroRef.current);
   };
 
-  const punta = PUNTAS[herramienta];
+  const punta = PUNTAS[herramienta] ?? PUNTAS.crayon;
   const escalaCursor = CURSOR / 48;
   const anchoReal = Math.max(4, tamano * (ESCALA_HERRAMIENTA[herramienta] ?? 1));
+  // ----- Textos -----
+  const enTexto = herramienta === 'texto' && !mano;
+  // Tamaño de letra en px del lienzo para un valor de la barra de tamaño
+  // (en pantalla, ~2,4 veces el valor: con el valor inicial, ~50px).
+  const escalaLienzo = () => {
+    const canvas = canvasRef.current;
+    return canvas.width / canvas.getBoundingClientRect().width;
+  };
+  const tamDeBarra = (v) => Math.round(v * 2.4 * escalaLienzo());
+  const textoSeleccionado = textos.find((t) => t.id === seleccionado) ?? null;
+
+  // Registra un cambio de textos: la lista anterior va a deshacer y la nueva
+  // a la historia (para repetirla). Con "fusionar", los cambios seguidos con
+  // la misma clave (mover la barra de tamaño) son un solo paso.
+  const cambiarTextos = (nuevos, fusionar = null) => {
+    const antes = textosRef.current;
+    ponerTextos(nuevos);
+    const pila = deshacerRef.current;
+    const previo = fusionTextoRef.current;
+    if (fusionar && previo?.clave === fusionar && pila[pila.length - 1] === previo.paso) {
+      previo.paso.hist.l = nuevos;
+    } else {
+      const hist = { t: 'textos', l: nuevos };
+      const paso = { textos: antes, hist };
+      pila.push(paso);
+      if (pila.length > MAX_DESHACER) pila.shift();
+      rehacerRef.current = [];
+      setPuedeDeshacer(true);
+      setPuedeRehacer(false);
+      anotarEnHistoria(hist);
+      fusionTextoRef.current = fusionar ? { clave: fusionar, paso } : null;
+    }
+    programarGuardado();
+  };
+  const cambiarSeleccionado = (cambios, fusionar) => {
+    if (!seleccionado) return;
+    cambiarTextos(textosRef.current.map((t) => (t.id === seleccionado ? { ...t, ...cambios } : t)), fusionar);
+  };
+
+  const seleccionarTexto = (t) => {
+    setSeleccionado(t.id);
+    // El menu muestra la letra y el tamaño de ese texto.
+    setFuente(t.fuente);
+    setTamano(Math.min(TAMANO_MAX, Math.max(TAMANO_MIN, Math.round(t.tam / (2.4 * escalaLienzo())))));
+  };
+  const abrirEdicion = (tid) => {
+    const t = textosRef.current.find((x) => x.id === tid);
+    if (t) setEscribiendo({ id: tid, texto: t.texto });
+  };
+  const confirmarEscritura = (valor) => {
+    const pedido = escribiendo;
+    setEscribiendo(null);
+    const limpio = valor.trim();
+    if (pedido.id) {
+      if (!limpio) {
+        cambiarTextos(textosRef.current.filter((t) => t.id !== pedido.id));
+        setSeleccionado(null);
+      } else {
+        cambiarTextos(textosRef.current.map((t) => (t.id === pedido.id ? { ...t, texto: limpio } : t)));
+      }
+      return;
+    }
+    if (!limpio) return;
+    const nuevo = {
+      id: `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      x: pedido.x,
+      y: pedido.y,
+      texto: limpio,
+      rgb: rgb ? [...rgb] : null,
+      tam: tamDeBarra(tamano),
+      fuente,
+    };
+    cambiarTextos([...textosRef.current, nuevo]);
+    setSeleccionado(nuevo.id);
+  };
+  const quitarTexto = () => {
+    setBorrarTexto(false);
+    cambiarTextos(textosRef.current.filter((t) => t.id !== seleccionado));
+    setSeleccionado(null);
+  };
+
+  // Arrastrar un texto: se mueve el nodo del SVG directo (sin re-render en
+  // cada movimiento) y al soltar se anota el cambio. Un toque sin mover lo
+  // selecciona; dos toques seguidos lo editan.
+  const apoyarTexto = (e, t) => {
+    if (!enTexto || repitiendoRef.current) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    arrastreTextoRef.current = { id: t.id, pointerId: e.pointerId, inicio: punto(e), x0: t.x, y0: t.y, x: t.x, y: t.y, movido: false, nodo: e.currentTarget };
+    if (seleccionado !== t.id) seleccionarTexto(t);
+  };
+  const moverTexto = (e) => {
+    const a = arrastreTextoRef.current;
+    if (!a || a.pointerId !== e.pointerId) return;
+    if (pellizcoRef.current) {
+      a.nodo.setAttribute('transform', `translate(${a.x0} ${a.y0})`);
+      arrastreTextoRef.current = null;
+      setArrastrando(false);
+      return;
+    }
+    const p = punto(e);
+    const [dx, dy] = [p.x - a.inicio.x, p.y - a.inicio.y];
+    if (!a.movido && Math.hypot(dx, dy) < 10 * escalaLienzo()) return;
+    if (!a.movido) setArrastrando(true);
+    a.movido = true;
+    const canvas = canvasRef.current;
+    a.x = redondear(Math.min(canvas.width, Math.max(0, a.x0 + dx)));
+    a.y = redondear(Math.min(canvas.height, Math.max(0, a.y0 + dy)));
+    a.nodo.setAttribute('transform', `translate(${a.x} ${a.y})`);
+  };
+  const soltarTexto = (e) => {
+    const a = arrastreTextoRef.current;
+    if (!a || a.pointerId !== e.pointerId) return;
+    arrastreTextoRef.current = null;
+    setArrastrando(false);
+    if (a.movido) {
+      cambiarTextos(textosRef.current.map((t) => (t.id === a.id ? { ...t, x: a.x, y: a.y } : t)));
+      return;
+    }
+    const ahora = performance.now();
+    const previo = ultimoToqueTextoRef.current;
+    if (previo.id === a.id && ahora - previo.t < 450) {
+      ultimoToqueTextoRef.current = { id: null, t: 0 };
+      abrirEdicion(a.id);
+    } else {
+      ultimoToqueTextoRef.current = { id: a.id, t: ahora };
+    }
+  };
+
+  // Caja del texto seleccionado (recuadro y botonera), medida en el SVG.
+  useLayoutEffect(() => {
+    const t = textos.find((x) => x.id === seleccionado);
+    const nodo = t && nodosTextoRef.current[t.id];
+    if (!nodo) {
+      setCajaSeleccion(null);
+      return;
+    }
+    const bb = nodo.getBBox();
+    const m = t.tam * 0.18;
+    setCajaSeleccion({ x: t.x + bb.x - m, y: t.y + bb.y - m, w: bb.width + m * 2, h: bb.height + m * 2 });
+  }, [seleccionado, textos]);
+
+  // Con Texto, levantar el dedo puede abrir un dialogo justo debajo: el
+  // "clic" que el navegador genera despues del toque caeria sobre el (un
+  // boton "Cancelar" lo cerraba al instante). Sin ese clic.
+  const anularClicTactil = (e) => {
+    if (enTexto) e.preventDefault();
+  };
+
+  const elegirFuente = (fid) => {
+    sonidoClic();
+    setFuente(fid);
+    if (enTexto && seleccionado) cambiarSeleccionado({ fuente: fid });
+  };
+  const tocarTexto = () => {
+    usarHerramienta('texto');
+    alternarMenu('texto');
+  };
+
   // Secciones que se repiten en los menus de las herramientas.
   const seccionColores = (
     <div className="colorear-seccion">
@@ -1283,7 +1594,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           min={TAMANO_MIN}
           max={TAMANO_MAX}
           value={tamano}
-          onChange={(e) => setTamano(Number(e.target.value))}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setTamano(v);
+            if (enTexto && seleccionado) cambiarSeleccionado({ tam: tamDeBarra(v) }, `tam:${seleccionado}`);
+          }}
           aria-label="Tamaño"
         />
       </span>
@@ -1298,7 +1613,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       <div className="colorear-centro">
         <div
           ref={marcoRef}
-          className={`colorear-hoja${mano ? ' colorear-hoja--mano' : ''}`}
+          className={`colorear-hoja${mano ? ' colorear-hoja--mano' : ''}${enTexto ? ' colorear-hoja--texto' : ''}`}
           style={caja ? { width: caja.ancho, height: caja.alto } : { visibility: 'hidden' }}
           onPointerDown={gestoApoyar}
           onPointerMove={gestoMover}
@@ -1314,6 +1629,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               onPointerDown={alApoyar}
               onPointerMove={alMover}
               onPointerUp={alSoltar}
+              onTouchEnd={anularClicTactil}
               onPointerCancel={alSoltar}
               onPointerEnter={moverCursor}
               onPointerLeave={ocultarCursor}
@@ -1321,6 +1637,78 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             <canvas ref={canvasTrazoRef} className="colorear-canvas-trazo" aria-hidden="true" />
             <canvas ref={repeticionRef} className="colorear-canvas-repeticion" aria-hidden="true" />
             <img src={src} alt="" className="colorear-lamina" draggable={false} />
+            {dimensiones && (
+              <svg
+                className={`colorear-textos${enTexto && !repitiendo ? ' colorear-textos--activos' : ''}`}
+                viewBox={`0 0 ${dimensiones.ancho} ${dimensiones.alto}`}
+                aria-hidden="true"
+              >
+                {(repitiendo ? textosRepeticion : textos).map((t) => {
+                  const f = FUENTE_POR_ID[t.fuente] ?? FUENTES[0];
+                  return (
+                    <g
+                      key={t.id}
+                      className="colorear-texto"
+                      transform={`translate(${t.x} ${t.y})`}
+                      onPointerDown={(e) => apoyarTexto(e, t)}
+                      onPointerMove={moverTexto}
+                      onPointerUp={soltarTexto}
+                      onPointerCancel={soltarTexto}
+                      onTouchEnd={anularClicTactil}
+                    >
+                      <text
+                        ref={(n) => {
+                          if (n) nodosTextoRef.current[t.id] = n;
+                          else delete nodosTextoRef.current[t.id];
+                        }}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        xmlSpace="preserve"
+                        fontFamily={f.familia}
+                        fontWeight={f.peso}
+                        fontSize={t.tam}
+                        fill={t.rgb ? colorTexto(t.rgb) : undefined}
+                        stroke="#fff"
+                        strokeWidth={bordeTexto(t.tam)}
+                        strokeLinejoin="round"
+                        paintOrder="stroke"
+                      >
+                        {t.rgb ? t.texto : letrasArcoiris(t.texto).map((l, i) => (
+                          // eslint-disable-next-line react/no-array-index-key
+                          <tspan key={i} fill={l.color ?? 'none'}>{l.letra}</tspan>
+                        ))}
+                      </text>
+                    </g>
+                  );
+                })}
+                {enTexto && cajaSeleccion && !arrastrando && !repitiendo && (
+                  <rect
+                    className="colorear-texto-seleccion"
+                    x={cajaSeleccion.x}
+                    y={cajaSeleccion.y}
+                    width={cajaSeleccion.w}
+                    height={cajaSeleccion.h}
+                    rx={Math.min(cajaSeleccion.h * 0.2, 24)}
+                  />
+                )}
+              </svg>
+            )}
+            {enTexto && cajaSeleccion && !arrastrando && !repitiendo && dimensiones && (
+              <div
+                className={`colorear-texto-acciones${cajaSeleccion.y / dimensiones.alto < 0.12 ? ' colorear-texto-acciones--abajo' : ''}`}
+                style={{
+                  left: `${((cajaSeleccion.x + cajaSeleccion.w / 2) / dimensiones.ancho) * 100}%`,
+                  top: `${((cajaSeleccion.y / dimensiones.alto < 0.12 ? cajaSeleccion.y + cajaSeleccion.h : cajaSeleccion.y) / dimensiones.alto) * 100}%`,
+                }}
+              >
+                <button type="button" onClick={() => abrirEdicion(seleccionado)} aria-label="Editar texto" title="Editar texto">
+                  <LuPencil />
+                </button>
+                <button type="button" onClick={() => setBorrarTexto(true)} aria-label="Borrar texto" title="Borrar texto">
+                  <DeleteOutlined />
+                </button>
+              </div>
+            )}
             {espejo && <span className="colorear-eje" aria-hidden="true" />}
             {dimensiones && !repitiendo && (
               <div className="colorear-titilan" aria-hidden="true">
@@ -1450,6 +1838,31 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             >
               <span className="colorear-icono-vivo" key={varianteBrillo}>
                 <IconoHerramienta herramienta="brillos" color={colorVarita} size={44} />
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`colorear-selector${enTexto ? ' colorear-selector--en-uso' : ''}${abierto('texto')}`}
+              onClick={tocarTexto}
+              aria-haspopup="true"
+              aria-expanded={menuBase === 'texto'}
+              aria-label="Texto"
+              title="Texto"
+            >
+              <span className={`colorear-selector-texto${rgb ? '' : ' colorear-selector-texto--arcoiris'}`} style={rgb ? { color: css(rgb) } : undefined}>
+                {!rgb && (
+                  <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+                    <defs>
+                      <linearGradient id="colorear-texto-arcoiris" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0" stopColor="#E53935" />
+                        <stop offset="0.35" stopColor="#FDD835" />
+                        <stop offset="0.65" stopColor="#43A047" />
+                        <stop offset="1" stopColor="#1E88E5" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                )}
+                <LuType />
               </span>
             </button>
             <button
@@ -1607,6 +2020,32 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             </div>
           )}
 
+          {menu === 'texto' && (
+            <div className="colorear-desplegable colorear-desplegable--texto" role="menu" aria-label="Texto">
+              <div className="colorear-fuentes">
+                {FUENTES.map((f) => {
+                  const activa = (textoSeleccionado?.fuente ?? fuente) === f.id;
+                  return (
+                    <button
+                      type="button"
+                      key={f.id}
+                      role="menuitemradio"
+                      aria-checked={activa}
+                      className={`colorear-util colorear-fuente${activa ? ' colorear-util--activo' : ''}`}
+                      onClick={() => elegirFuente(f.id)}
+                      aria-label={`Letra ${f.nombre}`}
+                    >
+                      <span className="colorear-fuente-muestra" style={{ fontFamily: f.familia, fontWeight: f.peso }}>Abc</span>
+                      <span className="colorear-util-nombre">{f.nombre}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {seccionColores}
+              {seccionTamano}
+            </div>
+          )}
+
           {menu === 'goma' && (
             <div className="colorear-desplegable colorear-desplegable--goma" role="menu" aria-label="Goma">
               {seccionTamano}
@@ -1652,10 +2091,30 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           className="colorear-cursor-icono"
           style={{ left: -punta.x * escalaCursor, top: -punta.y * escalaCursor }}
         >
-          <IconoHerramienta herramienta={herramienta} color={herramienta === 'brillos' ? colorVarita : colorIcono} size={CURSOR} />
+          {herramienta !== 'texto' && (
+            <IconoHerramienta herramienta={herramienta} color={herramienta === 'brillos' ? colorVarita : colorIcono} size={CURSOR} />
+          )}
         </span>
       </div>
 
+
+      {escribiendo && (
+        <DialogoTexto
+          inicial={escribiendo.texto}
+          editando={Boolean(escribiendo.id)}
+          onListo={confirmarEscritura}
+          onCancelar={() => setEscribiendo(null)}
+        />
+      )}
+
+      {borrarTexto && (
+        <ConfirmarBorrado
+          titulo="¿Borrar este texto?"
+          texto="Se quita el texto de la hoja."
+          onCancelar={() => setBorrarTexto(false)}
+          onConfirmar={quitarTexto}
+        />
+      )}
 
       {confirmarBorrar && (
         <ConfirmarBorrado

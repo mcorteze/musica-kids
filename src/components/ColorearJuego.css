@@ -432,6 +432,131 @@
   border-top: none;
 }
 
+/* ----- Texto: SVG encima de las lineas de la lamina ----- */
+.colorear-textos {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.colorear-texto text {
+  white-space: pre;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Solo con la herramienta Texto los textos se tocan (si no, se pinta a
+   traves de ellos). */
+.colorear-textos--activos .colorear-texto {
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+}
+
+.colorear-hoja--texto .colorear-canvas {
+  cursor: text;
+}
+
+.colorear-texto-seleccion {
+  fill: none;
+  stroke: #0B4F73;
+  stroke-width: 3;
+  stroke-dasharray: 10 7;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Botonera del texto seleccionado (editar, borrar): arriba del texto, o
+   abajo si el texto esta pegado al borde de arriba. No crece con el zoom. */
+.colorear-texto-acciones {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(8, 40, 66, 0.28);
+  transform-origin: bottom center;
+  transform: translate(-50%, calc(-100% - 8px)) scale(calc(1 / var(--escala-vista, 1)));
+}
+
+.colorear-texto-acciones--abajo {
+  transform-origin: top center;
+  transform: translate(-50%, 8px) scale(calc(1 / var(--escala-vista, 1)));
+}
+
+.colorear-texto-acciones button {
+  appearance: none;
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: #EEF3F7;
+  color: #0B4F73;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Boton "Texto" de la barra: la T en el color elegido. */
+.colorear-selector-texto {
+  font-size: 34px;
+  line-height: 0;
+  display: flex;
+  color: #0B4F73;
+}
+
+.colorear-selector-texto--arcoiris svg {
+  stroke: url(#colorear-texto-arcoiris);
+}
+
+/* Menu de Texto: las 4 letras con una muestra. */
+.colorear-fuentes {
+  display: grid;
+  grid-template-columns: repeat(4, 88px);
+  gap: 6px;
+  justify-content: center;
+}
+
+.colorear-fuente-muestra {
+  font-size: 28px;
+  line-height: 1.1;
+  color: #0B4F73;
+}
+
+.colorear-dialogo--texto {
+  width: min(94%, 440px);
+}
+
+.colorear-texto-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.colorear-texto-campo {
+  width: 100%;
+  height: 56px;
+  padding: 0 16px;
+  border: 2px solid #CFD9E3;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0B4F73;
+}
+
+.colorear-texto-campo:focus {
+  outline: none;
+  border-color: #0B4F73;
+}
+
 /* Panel "Más": acciones con su nombre. */
 .colorear-mas {
   display: grid;
@@ -1036,6 +1161,10 @@
 
 /* ----- Celular vertical: barra y paneles mas compactos ----- */
 @media screen and (max-width: 520px) {
+  .colorear-fuentes {
+    grid-template-columns: repeat(4, 72px);
+  }
+
   .colorear-mas {
     grid-template-columns: repeat(2, 120px);
   }

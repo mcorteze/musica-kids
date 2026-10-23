@@ -159,6 +159,19 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   tamaño). Tamaño = solo la barra (sin vista previa ni atajos). Elegir
   dentro de un menú no lo cierra; la paleta completa vuelve al menú de
   origen. Menú con scroll interno si no cabe a lo alto.
+- 2026-10-23: 8 marcos temáticos (Paw Patrol, Gatitos, Reino de hielo,
+  Toy Story, Mar tropical, Princesas, Dinosaurios, Espacio); figuras solo
+  de marcos en FORMAS_MARCO. Sin marco sugerido por temática (decisión).
+- 2026-10-23: herramienta Texto (utils/textosColorear.js): objetos aparte
+  (no pintura) encima de las líneas; tocar la hoja = escribir; tocar texto
+  = seleccionar (arrastrar mueve, 2 toques o lápiz = editar, papelero =
+  borrar con diálogo); menú: 4 letras (Fredoka, Patrick Hand, Chewy,
+  Nunito), colores (arcoíris = letra por letra), tamaño. Deshacer, guardado
+  (campo textos), imprimir/descargar/miniatura, Mis dibujos y repetición.
+  La goma no borra textos. Prueba: colorear-texto.mjs.
+- PENDIENTE (propuesto, sin aprobar): mejoras de fluidez de la acuarela
+  (guardado sin trabar, fundir solo la zona, pincel suave precalculado,
+  capa del trazo fija). Medido a 6x: 201 ms al soltar y 504 ms al guardar.
 
 ## Oportunidades de mejora implementadas (2026-10-22)
 - Bug: el encabezado de Pintar por números (vista 'pixel') lo pisaba una

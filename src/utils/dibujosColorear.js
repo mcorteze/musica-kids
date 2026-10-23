@@ -83,12 +83,13 @@ export async function leerDibujo(id) {
   }
 }
 
-export async function guardarDibujo(id, capa, miniatura, historia = null) {
+// textos: los de la herramienta Texto (objetos, no pintura; ver textosColorear.js).
+export async function guardarDibujo(id, capa, miniatura, historia = null, textos = []) {
   try {
     const anterior = await operar('readonly', (store) => store.get(id));
     const ahora = Date.now();
     const creado = anterior && !vencido(anterior) ? anterior.creado : ahora;
-    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, usado: ahora, capa, miniatura, historia }));
+    await operar('readwrite', (store) => store.put({ id, creado, actualizado: ahora, usado: ahora, capa, miniatura, historia, textos }));
   } catch {
     // Sin espacio o sin IndexedDB: el dibujo sigue en pantalla, solo no se guarda.
   }

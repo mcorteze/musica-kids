@@ -1966,12 +1966,12 @@ export default function MenuActividades({ onOpenChange }) {
   const avisarGuardadoColorear = useCallback(() => setVersionDibujos((v) => v + 1), []);
   const imprimirDibujoGuardado = useCallback((d) => {
     cargarLaminaColorear(d.id).then((src) => {
-      if (src) imprimirDibujo(d.capa, src, imprimirImagen);
+      if (src) imprimirDibujo(d.capa, src, imprimirImagen, d.textos);
     });
   }, []);
   const guardarImagenDibujoGuardado = useCallback((d) => {
     cargarLaminaColorear(d.id).then((src) => {
-      if (src) guardarImagenDibujo(d.capa, src, d.id);
+      if (src) guardarImagenDibujo(d.capa, src, d.id, d.textos);
     });
   }, []);
   const borrarDibujoGuardado = useCallback((id) => {
