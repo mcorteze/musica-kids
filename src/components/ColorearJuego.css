@@ -245,7 +245,9 @@
   padding: 0;
   border: none;
   border-radius: 20px;
-  background: #F2F6F9;
+  /* Sin fondo: solo la herramienta elegida lleva fondo y aro (pedido
+     explicito: con todas teñidas no se notaba cual estaba elegida). */
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -264,7 +266,7 @@
 }
 
 .colorear-selector--abierto {
-  background: rgba(11, 79, 115, 0.12);
+  background: #D4ECFB;
   box-shadow: inset 0 0 0 3px #0B4F73;
 }
 
@@ -272,10 +274,10 @@
   border-bottom-color: #0B4F73;
 }
 
-/* Cual de las tres herramientas (lapiz, sello, goma) esta pintando: fondo
-   teñido y una rayita abajo. "Abierto" (panel desplegado) es el aro. */
+/* La herramienta elegida: fondo celeste, aro azul y una rayita abajo. */
 .colorear-selector--en-uso {
-  background: rgba(11, 79, 115, 0.13);
+  background: #D4ECFB;
+  box-shadow: inset 0 0 0 3px #0B4F73;
 }
 
 .colorear-selector--en-uso::before {

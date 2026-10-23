@@ -36,6 +36,8 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   await espera(400);
   chequear('aparece el texto', (await textos()).length === 1, JSON.stringify(await textos()));
   chequear('queda seleccionado con botonera', await p.$('.colorear-texto-acciones') && await p.$('.colorear-texto-seleccion'));
+  // Texto se usa una vez: vuelve la herramienta anterior (pedido explicito).
+  chequear('tras escribir, Texto se desmarca y vuelve el lápiz', !(await p.$('.colorear-selector--en-uso[aria-label="Texto"]')) && await p.$('.colorear-selector--en-uso[aria-label^="Lápiz"]'));
   const antesMover = (await textos())[0];
   const caja = await (await p.$('.colorear-texto')).boundingBox();
   await arrastrar(caja.x + caja.width / 2, caja.y + caja.height / 2, caja.x + caja.width / 2 - 100, caja.y + caja.height / 2 + 300);
@@ -59,6 +61,11 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   await p.keyboard.press('Escape');
   await espera(200);
   chequear('el color se aplica al texto seleccionado', (await textos())[0].includes('rgb(30, 136, 229)'), (await textos())[0]);
+  // Con un texto seleccionado, tocar la hoja solo lo suelta: ni escribe ni pinta.
+  const antesSoltar = await pintado(p);
+  await tocar(m.x + m.width * 0.85, m.y + m.height * 0.15);
+  await espera(400);
+  chequear('tocar la hoja suelta el texto sin escribir ni pintar', !(await p.$('.colorear-texto-campo')) && !(await p.$('.colorear-texto-acciones')) && (await pintado(p)) === antesSoltar);
   await p.click('[aria-label="Deshacer"]');
   await espera(200);
   chequear('deshacer vuelve el color anterior', (await textos())[0].includes('rgb(229, 57, 53)'), (await textos())[0]);

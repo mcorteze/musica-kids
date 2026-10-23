@@ -66,7 +66,10 @@ import './ColorearJuego.css';
 // Texto (pedido explicito 2026-10-23): boton "Texto"; tocar la hoja
 // escribe uno nuevo; tocar un texto lo selecciona (arrastrar = mover, dos
 // toques o el lapiz = editar, papelero = borrar con confirmacion). Los
-// textos son objetos aparte (utils/textosColorear.js), no pintura. Los selectores
+// textos son objetos aparte (utils/textosColorear.js), no pintura.
+// Texto se usa UNA vez (pedido explicito): tras escribir o seleccionar,
+// vuelve la herramienta anterior y el texto queda seleccionado; tocar la
+// hoja solo lo suelta (ni escribe ni pinta). Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
 // y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
@@ -493,6 +496,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [arrastrando, setArrastrando] = useState(false);
   // Ultimo paso de deshacer que se puede seguir fusionando (barra de tamaño).
   const fusionTextoRef = useRef(null);
+  // Herramienta a la que se vuelve despues de usar Texto una vez.
+  const previaTextoRef = useRef('crayon');
   const ultimoToqueTextoRef = useRef({ id: null, t: 0 });
   // Textos de la repeticion ("Ver cómo lo pinté").
   const [textosRepeticion, setTextosRepeticion] = useState([]);
@@ -1041,6 +1046,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const alternarMano = () => {
     sonidoClic();
     setMenu(null);
+    setSeleccionado(null);
     setMano((m) => !m);
     ocultarCursor();
   };
@@ -1055,9 +1061,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       ignorarToqueRef.current = false;
       return;
     }
-    // Texto: el toque se resuelve al soltar (si no fue un pellizco): suelta
-    // el texto seleccionado o abre el dialogo para escribir uno nuevo ahi.
-    if (herramienta === 'texto') {
+    // Texto, o un texto seleccionado: el toque se resuelve al soltar (si no
+    // fue un pellizco): suelta el texto seleccionado o abre el dialogo para
+    // escribir uno nuevo ahi.
+    if (herramienta === 'texto' || seleccionado) {
       e.preventDefault();
       if (dimensiones) toqueTextoRef.current = { pointerId: e.pointerId, p: punto(e) };
       return;
@@ -1387,7 +1394,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     setColorId(cid);
     setMano(false);
     // Con un texto seleccionado, tambien se lo cambia a el.
-    if (herramienta === 'texto' && seleccionado) {
+    if (seleccionado) {
       const nuevo = cid.startsWith('propio:') ? cid.slice(7).split(',').map(Number) : COLORES.find((c) => c.id === cid).rgb;
       cambiarSeleccionado({ rgb: nuevo ? [...nuevo] : null });
     }
@@ -1404,6 +1411,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const anchoReal = Math.max(4, tamano * (ESCALA_HERRAMIENTA[herramienta] ?? 1));
   // ----- Textos -----
   const enTexto = herramienta === 'texto' && !mano;
+  // Los textos se tocan con Texto activo o mientras hay uno seleccionado.
+  const textosTocables = enTexto || Boolean(seleccionado);
+  // Texto ya se uso: vuelve la herramienta anterior (sin soltar la seleccion).
+  const dejarTexto = () => {
+    if (herramienta === 'texto') setHerramienta(previaTextoRef.current);
+  };
   // Tamaño de letra en px del lienzo para un valor de la barra de tamaño
   // (en pantalla, ~2,4 veces el valor: con el valor inicial, ~50px).
   const escalaLienzo = () => {
@@ -1454,6 +1467,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const confirmarEscritura = (valor) => {
     const pedido = escribiendo;
     setEscribiendo(null);
+    dejarTexto();
     const limpio = valor.trim();
     if (pedido.id) {
       if (!limpio) {
@@ -1487,11 +1501,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // cada movimiento) y al soltar se anota el cambio. Un toque sin mover lo
   // selecciona; dos toques seguidos lo editan.
   const apoyarTexto = (e, t) => {
-    if (!enTexto || repitiendoRef.current) return;
+    if (!textosTocables || repitiendoRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     arrastreTextoRef.current = { id: t.id, pointerId: e.pointerId, inicio: punto(e), x0: t.x, y0: t.y, x: t.x, y: t.y, movido: false, nodo: e.currentTarget };
     if (seleccionado !== t.id) seleccionarTexto(t);
+    dejarTexto();
   };
   const moverTexto = (e) => {
     const a = arrastreTextoRef.current;
@@ -1548,16 +1563,19 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   // "clic" que el navegador genera despues del toque caeria sobre el (un
   // boton "Cancelar" lo cerraba al instante). Sin ese clic.
   const anularClicTactil = (e) => {
-    if (enTexto) e.preventDefault();
+    if (textosTocables) e.preventDefault();
   };
 
   const elegirFuente = (fid) => {
     sonidoClic();
     setFuente(fid);
-    if (enTexto && seleccionado) cambiarSeleccionado({ fuente: fid });
+    if (seleccionado) cambiarSeleccionado({ fuente: fid });
   };
   const tocarTexto = () => {
-    usarHerramienta('texto');
+    if (!seleccionado) {
+      if (herramienta !== 'texto') previaTextoRef.current = herramienta;
+      usarHerramienta('texto');
+    }
     alternarMenu('texto');
   };
 
@@ -1597,7 +1615,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           onChange={(e) => {
             const v = Number(e.target.value);
             setTamano(v);
-            if (enTexto && seleccionado) cambiarSeleccionado({ tam: tamDeBarra(v) }, `tam:${seleccionado}`);
+            if (seleccionado) cambiarSeleccionado({ tam: tamDeBarra(v) }, `tam:${seleccionado}`);
           }}
           aria-label="Tamaño"
         />
@@ -1639,7 +1657,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
             <img src={src} alt="" className="colorear-lamina" draggable={false} />
             {dimensiones && (
               <svg
-                className={`colorear-textos${enTexto && !repitiendo ? ' colorear-textos--activos' : ''}`}
+                className={`colorear-textos${textosTocables && !repitiendo ? ' colorear-textos--activos' : ''}`}
                 viewBox={`0 0 ${dimensiones.ancho} ${dimensiones.alto}`}
                 aria-hidden="true"
               >
@@ -1681,7 +1699,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                     </g>
                   );
                 })}
-                {enTexto && cajaSeleccion && !arrastrando && !repitiendo && (
+                {seleccionado && cajaSeleccion && !arrastrando && !repitiendo && (
                   <rect
                     className="colorear-texto-seleccion"
                     x={cajaSeleccion.x}
@@ -1693,7 +1711,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                 )}
               </svg>
             )}
-            {enTexto && cajaSeleccion && !arrastrando && !repitiendo && dimensiones && (
+            {seleccionado && cajaSeleccion && !arrastrando && !repitiendo && dimensiones && (
               <div
                 className={`colorear-texto-acciones${cajaSeleccion.y / dimensiones.alto < 0.12 ? ' colorear-texto-acciones--abajo' : ''}`}
                 style={{
@@ -2103,7 +2121,10 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           inicial={escribiendo.texto}
           editando={Boolean(escribiendo.id)}
           onListo={confirmarEscritura}
-          onCancelar={() => setEscribiendo(null)}
+          onCancelar={() => {
+            setEscribiendo(null);
+            dejarTexto();
+          }}
         />
       )}
 
