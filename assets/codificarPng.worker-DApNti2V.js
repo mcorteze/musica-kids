@@ -1,0 +1,1 @@
+(function(){self.onmessage=async({data:{n:e,imagen:t}})=>{try{let n=new OffscreenCanvas(t.width,t.height);n.getContext(`2d`).drawImage(t,0,0),t.close();let r=await n.convertToBlob({type:`image/png`});self.postMessage({n:e,blob:r})}catch(t){self.postMessage({n:e,error:String(t)})}}})();
