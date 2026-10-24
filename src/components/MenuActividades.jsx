@@ -12,6 +12,7 @@ import PintarDev from './PintarDev';
 import PintarPixelDev from './PintarPixelDev';
 import SimonJuego, { SIMON_GRUPOS } from './SimonJuego';
 import ExplosionChispas from './ExplosionChispas';
+import HoraDormirPanel from './HoraDormirPanel';
 import ColorearLienzo, { ColorearGaleria, MisDibujos, guardarImagenDibujo, imprimirDibujo } from './ColorearJuego';
 import { LuPencil } from 'react-icons/lu';
 import { borrarDibujo, leerDibujos, limpiarDibujosVencidos } from '../utils/dibujosColorear';
@@ -1983,6 +1984,7 @@ export default function MenuActividades({ onOpenChange }) {
     else setVista('menu');
   }, [laminaColorear, grupoColorear]);
   const irASimon = useCallback(() => setVista('simon'), []);
+  const irAHoraDormir = useCallback(() => setVista('horaDormir'), []);
   const volverAlMenu = useCallback(() => {
     setVista('menu');
     setGrupoImprimir(null);
@@ -3079,6 +3081,8 @@ export default function MenuActividades({ onOpenChange }) {
       if (catalogoRomp) setCatalogoRomp(false);
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
+    } else if (vista === 'horaDormir') {
+      volverAlMenu();
     }
   }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, grupoSimonId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
 
@@ -3333,6 +3337,9 @@ export default function MenuActividades({ onOpenChange }) {
     mostrarVolver = true;
     tituloHeader = grupoSimon ? grupoSimon.name : 'Simón dice';
     colorHeader = temaSimon?.headerStyle?.background;
+  } else if (vista === 'horaDormir') {
+    mostrarVolver = true;
+    tituloHeader = 'Hora de dormir';
   }
   if (vista === 'colorear') {
     const grupoInfo = GRUPOS_IMPRIMIBLES.find((g) => g.id === grupoColorear);
@@ -3650,6 +3657,24 @@ export default function MenuActividades({ onOpenChange }) {
                         <img src={imagenSimon} alt="" className="memory-picker-img" />
                       </span>
                       <span className="memory-picker-nombre">Simón dice</span>
+                    </button>
+                    {/* Hora de dormir: ajustes del adulto y pruebas (2026-10-23).
+                        Lo que ve el niño (avisos y pantalla de buenas noches)
+                        funciona sin modo desarrollador si se activa aquí. */}
+                    <button
+                      type="button"
+                      className="memory-picker-tile memory-solo-dev"
+                      onClick={irAHoraDormir}
+                      aria-label="Hora de dormir"
+                    >
+                      <span className="memory-picker-img-wrap">
+                        <span className="memory-picker-img hd-tarjeta-img">
+                          <svg viewBox="0 0 40 40" aria-hidden="true">
+                            <path d="M26 6a15 15 0 1 0 8 26A13 13 0 0 1 26 6z" fill="#FFD66B" />
+                          </svg>
+                        </span>
+                      </span>
+                      <span className="memory-picker-nombre">Hora de dormir</span>
                     </button>
                   </div>
                 </div>
@@ -4778,6 +4803,8 @@ export default function MenuActividades({ onOpenChange }) {
                   )}
                 </>
               ))}
+
+              {vista === 'horaDormir' && <HoraDormirPanel />}
 
               {vista === 'simon' && !grupoSimon && (
                 <div className="memory-picker">

@@ -71,9 +71,10 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   chequear('deshacer vuelve el color anterior', (await textos())[0].includes('rgb(229, 57, 53)'), (await textos())[0]);
   await p.click('[aria-label="Rehacer"]');
   await espera(200);
-  // pintar encima con el lapiz
+  // pintar encima con el lapiz (en rojo: el azul queda solo para el texto)
   await p.click('.colorear-selector[aria-label^="Lápiz"]');
   await espera(200);
+  await p.$$eval('.colorear-desplegable--lapices .colorear-color', (b) => b[0].click());
   await p.keyboard.press('Escape');
   await espera(200);
   const c3 = await (await p.$('.colorear-texto')).boundingBox();
@@ -83,6 +84,16 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   chequear('con el lápiz se pinta a través del texto', (await pintado(p)) > antes);
   chequear('fuera de Texto no hay selección', !(await p.$('.colorear-texto-acciones')));
   await espera(1500);
+  // Se recarga recien cuando el guardado automatico ya tiene el trazo.
+  const guardoTrazo = () => p.evaluate(() => new Promise((res) => {
+    const q = indexedDB.open('musica-kids-colorear');
+    q.onsuccess = () => {
+      const g = q.result.transaction('dibujos').objectStore('dibujos').getAll();
+      g.onsuccess = () => res(g.result.some((d) => (d.historia ?? []).some((h) => h.t === 'trazo')));
+    };
+    q.onerror = () => res(false);
+  }));
+  for (let i = 0; i < 40 && !(await guardoTrazo()); i++) await espera(150);
   await p.reload();
   await espera(1500);
   await p.click('.memory-trigger-btn');
@@ -110,7 +121,7 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
     for (let i = 0; i < d.length; i += 4) if (d[i] < 90 && d[i + 1] > 100 && d[i + 1] < 170 && d[i + 2] > 200) n++;
     return n;
   });
-  chequear('el texto sale en la imagen para imprimir', azules > 30, `${azules} px azules`);
+  chequear('el texto sale en la imagen para imprimir', azules > 15, `${azules} px azules`);
   await p.keyboard.press('Escape');
   await espera(300);
   await p.click('[aria-label="Más opciones"]');

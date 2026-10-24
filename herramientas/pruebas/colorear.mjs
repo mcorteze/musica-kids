@@ -97,10 +97,10 @@ export async function probarColorear(browser, carpeta, chequear) {
   }
   chequear('la rueda acerca (2x en pocos pasos)', pasos <= 5, `${pasos} pasos`);
   await espera(300);
-  chequear('aparece el botón de porcentaje', await page.$('.colorear-zoom'));
-  await page.click('.colorear-zoom');
-  await espera(200);
-  chequear('el botón de porcentaje vuelve a la hoja entera', (await escalaVista(page)) === 1);
+  chequear('el control de zoom muestra el porcentaje', (await page.$eval('.colorear-control-zoom-valor', (e) => e.textContent)) !== '100%');
+  await page.click('.colorear-flecha--centro');
+  await espera(400);
+  chequear('el centro de las flechas vuelve a la hoja entera', (await escalaVista(page)) === 1);
   await espera(1200);
   await page.close();
 
@@ -114,7 +114,14 @@ export async function probarColorear(browser, carpeta, chequear) {
   await toque('touchStart', [[c[0] - 40, c[1]]]);
   await toque('touchMove', [[c[0] - 30, c[1] + 5]]);
   await toque('touchMove', [[c[0] - 20, c[1] + 10]]);
-  const alcanzo = await pintado(t);
+  // El crayon pinta en su capa hasta soltar: se cuentan las dos.
+  const alcanzo = (await pintado(t)) + await t.evaluate(() => {
+    const c = document.querySelector('.colorear-canvas-trazo');
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+    return n;
+  });
   await toque('touchStart', [[c[0] - 20, c[1] + 10], [c[0] + 40, c[1]]]);
   for (let k = 1; k <= 12; k++) {
     await toque('touchMove', [[c[0] - 20 - k * 12, c[1] + 10], [c[0] + 40 + k * 12, c[1]]]);
@@ -132,7 +139,7 @@ export async function probarColorear(browser, carpeta, chequear) {
   await toque('touchEnd', []);
   await espera(200);
   chequear('un dedo pinta con zoom', (await pintado(t)) > 0);
-  await t.$eval('.colorear-zoom', (b) => b.click());
+  await t.$eval('.colorear-flecha--centro', (b) => b.click());
   await espera(200);
   await t.$eval('.colorear-selector--mano', (b) => b.click());
   await espera(200);

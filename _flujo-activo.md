@@ -1,5 +1,24 @@
 # Flujo activo — musica-kids
-Actualizado: 2026-10-22
+Actualizado: 2026-10-23
+
+## Hora de dormir (2026-10-23) — fase 1 hecha, sin commit, en prueba del usuario
+- Pedido: inculcar que hay hora de terminar con las pantallas; avisar antes,
+  no apagar en seco. Primero el cierre del día; otros horarios después.
+- Hecho: utils/horaDormir.js (horario, fases, prórroga, ensayo),
+  components/HoraDormir.jsx (luna con anillo que se vacía, avisos a 30/10/2
+  min con campanita, pantalla de buenas noches hasta despertar, pregunta de
+  adulto: multiplicación → "15 minutos más" / "Apagar por hoy"),
+  HoraDormirPanel.jsx (Actividades > Hora de dormir, solo modo dev: activar,
+  horas, vistas previas, ensayo de un minuto). Música baja en 4 s y se pausa.
+  Clave musica-kids-hora-dormir permanente (caducidad.js). Viene APAGADO.
+- Decisión: SIN voz sintetizada (pedido explícito: "no necesito voz robótica").
+- Pruebas: herramientas/pruebas/hora-dormir.mjs (24 chequeos por build).
+- Pendiente:
+  - [ ] Que el usuario lo pruebe en la tablet y lo active.
+  - [ ] Fase final: ilustraciones de Skye (aviso, último juego, durmiendo)
+        en lugar de la luna SVG.
+  - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida,
+        horario distinto fin de semana.
 
 ## PLANIFICADO — reestructuración (NO se hace por ahora, pedido 2026-10-22)
 Dos cambios ligados; el 1 es requisito del 2.
@@ -184,6 +203,18 @@ skills/agregar-pintar.md (por-asignar → Modo desarrollador → propuesta).
   (tipos | colores, tamaño, Listo), compacto ≤1100px; celular vertical =
   hoja desde abajo sobre la barra; el JSX corre el menú para que no salga
   de la pantalla (--correr-x/y). Verificado en 11 pantallas.
+- 2026-10-24: (1) Puntero en tablet no tomaba textos: área táctil = rect
+  invisible del tamaño del texto + pointer-events: all (bounding-box no
+  existiría en Chrome viejo; NO verificado en la tablet real). (2) Pintura
+  plana: crayón, lápiz, tiza y pincel pasan a "capa"; fundirCapa mezcla
+  píxel a píxel en la zona del trazo: mismo color = intensidad mayor (no
+  oscurece), otro color = mezcla normal; el grano va fijo a la hoja. Costo
+  al soltar (CPU 6x): ~220 ms crayón. Spray sin cambio. (3) Repetición:
+  la hoja pintada se oculta con display:none (con visibility se veía el
+  final en la tablet; no reproducido aquí). (4) Control de zoom a la
+  derecha (−, %, +, flechas en cruz, centro = hoja entera); en vertical
+  flota abajo a la derecha. Se quitó el chip de % de la hoja. Doble toque:
+  ventana 450 ms (antes 320).
 - PENDIENTE (propuesto, sin aprobar): mejoras de fluidez de la acuarela
   (guardado sin trabar, fundir solo la zona, pincel suave precalculado,
   capa del trazo fija). Medido a 6x: 201 ms al soltar y 504 ms al guardar.

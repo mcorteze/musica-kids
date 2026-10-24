@@ -35,6 +35,8 @@ const PERMANENTES = new Set([
   'musica-kids-modo-desarrollador',
   // Ajuste del equipo: modo liviano fijado a mano (utils/rendimiento.js)
   'musica-kids-modo-liviano-forzado',
+  // Ajuste del equipo: hora de dormir (utils/horaDormir.js)
+  'musica-kids-hora-dormir',
   'musica-kids-diferencias-marcas',
   'musica-kids-pintar-cuadriculas',
   'musica-kids-pintar-pixel-descartes',

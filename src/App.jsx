@@ -9,6 +9,7 @@ import GroupMenuPage from './components/GroupMenuPage';
 import ToyChat from './components/ToyChat';
 import DrivingMode from './components/DrivingMode';
 import MenuActividades from './components/MenuActividades';
+import HoraDormir from './components/HoraDormir';
 import useAudioPlayer from './hooks/useAudioPlayer';
 import useLikedSongs from './hooks/useLikedSongs';
 import useLovedSongs from './hooks/useLovedSongs';
@@ -229,6 +230,30 @@ export default function App() {
     handlePrev();
   }, [audioRef, handleSeek, handlePrev]);
 
+  // Hora de dormir (components/HoraDormir.jsx): la musica no se corta en
+  // seco, baja en unos segundos y se pausa. Si alguien la vuelve a dar (por
+  // ejemplo desde la pantalla de bloqueo) se vuelve a apagar igual.
+  const [dormido, setDormido] = useState(false);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!dormido || !isPlaying || !audio) return undefined;
+    const inicial = audio.volume;
+    const pasos = 40;
+    let paso = 0;
+    const id = setInterval(() => {
+      paso += 1;
+      audio.volume = Math.max(0, inicial * (1 - paso / pasos));
+      if (paso >= pasos) {
+        clearInterval(id);
+        setIsPlaying(false);
+      }
+    }, 100);
+    return () => {
+      clearInterval(id);
+      audio.volume = isMuted ? 0 : volume / 100;
+    };
+  }, [dormido, isPlaying, audioRef, isMuted, volume]);
+
   const handleMediaPlay = useCallback(() => {
     if (currentSong) setIsPlaying(true);
   }, [currentSong]);
@@ -411,6 +436,8 @@ export default function App() {
           />
         )}
       </div>
+      {/* Fuera del app-shell: ese queda inert en el modo auto. */}
+      <HoraDormir onDormirChange={setDormido} />
     </ConfigProvider>
   );
 }

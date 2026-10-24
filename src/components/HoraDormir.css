@@ -1,0 +1,437 @@
+/* ========== HORA DE DORMIR (components/HoraDormir.jsx) ==========
+   Colores de noche: azul profundo y luna amarilla tibia, sin brillos ni
+   colores saturados (la idea es calmar, no excitar). Capas por encima del
+   drawer de Actividades (9998), del reproductor flotante (10000) y de la
+   vista previa de fotos (10002). Solo se animan opacity/transform (tablet
+   modesta); el titileo de las estrellas lo apaga .modo-liviano. */
+
+:root {
+  --hd-noche: #141C46;
+  --hd-noche-2: #26306B;
+  --hd-luna: #FFD66B;
+  --hd-texto: #F4F1FF;
+  --hd-texto-suave: #C9C6EE;
+}
+
+/* ---------- Luna con el tiempo que queda ---------- */
+.hd-reloj {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 10003;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hd-noche);
+  box-shadow: 0 6px 18px rgba(10, 14, 40, 0.35);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  animation: hdAparecer 0.4s ease both;
+}
+
+.hd-reloj > * {
+  grid-area: 1 / 1;
+}
+
+.hd-reloj-anillo {
+  width: 72px;
+  height: 72px;
+  transform: rotate(-90deg);
+}
+
+.hd-reloj-pista,
+.hd-reloj-tiempo {
+  fill: none;
+  stroke-width: 6;
+}
+
+.hd-reloj-pista {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.hd-reloj-tiempo {
+  stroke: var(--hd-luna);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* El ultimo tramo cambia de color: se nota sin leer nada. */
+.hd-reloj--ultimo .hd-reloj-tiempo {
+  stroke: #FF9D7A;
+}
+
+/* ---------- Aviso ---------- */
+.hd-aviso {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 10004;
+  width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 18px 20px 20px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--hd-noche-2), var(--hd-noche));
+  color: var(--hd-texto);
+  box-shadow: 0 14px 40px rgba(10, 14, 40, 0.45);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 16px;
+  transform: translateX(-50%);
+  animation: hdBajar 0.45s ease both;
+}
+
+.hd-aviso-ilustracion {
+  grid-row: span 2;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+}
+
+.hd-aviso-titulo {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hd-aviso-ok {
+  justify-self: start;
+  min-height: 56px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hd-luna);
+  color: #3A2A00;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ---------- Noche (pantalla de dormir) ---------- */
+.hd-noche {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 30%, var(--hd-noche-2) 0%, var(--hd-noche) 70%);
+  color: var(--hd-texto);
+  display: grid;
+  place-items: center;
+  animation: hdAparecer 1.2s ease both;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hd-estrella {
+  position: absolute;
+  border-radius: 50%;
+  background: #FFF6D8;
+  opacity: 0.8;
+  animation: hdTitilar 3.2s ease-in-out infinite;
+}
+
+.modo-liviano .hd-estrella {
+  animation: none;
+}
+
+.hd-noche-centro {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.hd-noche-ilustracion {
+  width: min(220px, 50vmin);
+  height: min(220px, 50vmin);
+  display: grid;
+  place-items: center;
+}
+
+.hd-noche-ilustracion svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hd-noche-titulo {
+  margin: 0;
+  color: var(--hd-texto);
+  font-size: clamp(36px, 7vmin, 60px);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.hd-noche-texto {
+  margin: 0;
+  color: var(--hd-texto-suave);
+  font-size: clamp(20px, 3.4vmin, 28px);
+  font-weight: 600;
+}
+
+/* Discreto pero tocable: un niño que lo toca se encuentra con la pregunta. */
+.hd-adulto-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hd-texto-suave);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- Pregunta de adulto ---------- */
+.hd-puerta-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(6, 9, 28, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.hd-puerta {
+  width: min(380px, 100%);
+  box-sizing: border-box;
+  padding: 22px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #1E2345;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+}
+
+.hd-puerta-titulo {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #5A5F86;
+}
+
+.hd-puerta-pregunta {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.hd-puerta-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 52px;
+  padding: 0 14px;
+  border: 2px solid #C9CCE6;
+  border-radius: 6px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E2345;
+  outline: none;
+}
+
+.hd-puerta-input:focus {
+  border-color: #4B57C9;
+}
+
+.hd-puerta-input--error {
+  border-color: #D9534F;
+}
+
+.hd-puerta-error {
+  margin: 8px 0 0;
+  color: #B33A36;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hd-puerta-acciones,
+.hd-puerta-opciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.hd-puerta-acciones {
+  justify-content: flex-end;
+}
+
+.hd-puerta-opciones {
+  flex-direction: column;
+}
+
+.hd-btn {
+  min-height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #3F4AB8;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hd-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hd-btn--suave {
+  background: #ECEDF8;
+  color: #2E3470;
+}
+
+/* ---------- Pruebas del modo desarrollador ---------- */
+.hd-prueba-chip,
+.hd-prueba-cerrar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10011;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #7C3AED;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hd-prueba-cerrar {
+  top: auto;
+  bottom: 104px;
+  left: 20px;
+  z-index: 10003;
+  min-height: 40px;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Panel de configuracion (Actividades > Hora de dormir) */
+.hd-panel {
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 8px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #2B2350;
+}
+
+.hd-panel-bloque {
+  padding: 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 2px 10px rgba(60, 30, 90, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hd-panel-bloque h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #2B2350;
+}
+
+.hd-panel-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hd-panel-hora {
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid #CFC8E6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #2B2350;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.hd-panel-estado {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4A4270;
+}
+
+.hd-panel-nota {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #4A4270;
+}
+
+.hd-panel-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Imagen de la tarjeta del menu (todavia sin ilustracion propia). */
+.hd-tarjeta-img {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 35%, var(--hd-noche-2), var(--hd-noche));
+  display: grid;
+  place-items: center;
+}
+
+.hd-tarjeta-img svg {
+  width: 45%;
+  height: 45%;
+}
+
+@keyframes hdAparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hdBajar {
+  from { opacity: 0; transform: translate(-50%, -24px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes hdTitilar {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.3; }
+}
+
+@media (max-width: 640px) {
+  .hd-aviso {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .hd-aviso-ilustracion {
+    grid-row: auto;
+  }
+
+  .hd-aviso-ok {
+    justify-self: center;
+  }
+}

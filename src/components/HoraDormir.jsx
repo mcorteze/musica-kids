@@ -1,0 +1,293 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  AVISOS, PRORROGA_MIN, apagarPorHoy, calcular, darProrroga, terminarPrueba, useHoraDormir,
+} from '../utils/horaDormir';
+import './HoraDormir.css';
+
+// Lo que ve el niño de la hora de dormir (la logica esta en
+// utils/horaDormir.js y se configura en Actividades > Hora de dormir, modo
+// desarrollador). Tres piezas:
+// - la luna: aparece 30 min antes en la esquina y se va vaciando, como un
+//   reloj de arena (un preescolar no lee la hora, pero ve cuanto queda);
+// - los avisos: tarjeta arriba + campanita a los 30, 10 y 2 minutos (sin
+//   voz sintetizada: pedido explicito). No bloquean: el juego sigue debajo;
+// - la noche: pantalla de buenas noches que tapa todo hasta despertar. La
+//   musica se apaga despacio (App.jsx, onDormirChange).
+// Va fuera del app-shell (que queda inert en el modo auto) y por encima del
+// drawer de Actividades (9998) y del reproductor flotante (10000).
+
+const TITULOS = {
+  aviso30: 'En un ratito es hora de dormir',
+  aviso10: 'Ve terminando tu juego',
+  ultimo: '¡Último juego!',
+};
+
+// La tarjeta se va sola; la luna queda para volver a verla.
+const AVISO_VISIBLE_MS = 20000;
+const ORDEN = ['libre', 'aviso30', 'aviso10', 'ultimo', 'dormir'];
+
+// Campanita suave de dos notas (sin archivo de audio).
+function campanita() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    [[784, 0], [523, 0.28]].forEach(([frecuencia, desfase]) => {
+      const osc = ctx.createOscillator();
+      const vol = ctx.createGain();
+      const t = ctx.currentTime + desfase;
+      osc.type = 'sine';
+      osc.frequency.value = frecuencia;
+      vol.gain.setValueAtTime(0.0001, t);
+      vol.gain.exponentialRampToValueAtTime(0.18, t + 0.03);
+      vol.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      osc.connect(vol).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.2);
+    });
+    setTimeout(() => ctx.close(), 1800);
+  } catch {
+    // Sin audio: la tarjeta basta.
+  }
+}
+
+function Luna({ tamano = 40 }) {
+  return (
+    <svg width={tamano} height={tamano} viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M26 6a15 15 0 1 0 8 26A13 13 0 0 1 26 6z" fill="#FFD66B" />
+    </svg>
+  );
+}
+
+// Luna en la esquina con un anillo que se vacia en los ultimos 30 minutos.
+function Reloj({ restantes, fase, onTocar }) {
+  const r = 30;
+  const largo = 2 * Math.PI * r;
+  const fraccion = Math.max(0, Math.min(1, restantes / AVISOS.aviso30));
+  return (
+    <button
+      type="button"
+      className={`hd-reloj hd-reloj--${fase}`}
+      onClick={onTocar}
+      aria-label="Cuánto falta para dormir"
+    >
+      <svg viewBox="0 0 72 72" className="hd-reloj-anillo" aria-hidden="true">
+        <circle cx="36" cy="36" r={r} className="hd-reloj-pista" />
+        <circle
+          cx="36"
+          cy="36"
+          r={r}
+          className="hd-reloj-tiempo"
+          strokeDasharray={largo}
+          strokeDashoffset={largo * (1 - fraccion)}
+        />
+      </svg>
+      <Luna tamano={34} />
+    </button>
+  );
+}
+
+function Aviso({ fase, onCerrar }) {
+  return (
+    <div className={`hd-aviso hd-aviso--${fase}`} role="status">
+      <div className="hd-aviso-ilustracion">
+        <Luna tamano={56} />
+      </div>
+      <p className="hd-aviso-titulo">{TITULOS[fase]}</p>
+      <button type="button" className="hd-aviso-ok" onClick={onCerrar}>
+        ¡Ya voy!
+      </button>
+    </div>
+  );
+}
+
+const nuevaPregunta = () => {
+  const a = 6 + Math.floor(Math.random() * 4);
+  const b = 6 + Math.floor(Math.random() * 4);
+  return { a, b };
+};
+
+// Pregunta de adulto: una multiplicacion que un preescolar no resuelve.
+function PuertaAdulto({ prueba, onCerrar }) {
+  const [pregunta, setPregunta] = useState(nuevaPregunta);
+  const [respuesta, setRespuesta] = useState('');
+  const [error, setError] = useState(false);
+  const [abierta, setAbierta] = useState(false);
+
+  const responder = (e) => {
+    e.preventDefault();
+    if (Number(respuesta) === pregunta.a * pregunta.b) {
+      setAbierta(true);
+      return;
+    }
+    setError(true);
+    setRespuesta('');
+    setPregunta(nuevaPregunta());
+  };
+
+  return (
+    <div className="hd-puerta-fondo" onClick={onCerrar}>
+      <div className="hd-puerta" onClick={(e) => e.stopPropagation()}>
+        {!abierta ? (
+          <form onSubmit={responder}>
+            <p className="hd-puerta-titulo">Solo para adultos</p>
+            <label className="hd-puerta-pregunta" htmlFor="hd-respuesta">
+              ¿Cuánto es {pregunta.a} × {pregunta.b}?
+            </label>
+            <input
+              id="hd-respuesta"
+              className={`hd-puerta-input${error ? ' hd-puerta-input--error' : ''}`}
+              inputMode="numeric"
+              autoComplete="off"
+              value={respuesta}
+              onChange={(e) => {
+                setError(false);
+                setRespuesta(e.target.value.replace(/\D/g, '').slice(0, 3));
+              }}
+            />
+            {error && <p className="hd-puerta-error">No es correcto, prueba con esta otra.</p>}
+            <div className="hd-puerta-acciones">
+              <button type="button" className="hd-btn hd-btn--suave" onClick={onCerrar}>Cancelar</button>
+              <button type="submit" className="hd-btn" disabled={!respuesta}>Aceptar</button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <p className="hd-puerta-titulo">¿Qué quieres hacer?</p>
+            <div className="hd-puerta-opciones">
+              {prueba ? (
+                <button type="button" className="hd-btn" onClick={terminarPrueba}>Terminar prueba</button>
+              ) : (
+                <>
+                  <button type="button" className="hd-btn" onClick={darProrroga}>
+                    {PRORROGA_MIN} minutos más
+                  </button>
+                  <button type="button" className="hd-btn hd-btn--suave" onClick={apagarPorHoy}>
+                    Apagar por hoy
+                  </button>
+                </>
+              )}
+              <button type="button" className="hd-btn hd-btn--suave" onClick={onCerrar}>Volver</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Estrellas fijas (sin JS): pocas y quietas salvo un titileo de opacidad,
+// que el modo liviano apaga.
+const ESTRELLAS = [
+  [8, 12, 3], [22, 30, 2], [35, 8, 2], [48, 20, 3], [63, 10, 2], [78, 26, 3],
+  [90, 14, 2], [12, 55, 2], [86, 60, 2], [70, 44, 2], [28, 72, 2], [94, 82, 3],
+];
+
+function Noche({ prueba }) {
+  const [puerta, setPuerta] = useState(false);
+
+  return (
+    <div className="hd-noche" role="dialog" aria-modal="true" aria-label="Hora de dormir">
+      {ESTRELLAS.map(([x, y, t], i) => (
+        <span
+          key={i}
+          className="hd-estrella"
+          style={{ left: `${x}%`, top: `${y}%`, width: t * 2, height: t * 2, animationDelay: `${i * 0.37}s` }}
+        />
+      ))}
+      <div className="hd-noche-centro">
+        <div className="hd-noche-ilustracion">
+          <Luna tamano={160} />
+        </div>
+        <h1 className="hd-noche-titulo">Hora de dormir</h1>
+        <p className="hd-noche-texto">Buenas noches. Mañana seguimos jugando.</p>
+      </div>
+      {prueba && <span className="hd-prueba-chip">Prueba</span>}
+      <button type="button" className="hd-adulto-btn" onClick={() => setPuerta(true)}>
+        Adulto
+      </button>
+      {puerta && <PuertaAdulto prueba={prueba} onCerrar={() => setPuerta(false)} />}
+    </div>
+  );
+}
+
+export default function HoraDormir({ onDormirChange }) {
+  const almacen = useHoraDormir();
+  const [ahora, setAhora] = useState(Date.now);
+  // { fase, n }: n cambia en cada aparicion para reiniciar el auto-cierre.
+  const [aviso, setAviso] = useState(null);
+  const avisadasRef = useRef(new Set());
+  const nPruebaRef = useRef(almacen.nPrueba);
+
+  // Reloj: un tic por segundo. Solo re-renderiza lo que cambia (la luna)
+  // cuando ya faltan 30 minutos o menos; antes el estado no cambia.
+  useEffect(() => {
+    const tic = () => setAhora(Date.now());
+    const id = setInterval(tic, 1000);
+    const alVolver = () => document.visibilityState === 'visible' && tic();
+    document.addEventListener('visibilitychange', alVolver);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', alVolver);
+    };
+  }, []);
+
+  const { fase, restantes, prueba } = calcular(almacen, ahora);
+
+  const mostrarAviso = useCallback((f) => setAviso((a) => ({ fase: f, n: (a?.n ?? 0) + 1 })), []);
+  useEffect(() => {
+    if (!aviso) return undefined;
+    const id = setTimeout(() => setAviso(null), AVISO_VISIBLE_MS);
+    return () => clearTimeout(id);
+  }, [aviso]);
+
+  // Cada aviso sale UNA vez por noche (al entrar a su fase). Si la app se
+  // abre ya dentro de una fase, sale el de esa fase y no los anteriores.
+  // Una prueba nueva del modo desarrollador empieza la cuenta de cero.
+  useEffect(() => {
+    const avisadas = avisadasRef.current;
+    if (nPruebaRef.current !== almacen.nPrueba) {
+      nPruebaRef.current = almacen.nPrueba;
+      avisadas.clear();
+    }
+    if (fase === 'libre' || fase === 'dormir') {
+      if (fase === 'libre') avisadas.clear();
+      setAviso(null);
+      return;
+    }
+    if (avisadas.has(fase)) return;
+    ORDEN.slice(0, ORDEN.indexOf(fase) + 1).forEach((f) => avisadas.add(f));
+    campanita();
+    mostrarAviso(fase);
+  }, [fase, almacen.nPrueba, mostrarAviso]);
+
+  const dormido = fase === 'dormir';
+  useEffect(() => {
+    onDormirChange?.(dormido);
+  }, [dormido, onDormirChange]);
+
+  if (fase === 'libre') return null;
+
+  return createPortal(
+    <>
+      {dormido ? (
+        <Noche prueba={prueba} />
+      ) : (
+        <>
+          <Reloj
+            restantes={restantes}
+            fase={fase}
+            onTocar={() => mostrarAviso(fase)}
+          />
+          {aviso && <Aviso fase={aviso.fase} onCerrar={() => setAviso(null)} />}
+          {prueba && (
+            <button type="button" className="hd-prueba-cerrar" onClick={terminarPrueba}>
+              Terminar prueba
+            </button>
+          )}
+        </>
+      )}
+    </>,
+    document.body,
+  );
+}

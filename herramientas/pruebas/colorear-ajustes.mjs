@@ -59,6 +59,44 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   await espera(1000);
   await t.close();
 
+  // ---------- Pintura plana: pasar dos veces no oscurece ----------
+  const pl = await paginaNueva(browser, chequear, { width: 1366, height: 768 }, 'pintura plana');
+  await abrirLaminaColorear(pl, carpeta, { limpiarColorear: true });
+  const hp = await (await pl.$('.colorear-canvas')).boundingBox();
+  const sumaAlfa = () => pl.evaluate(() => {
+    const c = document.querySelector('.colorear-canvas');
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) n += d[i];
+    return n;
+  });
+  const pasada = async (y) => {
+    await pl.mouse.move(hp.x + hp.width * 0.15, hp.y + hp.height * y);
+    await pl.mouse.down();
+    for (let k = 1; k <= 14; k++) await pl.mouse.move(hp.x + hp.width * (0.15 + 0.05 * k), hp.y + hp.height * y);
+    await pl.mouse.up();
+    await espera(150);
+  };
+  const malos = [];
+  let fila = 0;
+  for (const nombre of ['Crayón', 'Lápiz de color', 'Tiza', 'Pincel', 'Acuarela', 'Destacador']) {
+    await pl.click('.colorear-selector[aria-label^="Lápiz"]');
+    await espera(200);
+    await pl.$$eval('.colorear-desplegable--lapices .colorear-util', (els, n) => els.find((e) => e.textContent === n).click(), nombre);
+    await pl.keyboard.press('Escape');
+    await espera(150);
+    const y = 0.12 + fila * 0.13;
+    fila += 1;
+    const antes = await sumaAlfa();
+    await pasada(y);
+    const uno = (await sumaAlfa()) - antes;
+    await pasada(y);
+    const dos = (await sumaAlfa()) - antes;
+    if (!(uno > 0 && dos / uno < 1.06)) malos.push(`${nombre} ${(dos / uno).toFixed(2)}`);
+  }
+  chequear('pasar dos veces por el mismo lugar no oscurece (pintura plana)', malos.length === 0, malos.join(', ') || 'crayón, lápiz, tiza, pincel, acuarela, destacador');
+  await pl.close();
+
   // ---------- Zoom 6x, descarga en la barra y vencimiento ----------
   const page = await paginaNueva(browser, chequear, { width: 1366, height: 768 }, 'colorear ajustes');
   await abrirLaminaColorear(page, carpeta, { limpiarColorear: true });
@@ -67,7 +105,7 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   for (let i = 0; i < 40; i++) await page.mouse.wheel({ deltaY: -150 });
   await espera(300);
   chequear('el zoom llega a 6x', Math.abs((await escalaVista(page)) - 6) < 0.01, `x${await escalaVista(page)}`);
-  await page.click('.colorear-zoom');
+  await page.click('.colorear-flecha--centro');
   await espera(200);
   const lienzo = await (await page.$('.colorear-canvas')).boundingBox();
   await page.mouse.move(lienzo.x + 100, lienzo.y + 100);

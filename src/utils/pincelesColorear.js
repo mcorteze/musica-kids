@@ -3,10 +3,12 @@
 // convierte el tamaño elegido, que es UNO solo para todas las herramientas;
 // cada una lo ajusta con su "escala").
 //
-// Herramientas con "capa" (acuarela, destacador, neon) no pintan directo en
-// la hoja: el trazo se arma opaco en un canvas aparte y al soltar se funde con
-// esa transparencia (y modo). Asi un mismo trazo no se oscurece donde se
-// pisa a si mismo, pero dos trazos distintos si se superponen, como en papel.
+// Herramientas con "capa" (crayon, lapiz, tiza, pincel, acuarela,
+// destacador, neon) no pintan directo en la hoja: el trazo se arma en un
+// canvas aparte y al soltar se funde (fundirCapa). Pintura PLANA (pedido
+// explicito 2026-10-23): donde el trazo cae sobre el MISMO color queda la
+// intensidad mayor de los dos (pasar dos veces no oscurece); sobre otro
+// color se mezcla como siempre. El spray no: acumular puntitos es lo suyo.
 //
 // El color llega como [r, g, b], o null = arcoiris (cambia de tono a lo
 // largo del trazo, con cualquier herramienta).
@@ -30,13 +32,13 @@ export { FORMAS_SELLO, GRUPOS_SELLO } from './formasSello';
 // grupo: a que boton de la barra pertenece ('lapiz' = panel de lapices;
 // 'sello', 'varita' y 'goma' tienen boton propio, pedido explicito).
 export const HERRAMIENTAS = [
-  { id: 'crayon', nombre: 'Crayón', escala: 1, grupo: 'lapiz' },
-  { id: 'lapiz', nombre: 'Lápiz de color', escala: 0.45, grupo: 'lapiz' },
+  { id: 'crayon', nombre: 'Crayón', escala: 1, grupo: 'lapiz', capa: { alfa: 1, modo: 'source-over' } },
+  { id: 'lapiz', nombre: 'Lápiz de color', escala: 0.45, grupo: 'lapiz', capa: { alfa: 1, modo: 'source-over' } },
   { id: 'plumon', nombre: 'Plumón', escala: 0.8, grupo: 'lapiz' },
-  { id: 'pincel', nombre: 'Pincel', escala: 1, grupo: 'lapiz' },
+  { id: 'pincel', nombre: 'Pincel', escala: 1, grupo: 'lapiz', capa: { alfa: 1, modo: 'source-over' } },
   { id: 'acuarela', nombre: 'Acuarela', escala: 1.15, grupo: 'lapiz', capa: { alfa: 0.42, modo: 'source-over' } },
-  { id: 'destacador', nombre: 'Destacador', escala: 1.2, grupo: 'lapiz', capa: { alfa: 0.5, modo: 'multiply' } },
-  { id: 'tiza', nombre: 'Tiza', escala: 1, grupo: 'lapiz' },
+  { id: 'destacador', nombre: 'Destacador', escala: 1.2, grupo: 'lapiz', capa: { alfa: 0.5, modo: 'source-over' } },
+  { id: 'tiza', nombre: 'Tiza', escala: 1, grupo: 'lapiz', capa: { alfa: 1, modo: 'source-over' } },
   { id: 'spray', nombre: 'Spray', escala: 1.5, grupo: 'lapiz' },
   // Neon: en su capa se redibuja el trazo ENTERO en cada tramo (halo y
   // centro claro); por tramos, cada halo nuevo tapaba el centro del anterior
@@ -271,8 +273,9 @@ export function empezarTrazo(herramienta, rgb, ancho, opciones = {}) {
     ancho: ancho * (HERRAMIENTA_POR_ID[herramienta]?.escala ?? 1),
     tono: azar() * 360,
     resto: 0,
-    // El grano se corre al azar en cada trazo: repasar una zona va tapando
-    // los huecos, como con un crayon de verdad.
+    // Ya no se usa (el grano va fijo a la hoja, ver lineaConGrano); se
+    // siguen pidiendo los dos numeros para que el azar de los trazos ya
+    // guardados siga igual al repetirlos.
     desfase: [azar() * 300, azar() * 300],
     titilan: [],
     nuevosSellos: [],
@@ -303,9 +306,12 @@ function linea(ctx, a, b, ancho, estilo) {
   ctx.stroke();
 }
 
+// El grano va FIJO a la hoja, como la textura del papel (pedido explicito
+// 2026-10-23: pintura plana): repasar cae en los mismos puntitos y, con el
+// fundido de la capa, no oscurece. Antes se corria al azar en cada trazo y
+// repasar iba tapando los huecos.
 function lineaConGrano(ctx, trazo, tipo, a, b, ancho, rgb) {
   const patron = ctx.createPattern(textura(tipo, rgb), 'repeat');
-  patron.setTransform(new DOMMatrix().translate(trazo.desfase[0], trazo.desfase[1]));
   linea(ctx, a, b, ancho, patron);
 }
 
@@ -673,13 +679,33 @@ export function recogerEfectos(trazo) {
 // Destellos que titilan de todo el trazo (con su reflejo).
 export const titilanDe = (trazo) => (trazo.gemelo ? [...trazo.titilan, ...trazo.gemelo.titilan] : trazo.titilan);
 
-// Funde el trazo de una herramienta con capa sobre la hoja y limpia la capa.
-export function fundirCapa(ctx, capa, herramienta) {
-  const { alfa, modo } = capaDe(herramienta);
-  ctx.save();
-  ctx.globalAlpha = alfa;
-  ctx.globalCompositeOperation = modo;
-  ctx.drawImage(capa, 0, 0);
-  ctx.restore();
-  capa.getContext('2d').clearRect(0, 0, capa.width, capa.height);
+// Funde el trazo de una herramienta con capa sobre la hoja (solo en la
+// zona del trazo, px del lienzo) y limpia la capa. Pixel por pixel: sobre
+// el mismo color (o casi) queda la intensidad mayor (pintura plana); sobre
+// otro color, o en blanco, se mezcla normal (source-over).
+const MISMO_COLOR = 36;
+export function fundirCapa(ctx, capa, herramienta, zona = null) {
+  const { alfa } = capaDe(herramienta);
+  const z = zona ?? { x: 0, y: 0, w: capa.width, h: capa.height };
+  const cctx = capa.getContext('2d');
+  if (z.w > 0 && z.h > 0) {
+    const src = cctx.getImageData(z.x, z.y, z.w, z.h).data;
+    const imagen = ctx.getImageData(z.x, z.y, z.w, z.h);
+    const dst = imagen.data;
+    for (let i = 0; i < dst.length; i += 4) {
+      const sa = (src[i + 3] / 255) * alfa;
+      if (sa === 0) continue;
+      const da = dst[i + 3] / 255;
+      const mismo = da > 0 && Math.abs(src[i] - dst[i]) + Math.abs(src[i + 1] - dst[i + 1]) + Math.abs(src[i + 2] - dst[i + 2]) < MISMO_COLOR;
+      if (mismo) {
+        if (sa > da) dst[i + 3] = Math.round(sa * 255);
+        continue;
+      }
+      const a = sa + da * (1 - sa);
+      for (let k = 0; k < 3; k++) dst[i + k] = Math.round((src[i + k] * sa + dst[i + k] * da * (1 - sa)) / a);
+      dst[i + 3] = Math.round(a * 255);
+    }
+    ctx.putImageData(imagen, z.x, z.y);
+  }
+  cctx.clearRect(0, 0, capa.width, capa.height);
 }

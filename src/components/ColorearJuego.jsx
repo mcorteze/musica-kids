@@ -8,6 +8,10 @@ import {
   LuEllipsis,
   LuFastForward,
   LuFlipHorizontal2,
+  LuArrowDown,
+  LuArrowLeft,
+  LuArrowRight,
+  LuArrowUp,
   LuCheck,
   LuMic,
   LuMousePointer2,
@@ -16,12 +20,14 @@ import {
   LuRedo2,
   LuShrink,
   LuType,
+  LuZoomIn,
+  LuZoomOut,
   LuUndo2,
   LuVolume2,
   LuVolumeX,
 } from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, ultimoUso, VIGENCIA_MS } from '../utils/dibujosColorear';
-import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, encajarTexto, letrasArcoiris } from '../utils/textosColorear';
+import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, encajarTexto, letrasArcoiris, medirTexto } from '../utils/textosColorear';
 import {
   COLORES,
   ESPECTRO,
@@ -77,10 +83,12 @@ import './ColorearJuego.css';
 // dos columnas (tipos | colores, tamaño y Listo). Los selectores
 // muestran lo elegido y despliegan su panel encima de la hoja, que se retrae
 // al elegir, al tocar fuera o al tocar el mismo boton. Sobre la hoja: espejo
-// y sonido (arriba a la derecha) y el porcentaje de zoom (abajo a la
-// derecha). El boton "¡Terminé!" con festejo se quito (pedido explicito,
-// 2026-10-22); "Ver cómo lo pinté" quedo en la barra, con confirmacion. Barra a la izquierda en
-// horizontal, abajo en vertical. Lo destructivo siempre pide confirmacion.
+// y sonido (arriba a la derecha). Control de zoom (acercar, alejar, el
+// porcentaje y flechas): a la derecha de la hoja en horizontal, flotando
+// abajo a la derecha en vertical. El boton "¡Terminé!" con festejo se quito
+// (pedido explicito, 2026-10-22); "Ver cómo lo pinté" quedo en la barra, con
+// confirmacion. Barra a la izquierda en horizontal, abajo en vertical. Lo
+// destructivo siempre pide confirmacion.
 
 // Tamaño en px de pantalla (cada herramienta lo ajusta con su escala).
 const TAMANO_MIN = 6;
@@ -577,6 +585,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const marcoRef = useRef(null);
   const vistaRef = useRef(null);
   const ultimaEstelaRef = useRef(0);
+  const animacionVistaRef = useRef(null);
+  const controlZoomRef = useRef(null);
   const ultimoPopRef = useRef(0);
 
   // Con un panel, un dialogo o la repeticion abiertos, el Escape del drawer
@@ -679,8 +689,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const { width, height } = zona.getBoundingClientRect();
       const enFila = getComputedStyle(zona.firstElementChild).flexDirection === 'row';
       const b = barra.getBoundingClientRect();
-      const libreAncho = enFila ? width - b.width - SEPARACION : width;
+      // El control de zoom, en horizontal, es otra columna a la derecha.
+      const control = controlZoomRef.current;
+      const conControl = enFila && control && getComputedStyle(control).position !== 'absolute';
+      const anchoControl = conControl ? control.getBoundingClientRect().width + SEPARACION : 0;
+      const libreAncho = enFila ? width - b.width - SEPARACION - anchoControl : width;
       const libreAlto = enFila ? height : height - b.height - SEPARACION;
+      zona.firstElementChild.style.setProperty('--alto-barra', `${Math.round(b.height)}px`);
       const escala = Math.max(0, Math.min(libreAncho / dimensiones.ancho, libreAlto / dimensiones.alto));
       setCaja({ ancho: Math.floor(dimensiones.ancho * escala), alto: Math.floor(dimensiones.alto * escala) });
     };
@@ -826,6 +841,18 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const { x, y, w, h } = zona ?? { x: 0, y: 0, w: canvas.width, h: canvas.height };
     ctx.clearRect(x, y, w, h);
     ctx.drawImage(canvas, x, y, w, h, x, y, w, h);
+  };
+
+  // Caja (minimo/maximo) de los puntos de un trazo de la historia [x, y, ...].
+  const cajaDePuntos = (p) => {
+    const caja = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    for (let k = 0; k < p.length; k += 2) {
+      caja.x0 = Math.min(caja.x0, p[k]);
+      caja.x1 = Math.max(caja.x1, p[k]);
+      caja.y0 = Math.min(caja.y0, p[k + 1]);
+      caja.y1 = Math.max(caja.y1, p[k + 1]);
+    }
+    return caja;
   };
 
   // Zona del trazo (minimo/maximo de sus puntos) + margen por el grosor, el
@@ -996,6 +1023,34 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
 
   const reiniciarVista = useCallback(() => aplicarVista(VISTA_INICIAL), [aplicarVista]);
 
+  // Control de zoom a la derecha (pedido explicito 2026-10-23: en la tablet
+  // el pellizco costaba y pintaba): acercar/alejar desde el centro de lo que
+  // se ve y flechas para recorrer la hoja acercada. Cada toque se anima.
+  const animarVista = (v) => {
+    const vista = vistaRef.current;
+    if (vista) {
+      vista.style.transition = 'transform 0.2s ease-out';
+      clearTimeout(animacionVistaRef.current);
+      animacionVistaRef.current = setTimeout(() => {
+        vista.style.transition = '';
+      }, 220);
+    }
+    aplicarVista(limitarVistaRef.current(v));
+  };
+  const zoomControl = (factor) => {
+    if (!caja) return;
+    const v = vistaActualRef.current;
+    const m = { x: caja.ancho / 2, y: caja.alto / 2 };
+    const s = Math.min(ZOOM_MAX, Math.max(1, v.s * factor));
+    const p = { x: (m.x - v.x) / v.s, y: (m.y - v.y) / v.s };
+    animarVista({ s, x: m.x - p.x * s, y: m.y - p.y * s });
+  };
+  const moverControl = (dx, dy) => {
+    if (!caja) return;
+    const v = vistaActualRef.current;
+    animarVista({ s: v.s, x: v.x - dx * caja.ancho * 0.3, y: v.y - dy * caja.alto * 0.3 });
+  };
+
   // Si cambia el tamaño de la hoja (girar la tablet), vuelve a la hoja entera.
   useEffect(() => {
     reiniciarVista();
@@ -1060,7 +1115,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const antes = ultimoToqueRef.current;
     const ahora = performance.now();
     ultimoToqueRef.current = { ...p, t: ahora };
-    if (!antes || ahora - antes.t > 320 || Math.hypot(p.x - antes.x, p.y - antes.y) > 30) return false;
+    // 450 ms: en una tablet lenta (o con el guardado en curso) el segundo
+    // toque llega tarde y con 320 no se reconocia.
+    if (!antes || ahora - antes.t > 450 || Math.hypot(p.x - antes.x, p.y - antes.y) > 30) return false;
     ultimoToqueRef.current = null;
     if (vistaActualRef.current.s > 1.05) reiniciarVista();
     else acercarEn(p, ZOOM_TOQUE);
@@ -1248,10 +1305,11 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (!actual || actual.pointerId !== e.pointerId) return;
     trazoRef.current = null;
     sonidoTrazoRef.current?.parar();
-    if (actual.capa) fundirCapa(canvasRef.current.getContext('2d'), canvasTrazoRef.current, actual.trazo.herramienta);
+    const zona = zonaDeTrazo(actual.caja, actual.trazo.ancho, actual.trazo.espejo);
+    if (actual.capa) fundirCapa(canvasRef.current.getContext('2d'), canvasTrazoRef.current, actual.trazo.herramienta, zona);
     const titilan = titilanDe(actual.trazo);
     if (titilan.length) actual.hist.ti = titilan;
-    registrarCambio(zonaDeTrazo(actual.caja, actual.trazo.ancho, actual.trazo.espejo), actual.hist);
+    registrarCambio(zona, actual.hist);
     if (actual.trazo.herramienta === 'goma') apagarBrillosBorrados(actual.hist);
     programarGuardado();
   };
@@ -1391,7 +1449,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           presupuesto -= 1;
         }
         if (j >= n) {
-          if (capaDe(h.h)) fundirCapa(ctx, capa, h.h);
+          // Misma zona que al pintarlo: el resultado sale identico.
+          if (capaDe(h.h)) fundirCapa(ctx, capa, h.h, zonaDeTrazo(cajaDePuntos(h.p), h.a, h.e));
           i += 1;
           j = 0;
         }
@@ -1816,6 +1875,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                       onPointerCancel={soltarTexto}
                       onTouchEnd={anularClicTactil}
                     >
+                      {/* Area para tocarlo: todo su recuadro (sin esto, en
+                          la tablet el toque no lo tomaba). */}
+                      {(() => {
+                        const { w, h } = medirTexto(t);
+                        return <rect className="colorear-texto-area" x={-w / 2} y={-h / 2} width={w} height={h} />;
+                      })()}
                       <text
                         ref={(n) => {
                           if (n) nodosTextoRef.current[t.id] = n;
@@ -1935,24 +2000,44 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
               </div>
             </>
           )}
-          {zoom > 1.01 && !repitiendo && (
-            <button
-              type="button"
-              className="colorear-zoom"
-              onClick={reiniciarVista}
-              aria-label="Ver la hoja completa"
-              title="Ver la hoja completa"
-            >
-              <LuShrink />
-              <span>{Math.round(zoom * 100)}%</span>
-            </button>
-          )}
           {repitiendo && (
             <button type="button" className="colorear-saltar" onClick={terminarRepeticion} aria-label="Saltar">
               <LuFastForward />
               <span>Saltar</span>
             </button>
           )}
+        </div>
+
+        {/* Control de zoom: acercar y alejar arriba; flechas para recorrer
+            la hoja acercada abajo (el centro vuelve a la hoja entera). En
+            horizontal va a la derecha de la hoja; en vertical, flotando. */}
+        <div className="colorear-control-zoom" ref={controlZoomRef} inert={repitiendo || undefined}>
+          <div className="colorear-control-zoom-fila">
+            <button type="button" onClick={() => zoomControl(1 / 1.5)} disabled={zoom <= 1.001} aria-label="Alejar" title="Alejar">
+              <LuZoomOut />
+            </button>
+            <span className="colorear-control-zoom-valor" aria-live="polite">{Math.round(zoom * 100)}%</span>
+            <button type="button" onClick={() => zoomControl(1.5)} disabled={zoom >= ZOOM_MAX - 0.001} aria-label="Acercar" title="Acercar">
+              <LuZoomIn />
+            </button>
+          </div>
+          <div className="colorear-control-flechas">
+            <button type="button" className="colorear-flecha--arriba" onClick={() => moverControl(0, -1)} disabled={zoom <= 1.001} aria-label="Mover hacia arriba">
+              <LuArrowUp />
+            </button>
+            <button type="button" className="colorear-flecha--izquierda" onClick={() => moverControl(-1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la izquierda">
+              <LuArrowLeft />
+            </button>
+            <button type="button" className="colorear-flecha--centro" onClick={reiniciarVista} disabled={zoom <= 1.001} aria-label="Ver la hoja completa" title="Ver la hoja completa">
+              <LuShrink />
+            </button>
+            <button type="button" className="colorear-flecha--derecha" onClick={() => moverControl(1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la derecha">
+              <LuArrowRight />
+            </button>
+            <button type="button" className="colorear-flecha--abajo" onClick={() => moverControl(0, 1)} disabled={zoom <= 1.001} aria-label="Mover hacia abajo">
+              <LuArrowDown />
+            </button>
+          </div>
         </div>
 
         {/* Barra: herramientas (lapiz, sello, varita, goma, mano), estilo

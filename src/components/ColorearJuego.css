@@ -103,11 +103,80 @@
 }
 
 .colorear-centro {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
 }
+
+/* ----- Control de zoom: acercar/alejar y flechas ----- */
+.colorear-control-zoom {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(8, 40, 66, 0.2);
+  /* En vertical flota sobre la hoja, abajo a la derecha (en horizontal va
+     en su columna; ver la media query). */
+  position: absolute;
+  z-index: 5;
+  right: 8px;
+  bottom: calc(var(--alto-barra, 90px) + 22px);
+}
+
+.colorear-control-zoom button {
+  appearance: none;
+  cursor: pointer;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #EEF3F7;
+  color: #0B4F73;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colorear-control-zoom button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.colorear-control-zoom-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colorear-control-zoom-valor {
+  min-width: 46px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0B4F73;
+}
+
+/* Flechas en cruz; en el centro, volver a la hoja entera. */
+.colorear-control-flechas {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(3, 46px);
+  gap: 2px;
+}
+
+.colorear-control-flechas .colorear-flecha--arriba { grid-area: 1 / 2; }
+.colorear-control-flechas .colorear-flecha--izquierda { grid-area: 2 / 1; }
+.colorear-control-flechas .colorear-flecha--centro { grid-area: 2 / 2; background: transparent; font-size: 18px; }
+.colorear-control-flechas .colorear-flecha--derecha { grid-area: 2 / 3; }
+.colorear-control-flechas .colorear-flecha--abajo { grid-area: 3 / 2; }
 
 .colorear-hoja {
   position: relative;
@@ -179,33 +248,6 @@
 
 .colorear-hoja--mano:active .colorear-canvas {
   cursor: grabbing;
-}
-
-/* Porcentaje de zoom en la esquina de la hoja: tocarlo vuelve a la hoja entera. */
-.colorear-zoom {
-  appearance: none;
-  cursor: pointer;
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 3;
-  height: 38px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 19px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 4px 14px rgba(8, 40, 66, 0.25);
-  color: #0B4F73;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.colorear-zoom svg {
-  font-size: 18px;
 }
 
 /* ----- Barra de herramientas -----
@@ -493,10 +535,15 @@
 
 /* Solo con la herramienta Texto los textos se tocan (si no, se pinta a
    traves de ellos). */
+/* Area para tocar el texto: invisible, del tamaño del texto. */
+.colorear-texto-area {
+  fill: transparent;
+}
+
 .colorear-textos--activos .colorear-texto {
-  /* Se toma tocando cualquier parte de su recuadro, no solo las letras
-     (entre letras el toque caia en la hoja y escribia uno nuevo). */
-  pointer-events: bounding-box;
+  /* Se toma tocando cualquier parte de su recuadro (el rect de area), no
+     solo las letras. "all": funciona tambien en Chrome viejo de tablet. */
+  pointer-events: all;
   cursor: move;
   touch-action: none;
 }
@@ -953,9 +1000,11 @@
   pointer-events: none;
 }
 
+/* display: none (antes visibility): en la tablet la hoja ya pintada se
+   seguia viendo y la repeticion parecia empezar desde el final. */
 .colorear-vista--repitiendo .colorear-canvas,
 .colorear-vista--repitiendo .colorear-canvas-trazo {
-  visibility: hidden;
+  display: none;
 }
 
 .colorear-vista--repitiendo .colorear-canvas-repeticion {
@@ -1256,6 +1305,23 @@
 
 /* ----- Celular vertical: barra y paneles mas compactos ----- */
 @media screen and (max-width: 520px) {
+  .colorear-control-zoom {
+    gap: 6px;
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .colorear-control-zoom button {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .colorear-control-flechas {
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 38px);
+  }
+
   .colorear-fuentes {
     grid-template-columns: repeat(4, 72px);
   }
@@ -1397,6 +1463,12 @@
 @media screen and (orientation: landscape) and (min-width: 700px) {
   .colorear-centro {
     flex-direction: row;
+  }
+
+  /* Control de zoom: columna a la derecha de la hoja (sobra espacio a los
+     lados: las laminas son verticales). */
+  .colorear-control-zoom {
+    position: static;
   }
 
   .colorear-barra {

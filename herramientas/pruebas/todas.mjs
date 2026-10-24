@@ -1,7 +1,7 @@
 // Pruebas de interfaz de musica-kids (npm run pruebas). Sin servidor: arma un
 // build de PRODUCCION y uno de DESARROLLO en una carpeta temporal y prueba
-// los dos con Chrome: Colorear, festejo al ganar, caducidad, modo liviano y
-// paletas (cuadros por segundo: npm run rendimiento). El de
+// los dos con Chrome: Colorear, festejo al ganar, caducidad, modo liviano,
+// hora de dormir y paletas (cuadros por segundo: npm run rendimiento). El de
 // desarrollo atrapa bugs que solo salen con StrictMode, como el zoom muerto
 // de Colorear del 2026-10-22.
 //   node herramientas/pruebas/todas.mjs [produccion|desarrollo]
@@ -16,6 +16,7 @@ import { probarJuegos } from './juegos.mjs';
 import { probarPaletas } from './paletas.mjs';
 import { probarCaducidad } from './caducidad.mjs';
 import { probarFluidez } from './fluidez.mjs';
+import { probarHoraDormir } from './hora-dormir.mjs';
 
 const modos = process.argv[2] ? [process.argv[2]] : ['produccion', 'desarrollo'];
 const { resultados, chequear } = crearInforme();
@@ -40,6 +41,8 @@ try {
     await probarCaducidad(browser, carpeta, chequear);
     console.log('-- Fluidez: modo liviano y piezas recortadas');
     await probarFluidez(browser, carpeta, chequear);
+    console.log('-- Hora de dormir');
+    await probarHoraDormir(browser, carpeta, chequear);
   }
 } catch (e) {
   chequear('la prueba terminó sin caerse', false, e.message);
