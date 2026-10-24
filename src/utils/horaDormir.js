@@ -6,7 +6,7 @@
 // transicion del jardin.
 //
 // Se configura en el modo desarrollador (Actividades > Hora de dormir) y
-// queda guardado en ESTE equipo. Viene apagado. Cada dia de la semana tiene
+// queda guardado en ESTE equipo. Viene ENCENDIDO (pedido 2026-10-24). Cada dia de la semana tiene
 // su hora de dormir; la de despertar es una sola.
 //
 // Fases:
@@ -36,7 +36,7 @@ export const NOMBRES_DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves
 export const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
 
 const PREDETERMINADA = {
-  activo: false,
+  activo: true,
   dias: ['20:00', '19:45', '19:45', '19:45', '19:45', '19:45', '20:30'],
   despertar: '07:00',
   // encendido/apagado de cada aviso de AVISOS
@@ -77,6 +77,9 @@ export const AUDIOS = ['aviso-30', 'aviso-15', 'aviso-5', 'buenas-noches'];
 const ARCHIVOS_AUDIO = import.meta.glob('../assets/hora-dormir/*.mp3', { eager: true, query: '?url', import: 'default' });
 export const audioDe = (nombre) => ARCHIVOS_AUDIO[`../assets/hora-dormir/${nombre}.mp3`] ?? null;
 export const audioDeAviso = (nivel) => audioDe(`aviso-${AVISOS[nivel]}`);
+// Ilustracion de Skye de cada aviso (aviso-30.avif...); sin ella, la luna.
+const IMAGENES = import.meta.glob('../assets/hora-dormir/*.avif', { eager: true, query: '?url', import: 'default' });
+export const imagenDeAviso = (nivel) => IMAGENES[`../assets/hora-dormir/aviso-${AVISOS[nivel]}.avif`] ?? null;
 
 // ---------- Almacen (config + pruebas del modo desarrollador) ----------
 // ensayo: la secuencia completa acelerada; parte justo antes de que aparezca

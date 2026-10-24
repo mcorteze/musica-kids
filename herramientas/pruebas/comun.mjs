@@ -44,9 +44,22 @@ export function crearInforme() {
   return { resultados, chequear };
 }
 
-// Pagina nueva con los errores de la app como fallos.
-export async function paginaNueva(browser, chequear, viewport, etiqueta) {
+// Pagina nueva con los errores de la app como fallos. La hora de dormir
+// viene encendida: corriendo las pruebas de noche taparia todo, asi que se
+// apaga (si nadie la configuro) salvo en su propia prueba (horaDormir).
+export async function paginaNueva(browser, chequear, viewport, etiqueta, { horaDormir = false } = {}) {
   const page = await browser.newPage();
+  if (!horaDormir) {
+    await page.evaluateOnNewDocument(() => {
+      try {
+        if (!localStorage.getItem('musica-kids-hora-dormir')) {
+          localStorage.setItem('musica-kids-hora-dormir', JSON.stringify({ activo: false }));
+        }
+      } catch {
+        // about:blank y otros documentos sin localStorage.
+      }
+    });
+  }
   page.on('pageerror', (e) => chequear(`sin errores de la app (${etiqueta})`, false, e.message));
   await page.setViewport(viewport);
   return page;

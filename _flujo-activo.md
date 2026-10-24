@@ -24,9 +24,13 @@ Actualizado: 2026-10-24
 - Pruebas: herramientas/pruebas/hora-dormir.mjs (29 chequeos por build).
 - Pendiente:
   - [ ] Que el usuario lo pruebe en la tablet y lo active.
-  - [ ] Usuario genera los 4 audios en ElevenLabs; probarlos en el panel.
-  - [ ] Fase final: ilustraciones de Skye (aviso, último juego, durmiendo)
-        en lugar de la luna SVG.
+  - [x] 2026-10-24: audios aviso-30/15/5 e ilustraciones de Skye (avif,
+        fondo #15214D = tarjeta) integrados. Voz entra 1,5 s después.
+  - [ ] Falta buenas-noches.mp3 (ahí suena solo la campanita).
+  - [ ] Viene APAGADO por defecto: activarlo en la tablet (o cambiar el
+        predeterminado si el usuario lo pide).
+  - Ojo: commits de Colorear (otra sesión, 91f307e/93554bf/405ad77) se
+    llevaron los archivos de Hora de dormir con git add -A; sin push aún.
   - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida.
 
 ## PLANIFICADO — reestructuración (NO se hace por ahora, pedido 2026-10-22)

@@ -37,16 +37,23 @@ async function responder(page, bien) {
 
 export async function probarHoraDormir(browser, carpeta, chequear) {
   // ---------- Sin modo desarrollador no hay tarjeta ----------
-  const p = await paginaNueva(browser, chequear, viewportDe(820, 1180), 'hora de dormir');
+  const p = await paginaNueva(browser, chequear, viewportDe(820, 1180), 'hora de dormir', { horaDormir: true });
   await abrirActividades(p, carpeta);
   chequear('sin modo desarrollador no se ve la tarjeta Hora de dormir', !(await visible(p, 'button[aria-label="Hora de dormir"]')));
 
   // ---------- Panel y vistas previas ----------
+  // Sin configuracion guardada (las otras pruebas dejan una apagada).
+  await p.evaluate((clave) => localStorage.removeItem(clave), CLAVE);
   await abrirActividades(p, carpeta, { modoDev: true });
   await p.$eval('button[aria-label="Hora de dormir"]', (b) => b.click());
   await espera(300);
   chequear('el panel se abre desde la tarjeta', await visible(p, '.hd-panel'));
-  chequear('viene apagado', (await p.$eval('.hd-panel-estado', (el) => el.textContent)).includes('Apagado'));
+  chequear('viene encendido', await p.$eval('.hd-panel-bloque .ant-switch', (el) => el.getAttribute('aria-checked')) === 'true');
+  // Se apaga para que la hora real (si se corre de noche) no se cruce con
+  // las vistas previas; tambien prueba el interruptor.
+  await p.$eval('.hd-panel-bloque .ant-switch', (b) => b.click());
+  await espera(200);
+  chequear('el interruptor lo apaga', (await p.$eval('.hd-panel-estado', (el) => el.textContent)).includes('Apagado'));
   await capturar(p, 'panel-tablet');
 
   const interruptores = await p.$$eval('.hd-panel-bloque:nth-child(3) .ant-switch', (els) => els.map((e) => `${e.getAttribute('aria-label')}:${e.getAttribute('aria-checked')}`).join());
@@ -59,6 +66,23 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   chequear('vista previa: aparece la luna con el tiempo', await visible(p, '.hd-reloj'));
   chequear(`aviso: botón de volver a escuchar ${hayAudio('aviso-15') ? 'visible (hay audio)' : 'oculto (falta el audio)'}`,
     (await visible(p, '.hd-aviso .hd-escuchar')) === hayAudio('aviso-15'));
+  chequear('aviso de 15 min con su ilustración de Skye', await p.$eval('.hd-aviso-ilustracion img', (img) => img.complete && img.naturalWidth > 0 && img.src.includes('aviso-15')).catch(() => false));
+  if (hayAudio('aviso-15')) {
+    // Se anota lo que suena y si el archivo se pudo leer (duracion > 0).
+    await p.evaluate(() => {
+      window.sonados = [];
+      const play = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function anotar() {
+        const el = this;
+        el.addEventListener('loadedmetadata', () => window.sonados.push(`${el.src.split('/').pop()}:${el.duration > 0}`));
+        return play.call(el);
+      };
+    });
+    await p.$eval('.hd-aviso .hd-escuchar', (b) => b.click());
+    await espera(1500);
+    const sonados = await p.evaluate(() => window.sonados.join());
+    chequear('«volver a escuchar» reproduce el audio del aviso', /aviso-15[^:]*\.mp3:true/.test(sonados), sonados);
+  }
   await capturar(p, 'aviso10-tablet');
   await p.$eval('.hd-aviso-ok', (b) => b.click());
   await espera(200);
@@ -100,7 +124,7 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   await p.close();
 
   // ---------- Horario real, sin modo desarrollador ----------
-  const r = await paginaNueva(browser, chequear, viewportDe(1180, 820), 'hora de dormir real');
+  const r = await paginaNueva(browser, chequear, viewportDe(1180, 820), 'hora de dormir real', { horaDormir: true });
   await r.goto(urlDe(carpeta));
   const guardar = async (cfg) => {
     await r.evaluate((c, clave) => {
@@ -147,7 +171,7 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
 
   // ---------- Nada se sale de la pantalla ----------
   for (const [nombre, w, h] of PANTALLAS) {
-    const v = await paginaNueva(browser, chequear, viewportDe(w, h), `hora de dormir ${nombre}`);
+    const v = await paginaNueva(browser, chequear, viewportDe(w, h), `hora de dormir ${nombre}`, { horaDormir: true });
     await abrirActividades(v, carpeta, { modoDev: true });
     await v.$eval('button[aria-label="Hora de dormir"]', (b) => b.click());
     await espera(300);

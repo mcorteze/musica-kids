@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SoundFilled } from '@ant-design/icons';
 import {
-  LUNA_MIN, PRORROGA_MIN, apagarPorHoy, audioDe, audioDeAviso, calcular, darProrroga, terminarPrueba,
-  useHoraDormir,
+  LUNA_MIN, PRORROGA_MIN, apagarPorHoy, audioDe, audioDeAviso, calcular, darProrroga, imagenDeAviso,
+  terminarPrueba, useHoraDormir,
 } from '../utils/horaDormir';
 import './HoraDormir.css';
 
@@ -50,8 +50,10 @@ function campanita() {
   }
 }
 
-// Voz grabada (src/assets/hora-dormir/). Una sola a la vez; la campanita
-// suena antes, por eso el retardo.
+// Voz grabada (src/assets/hora-dormir/). Una sola a la vez. Al aparecer
+// un aviso entra 1,5 s despues (pedido 2026-10-24): primero la campanita y
+// la tarjeta, luego la voz. Volver a escucharla (boton, luna) es inmediato.
+const RETARDO_VOZ_MS = 1500;
 let vozActual = null;
 let vozPendiente = null;
 function callarVoz() {
@@ -59,7 +61,7 @@ function callarVoz() {
   vozActual?.pause();
   vozActual = null;
 }
-function decir(url, retardo = 900) {
+function decir(url, retardo = RETARDO_VOZ_MS) {
   callarVoz();
   if (!url) return;
   vozPendiente = setTimeout(() => {
@@ -126,10 +128,11 @@ function Escuchar({ url, className = '' }) {
 }
 
 function Aviso({ nivel, onCerrar }) {
+  const imagen = imagenDeAviso(nivel);
   return (
     <div className="hd-aviso" role="status">
-      <div className="hd-aviso-ilustracion">
-        <Luna tamano={56} />
+      <div className={`hd-aviso-ilustracion${imagen ? ' hd-aviso-ilustracion--imagen' : ''}`}>
+        {imagen ? <img src={imagen} alt="" /> : <Luna tamano={56} />}
       </div>
       <p className="hd-aviso-titulo">{TITULOS[nivel]}</p>
       <div className="hd-aviso-botones">
@@ -228,7 +231,7 @@ function Noche({ prueba }) {
   const [puerta, setPuerta] = useState(false);
   // Despues de que la musica alcanza a bajar un poco.
   useEffect(() => {
-    decir(audioDe('buenas-noches'), 1500);
+    decir(audioDe('buenas-noches'));
     return callarVoz;
   }, []);
 

@@ -18,4 +18,9 @@ Textos (2026-10-24; deben decir el tiempo que falta):
   buenas-noches  Ya es hora de dormir. Jugaste muy bien hoy. Buenas noches,
                  que sueñes bonito. Mañana seguimos jugando.
 
+Ilustraciones de Skye (una por aviso): aviso-30.avif, aviso-15.avif,
+aviso-5.avif. Fondo plano #15214D (el de la tarjeta, --hd-aviso-fondo en
+HoraDormir.css). Se convierten a 480 px de ancho:
+  ffmpeg -i entrada.jpg -vf "scale=480:-2:flags=lanczos,format=yuv420p" -c:v libaom-av1 -still-picture 1 -crf 28 aviso-30.avif
+
 Se prueban en Actividades > Hora de dormir (modo desarrollador).

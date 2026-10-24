@@ -7,6 +7,8 @@
 
 :root {
   --hd-noche: #141C46;
+  /* Fondo de las ilustraciones de Skye (medido en las imagenes, 2026-10-24) */
+  --hd-aviso-fondo: #15214D;
   --hd-noche-2: #26306B;
   --hd-luna: #FFD66B;
   --hd-texto: #F4F1FF;
@@ -71,11 +73,13 @@
   top: 16px;
   left: 50%;
   z-index: 10004;
-  width: min(440px, calc(100vw - 32px));
+  width: min(520px, calc(100vw - 32px));
   box-sizing: border-box;
   padding: 18px 20px 20px;
   border-radius: 16px;
-  background: linear-gradient(160deg, var(--hd-noche-2), var(--hd-noche));
+  /* Color plano (no degradado), el mismo del fondo de las ilustraciones de
+     Skye (src/assets/hora-dormir/aviso-*.avif) para que se fundan. */
+  background: var(--hd-aviso-fondo);
   color: var(--hd-texto);
   box-shadow: 0 14px 40px rgba(10, 14, 40, 0.45);
   display: grid;
@@ -94,6 +98,20 @@
   background: rgba(255, 255, 255, 0.08);
   display: grid;
   place-items: center;
+}
+
+/* Con ilustracion de Skye: sin circulo, grande para que el numero se lea. */
+.hd-aviso-ilustracion--imagen {
+  width: 170px;
+  height: auto;
+  border-radius: 0;
+  background: none;
+}
+
+.hd-aviso-ilustracion--imagen img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .hd-aviso-titulo {
@@ -465,6 +483,10 @@
 
   .hd-aviso-ilustracion {
     grid-row: auto;
+  }
+
+  .hd-aviso-ilustracion--imagen {
+    width: 200px;
   }
 
   .hd-aviso-botones {
