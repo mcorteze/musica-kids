@@ -1119,9 +1119,12 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   };
 
   // Doble toque con la mano: acerca a ZOOM_TOQUE ahi, o vuelve a la hoja entera.
-  const dobleToque = (p) => {
+  // t: la hora del TOQUE (e.timeStamp), no la de atenderlo: si la pagina
+  // esta ocupada (guardando), el segundo toque se atiende tarde aunque se
+  // haya hecho a tiempo, y con la hora de atencion no se reconocia.
+  const dobleToque = (p, t) => {
     const antes = ultimoToqueRef.current;
-    const ahora = performance.now();
+    const ahora = t;
     ultimoToqueRef.current = { ...p, t: ahora };
     // 450 ms: en una tablet lenta (o con el guardado en curso) el segundo
     // toque llega tarde y con 320 no se reconocia.
@@ -1142,7 +1145,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     if (mano) {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
-      if (gestosRef.current.size === 1 && dobleToque(p)) {
+      if (gestosRef.current.size === 1 && dobleToque(p, e.timeStamp)) {
         gestosRef.current.delete(e.pointerId);
         return;
       }

@@ -152,7 +152,7 @@ export async function probarColorear(browser, carpeta, chequear) {
   await espera(120);
   await tap();
   await espera(300);
-  chequear('doble toque con la mano acerca', Math.abs((await escalaVista(t)) - 2.5) < 0.01);
+  chequear('doble toque con la mano acerca', Math.abs((await escalaVista(t)) - 2.5) < 0.01, `x${await escalaVista(t)}`);
   await toque('touchStart', [[c[0], c[1]]]);
   for (let k = 1; k <= 8; k++) {
     await toque('touchMove', [[c[0] - k * 15, c[1] - k * 12]]);
