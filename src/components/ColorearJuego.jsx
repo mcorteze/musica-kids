@@ -594,7 +594,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const vistaRef = useRef(null);
   const ultimaEstelaRef = useRef(0);
   const animacionVistaRef = useRef(null);
-  const controlZoomRef = useRef(null);
   const ultimoPopRef = useRef(0);
 
   // Con un panel, un dialogo o la repeticion abiertos, el Escape del drawer
@@ -697,11 +696,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       const { width, height } = zona.getBoundingClientRect();
       const enFila = getComputedStyle(zona.firstElementChild).flexDirection === 'row';
       const b = barra.getBoundingClientRect();
-      // El control de zoom, en horizontal, es otra columna a la derecha.
-      const control = controlZoomRef.current;
-      const conControl = enFila && control && getComputedStyle(control).position !== 'absolute';
-      const anchoControl = conControl ? control.getBoundingClientRect().width + SEPARACION : 0;
-      const libreAncho = enFila ? width - b.width - SEPARACION - anchoControl : width;
+      const libreAncho = enFila ? width - b.width - SEPARACION : width;
       const libreAlto = enFila ? height : height - b.height - SEPARACION;
       zona.firstElementChild.style.setProperty('--alto-barra', `${Math.round(b.height)}px`);
       const escala = Math.max(0, Math.min(libreAncho / dimensiones.ancho, libreAlto / dimensiones.alto));
@@ -2024,38 +2019,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           )}
         </div>
 
-        {/* Control de zoom: acercar y alejar arriba; flechas para recorrer
-            la hoja acercada abajo (el centro vuelve a la hoja entera). En
-            horizontal va a la derecha de la hoja; en vertical, flotando. */}
-        <div className="colorear-control-zoom" ref={controlZoomRef} inert={repitiendo || undefined}>
-          <div className="colorear-control-zoom-fila">
-            <button type="button" onClick={() => zoomControl(1 / 1.5)} disabled={zoom <= 1.001} aria-label="Alejar" title="Alejar">
-              <LuZoomOut />
-            </button>
-            <span className="colorear-control-zoom-valor" aria-live="polite">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => zoomControl(1.5)} disabled={zoom >= ZOOM_MAX - 0.001} aria-label="Acercar" title="Acercar">
-              <LuZoomIn />
-            </button>
-          </div>
-          <div className="colorear-control-flechas">
-            <button type="button" className="colorear-flecha--arriba" onClick={() => moverControl(0, -1)} disabled={zoom <= 1.001} aria-label="Mover hacia arriba">
-              <LuArrowUp />
-            </button>
-            <button type="button" className="colorear-flecha--izquierda" onClick={() => moverControl(-1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la izquierda">
-              <LuArrowLeft />
-            </button>
-            <button type="button" className="colorear-flecha--centro" onClick={reiniciarVista} disabled={zoom <= 1.001} aria-label="Ver la hoja completa" title="Ver la hoja completa">
-              <LuShrink />
-            </button>
-            <button type="button" className="colorear-flecha--derecha" onClick={() => moverControl(1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la derecha">
-              <LuArrowRight />
-            </button>
-            <button type="button" className="colorear-flecha--abajo" onClick={() => moverControl(0, 1)} disabled={zoom <= 1.001} aria-label="Mover hacia abajo">
-              <LuArrowDown />
-            </button>
-          </div>
-        </div>
-
         {/* Barra: herramientas (lapiz, sello, varita, goma, mano), estilo
             (color, tamaño) y acciones. Los selectores muestran lo elegido y
             despliegan su panel; los paneles cuelgan de la barra. --en-uso
@@ -2170,32 +2133,66 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
           </div>
 
           {/* "Más": las acciones de menos uso, con su nombre (el niño no lee
-              iconos sueltos). Guardar imagen usa el ultimo marco elegido. */}
+              iconos sueltos). Guardar imagen usa el ultimo marco elegido. Al
+              lado, el control de zoom (pedido 2026-10-24: suelto tapaba la
+              hoja): acercar y alejar arriba; flechas para recorrer la hoja
+              acercada abajo (el centro vuelve a la hoja entera). Tocarlo no
+              cierra el menu. */}
           {menu === 'mas' && (
             <div className="colorear-desplegable colorear-desplegable--mas" role="menu" aria-label="Más opciones">
-              <div className="colorear-mas">
-                {[
-                  ['Ver cómo lo pinté', <LuPlay key="i" />, () => setDialogo('repetir'), !sePuedeRepetir],
-                  ['Guardar imagen', <LuDownload key="i" />, guardarImagen, false],
-                  ['Imprimir o guardar', <PrinterOutlined key="i" />, () => setDialogo('imprimir'), false],
-                  ['Borrar todo', <DeleteOutlined key="i" />, () => setConfirmarBorrar(true), false],
-                ].map(([nombre, icono, accion, apagado]) => (
-                  <button
-                    type="button"
-                    key={nombre}
-                    role="menuitem"
-                    className="colorear-util colorear-mas-opcion"
-                    disabled={apagado}
-                    onClick={() => {
-                      setMenu(null);
-                      accion();
-                    }}
-                    aria-label={nombre}
-                  >
-                    <span className="colorear-mas-icono">{icono}</span>
-                    <span className="colorear-util-nombre">{nombre}</span>
-                  </button>
-                ))}
+              <div className="colorear-mas-contenido">
+                <div className="colorear-mas">
+                  {[
+                    ['Ver cómo lo pinté', <LuPlay key="i" />, () => setDialogo('repetir'), !sePuedeRepetir],
+                    ['Guardar imagen', <LuDownload key="i" />, guardarImagen, false],
+                    ['Imprimir o guardar', <PrinterOutlined key="i" />, () => setDialogo('imprimir'), false],
+                    ['Borrar todo', <DeleteOutlined key="i" />, () => setConfirmarBorrar(true), false],
+                  ].map(([nombre, icono, accion, apagado]) => (
+                    <button
+                      type="button"
+                      key={nombre}
+                      role="menuitem"
+                      className="colorear-util colorear-mas-opcion"
+                      disabled={apagado}
+                      onClick={() => {
+                        setMenu(null);
+                        accion();
+                      }}
+                      aria-label={nombre}
+                    >
+                      <span className="colorear-mas-icono">{icono}</span>
+                      <span className="colorear-util-nombre">{nombre}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="colorear-control-zoom">
+                  <div className="colorear-control-zoom-fila">
+                    <button type="button" onClick={() => zoomControl(1 / 1.5)} disabled={zoom <= 1.001} aria-label="Alejar" title="Alejar">
+                      <LuZoomOut />
+                    </button>
+                    <span className="colorear-control-zoom-valor" aria-live="polite">{Math.round(zoom * 100)}%</span>
+                    <button type="button" onClick={() => zoomControl(1.5)} disabled={zoom >= ZOOM_MAX - 0.001} aria-label="Acercar" title="Acercar">
+                      <LuZoomIn />
+                    </button>
+                  </div>
+                  <div className="colorear-control-flechas">
+                    <button type="button" className="colorear-flecha--arriba" onClick={() => moverControl(0, -1)} disabled={zoom <= 1.001} aria-label="Mover hacia arriba">
+                      <LuArrowUp />
+                    </button>
+                    <button type="button" className="colorear-flecha--izquierda" onClick={() => moverControl(-1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la izquierda">
+                      <LuArrowLeft />
+                    </button>
+                    <button type="button" className="colorear-flecha--centro" onClick={reiniciarVista} disabled={zoom <= 1.001} aria-label="Ver la hoja completa" title="Ver la hoja completa">
+                      <LuShrink />
+                    </button>
+                    <button type="button" className="colorear-flecha--derecha" onClick={() => moverControl(1, 0)} disabled={zoom <= 1.001} aria-label="Mover hacia la derecha">
+                      <LuArrowRight />
+                    </button>
+                    <button type="button" className="colorear-flecha--abajo" onClick={() => moverControl(0, 1)} disabled={zoom <= 1.001} aria-label="Mover hacia abajo">
+                      <LuArrowDown />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -9,6 +9,7 @@ import {
   fueraDePantalla,
   paginaNueva,
   pintado,
+  tocarZoom,
   viewportDe,
 } from './comun.mjs';
 
@@ -97,9 +98,14 @@ export async function probarColorear(browser, carpeta, chequear) {
   }
   chequear('la rueda acerca (2x en pocos pasos)', pasos <= 5, `${pasos} pasos`);
   await espera(300);
-  chequear('el control de zoom muestra el porcentaje', (await page.$eval('.colorear-control-zoom-valor', (e) => e.textContent)) !== '100%');
+  await page.$eval('[aria-label="Más opciones"]', (b) => b.click());
+  await espera(200);
+  chequear('el control de zoom está dentro de «...» y muestra el porcentaje', (await page.$eval('.colorear-desplegable--mas .colorear-control-zoom-valor', (e) => e.textContent)) !== '100%');
+  if (process.env.CAPTURAS) await page.screenshot({ path: `${process.env.CAPTURAS}/colorear-mas-zoom.png` });
   await page.click('.colorear-flecha--centro');
   await espera(400);
+  chequear('tocar el zoom no cierra el menu', Boolean(await page.$('.colorear-desplegable--mas')));
+  await page.keyboard.press('Escape');
   chequear('el centro de las flechas vuelve a la hoja entera', (await escalaVista(page)) === 1);
   await espera(1200);
   await page.close();
@@ -139,8 +145,7 @@ export async function probarColorear(browser, carpeta, chequear) {
   await toque('touchEnd', []);
   await espera(200);
   chequear('un dedo pinta con zoom', (await pintado(t)) > 0);
-  await t.$eval('.colorear-flecha--centro', (b) => b.click());
-  await espera(200);
+  await tocarZoom(t, '.colorear-flecha--centro');
   await t.$eval('.colorear-selector--mano', (b) => b.click());
   await espera(200);
   const conMano = await pintado(t);

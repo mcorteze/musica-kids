@@ -111,25 +111,26 @@
 }
 
 /* ----- Control de zoom: acercar/alejar y flechas -----
-   Compacto (pedido explicito: no quitarle espacio a la hoja): tres
-   columnas justas, poco margen. Arriba alejar, porcentaje y acercar; abajo
-   las flechas en cruz con "hoja entera" al centro. */
+   Va dentro del menu "..." al lado de las opciones (pedido 2026-10-24:
+   flotando tapaba la hoja). Tres columnas justas: arriba alejar,
+   porcentaje y acercar; abajo las flechas en cruz con "hoja entera" al
+   centro. */
+.colorear-mas-contenido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+}
+
 .colorear-control-zoom {
   flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 6px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 8px 24px rgba(8, 40, 66, 0.2);
-  /* En vertical flota sobre la hoja, abajo a la derecha (en horizontal va
-     en su columna; ver la media query). */
-  position: absolute;
-  z-index: 5;
-  right: 8px;
-  bottom: calc(var(--alto-barra, 90px) + 22px);
+  padding-left: 14px;
+  border-left: 1px solid #E1E8EE;
 }
 
 .colorear-control-zoom button {
@@ -1308,12 +1309,6 @@
 
 /* ----- Celular vertical: barra y paneles mas compactos ----- */
 @media screen and (max-width: 520px) {
-  .colorear-control-zoom {
-    gap: 6px;
-    padding: 6px;
-    border-radius: 18px;
-  }
-
   .colorear-control-zoom button {
     width: 34px;
     height: 34px;
@@ -1470,12 +1465,6 @@
 @media screen and (orientation: landscape) and (min-width: 700px) {
   .colorear-centro {
     flex-direction: row;
-  }
-
-  /* Control de zoom: columna a la derecha de la hoja (sobra espacio a los
-     lados: las laminas son verticales). */
-  .colorear-control-zoom {
-    position: static;
   }
 
   .colorear-barra {

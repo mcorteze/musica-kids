@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { abrirActividades, abrirLaminaColorear, escalaVista, espera, paginaNueva, viewportDe } from './comun.mjs';
+import { abrirActividades, abrirLaminaColorear, escalaVista, espera, paginaNueva, tocarZoom, viewportDe } from './comun.mjs';
 
 const DIA = 24 * 3600 * 1000;
 
@@ -105,8 +105,7 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
   for (let i = 0; i < 40; i++) await page.mouse.wheel({ deltaY: -150 });
   await espera(300);
   chequear('el zoom llega a 6x', Math.abs((await escalaVista(page)) - 6) < 0.01, `x${await escalaVista(page)}`);
-  await page.click('.colorear-flecha--centro');
-  await espera(200);
+  await tocarZoom(page, '.colorear-flecha--centro');
   const lienzo = await (await page.$('.colorear-canvas')).boundingBox();
   await page.mouse.move(lienzo.x + 100, lienzo.y + 100);
   await page.mouse.down();

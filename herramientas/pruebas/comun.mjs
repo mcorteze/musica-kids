@@ -89,6 +89,19 @@ export async function abrirLaminaColorear(page, carpeta, opciones = {}) {
   await espera(700);
 }
 
+// Control de zoom de Colorear: vive dentro del menu "..." (2026-10-24).
+// Abre el menu si hace falta, toca el boton (selector) y cierra con Escape.
+export async function tocarZoom(page, selector) {
+  if (!(await page.$('.colorear-desplegable--mas'))) {
+    await page.$eval('[aria-label="Más opciones"]', (b) => b.click());
+    await espera(200);
+  }
+  await page.$eval(`.colorear-control-zoom ${selector}`, (b) => b.click());
+  await espera(250);
+  await page.keyboard.press('Escape');
+  await espera(150);
+}
+
 // Pixeles con color en la capa de pintura de Colorear.
 export const pintado = (page) => page.evaluate(() => {
   const c = document.querySelector('.colorear-canvas');
