@@ -43,6 +43,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   BarsOutlined,
+  CheckOutlined,
   CloseOutlined,
   LeftOutlined,
   PictureOutlined,
@@ -1759,6 +1760,11 @@ export default function MenuActividades({ onOpenChange }) {
   // Nivel cuya grilla de rompecabezas se ve en ese modal (null = la lista
   // de niveles).
   const [nivelVistoRomp, setNivelVistoRomp] = useState(null);
+  // Galeria del tema (pedido 2026-10-24): al elegir un tema se ven las
+  // miniaturas de sus rompecabezas, con una pestaña por nivel, como las
+  // laminas de Colorear; tocar una la arma. tabNivelRomp = pestaña abierta.
+  const [galeriaRomp, setGaleriaRomp] = useState(false);
+  const [tabNivelRomp, setTabNivelRomp] = useState(0);
   // Vista previa de la imagen completa armada (boton "Ver imagen" del
   // header) — util sobre todo del nivel 2 en adelante, donde ya no hay
   // guia transparente de fondo.
@@ -2121,6 +2127,7 @@ export default function MenuActividades({ onOpenChange }) {
 
   const elegirTemaRomp = useCallback((id) => {
     setTemaRompId(id);
+    setGaleriaRomp(true);
     setRompIdRomp(null);
     setImagenRomp(null);
     setTableroRomp({ orden: [], posiciones: [] });
@@ -2131,12 +2138,32 @@ export default function MenuActividades({ onOpenChange }) {
 
   const volverAlSelectorRomp = useCallback(() => {
     setTemaRompId(null);
+    setGaleriaRomp(false);
     setRompIdRomp(null);
     setImagenRomp(null);
     setTableroRomp({ orden: [], posiciones: [] });
     setPiezaArrastrandoRomp(null);
     setMostrarNivelesRomp(false);
     setMostrarPreviaRomp(false);
+  }, []);
+
+  // Del juego a la galeria del tema, en la pestaña del nivel que se jugaba.
+  const volverAGaleriaRomp = useCallback(() => {
+    setGaleriaRomp(true);
+    setTabNivelRomp(nivelIdxRomp);
+    setRompIdRomp(null);
+    setImagenRomp(null);
+    setTableroRomp({ orden: [], posiciones: [] });
+    setPiezaArrastrandoRomp(null);
+    setMostrarNivelesRomp(false);
+    setMostrarPreviaRomp(false);
+  }, [nivelIdxRomp]);
+
+  // Tocar una miniatura de la galeria arma ese rompecabezas.
+  const jugarDesdeGaleriaRomp = useCallback((idx, id) => {
+    setGaleriaRomp(false);
+    setNivelIdxRomp(idx);
+    setRompIdRomp(id);
   }, []);
 
   // Pagina "Todos los rompecabezas": primero el estado ("En preparacion" /
@@ -2214,19 +2241,35 @@ export default function MenuActividades({ onOpenChange }) {
     };
   }, [catalogoRomp, tabActivaRomp, estadoCatalogoRomp]);
 
-  // Elegir un tema (o volver a elegirlo) retoma el nivel guardado de ESE
-  // tema y sortea su rompecabezas antes de pedir ninguna imagen — asi el
-  // efecto de carga de abajo pide la foto correcta desde el principio, no
-  // la del nivel que se estaba jugando en el tema anterior.
+  // Elegir un tema retoma su progreso guardado (armados y nivel) y abre la
+  // galeria en la pestaña de ese nivel; no se sortea nada: el niño elige.
   useEffect(() => {
     if (!temaRompId || !temaRomp) return;
     const { nivelMaximo: inicial, ids: completados } = retomarProgresoRompecabezas(temaRomp);
     setNivelMaximoRomp(inicial);
     setNivelIdxRomp(inicial);
+    setTabNivelRomp(inicial);
     setCompletadosRomp(completados);
-    setRompIdRomp(elegirAlAzarPendiente(temaRomp.niveles[inicial].rompecabezas, null, completados));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [temaRompId]);
+
+  // Miniaturas de la pestaña abierta de la galeria (solo esa; comparten el
+  // cache con el modal de niveles y "Todos los rompecabezas").
+  useEffect(() => {
+    if (!galeriaRomp || !temaRomp) return;
+    const nivel = temaRomp.niveles[tabNivelRomp];
+    if (!nivel) return;
+    let vivo = true;
+    nivel.rompecabezas.forEach((romp) => {
+      cargarImagenConAspecto(romp.cargar).then((res) => {
+        if (!vivo) return;
+        setMiniaturasRomp((prev) => (prev[romp.id]?.src === res.src ? prev : { ...prev, [romp.id]: res }));
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [galeriaRomp, tabNivelRomp, temaRomp]);
 
   // Carga la imagen del rompecabezas sorteado (no de todo el nivel: cada
   // rompecabezas trae su propia foto) cada vez que cambia.
@@ -2268,10 +2311,6 @@ export default function MenuActividades({ onOpenChange }) {
     () => tableroRomp.orden.filter((id) => !tableroRomp.posiciones.includes(id)),
     [tableroRomp]
   );
-  const siguienteNivelIdxRomp = temaRomp && nivelIdxRomp + 1 < temaRomp.niveles.length
-    ? nivelIdxRomp + 1
-    : undefined;
-  const enFronteraRomp = nivelIdxRomp === nivelMaximoRomp;
   const nivelesAlcanzadosRomp = temaRomp ? temaRomp.niveles.slice(0, nivelMaximoRomp + 1) : [];
 
   // Rompecabezas armados, contando el que se acaba de terminar (el efecto
@@ -2283,16 +2322,6 @@ export default function MenuActividades({ onOpenChange }) {
       : completadosRomp),
     [ganoRomp, rompActualRomp, completadosRomp]
   );
-  // Cuantos rompecabezas del nivel actual faltan por armar. Mientras falte
-  // alguno en el nivel de la frontera, el siguiente nivel sigue bloqueado.
-  const faltanRomp = nivelActualRomp
-    ? nivelActualRomp.rompecabezas.filter((r) => !idsCompletosRomp.includes(r.id)).length
-    : 0;
-  // Mientras falte alguno del nivel se sigue en el, sea o no el nivel mas
-  // alto desbloqueado: un nivel ya superado puede volver a tener pendientes
-  // (rompecabezas nuevos, o armados borrados por inactividad)
-  // y antes, al armar uno, se saltaba al siguiente aunque faltaran.
-  const seguirEnNivelRomp = faltanRomp > 0;
 
   // Guarda cada rompecabezas apenas se arma.
   useEffect(() => {
@@ -3079,12 +3108,13 @@ export default function MenuActividades({ onOpenChange }) {
       } else volverAlMenu();
     } else if (vista === 'rompecabezas') {
       if (catalogoRomp) setCatalogoRomp(false);
+      else if (temaRompId && !galeriaRomp) volverAGaleriaRomp();
       else if (temaRompId) volverAlSelectorRomp();
       else volverAlMenu();
     } else if (vista === 'horaDormir') {
       volverAlMenu();
     }
-  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, grupoSimonId, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
+  }, [vista, temaId, grupoImprimir, temaRompId, catalogoRomp, temaContarId, temaSecId, devDif, temaDifId, temaPinId, devPin, devPix, laminaPixId, temaPixId, grupoSimonId, galeriaRomp, volverAGaleriaRomp, volverAlSelector, volverAlMenu, volverAlSelectorRomp, volverAlSelectorContar, volverAlSelectorSec, volverAlSelectorDif, volverAlSelectorPin]);
 
   // ===== Pintar pixel art: lógica del drawer =====
   const temaPix = temaPixId ? TEMAS_PIXEL.find((t) => t.id === temaPixId) : null;
@@ -4022,29 +4052,56 @@ export default function MenuActividades({ onOpenChange }) {
                     <PictureOutlined /> Ver todos los rompecabezas
                   </button>
                 </div>
+              ) : galeriaRomp ? (
+                <div className="romp-galeria">
+                  <div className="romp-tabs" role="tablist" aria-label="Niveles">
+                    {temaRomp.niveles.map((n, i) => n.rompecabezas.length > 0 && (
+                      <button
+                        type="button"
+                        key={i}
+                        role="tab"
+                        aria-selected={i === tabNivelRomp}
+                        className={`romp-tab${i === tabNivelRomp ? ' activo' : ''}`}
+                        style={i === tabNivelRomp ? { background: temaRomp.header } : undefined}
+                        onClick={() => setTabNivelRomp(i)}
+                      >
+                        Nivel {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="colorear-grilla romp-galeria-grilla" role="tabpanel">
+                    {(temaRomp.niveles[tabNivelRomp]?.rompecabezas ?? []).map((romp) => {
+                      const imagen = miniaturasRomp[romp.id];
+                      return (
+                        <button
+                          type="button"
+                          key={romp.id}
+                          className="colorear-tarjeta"
+                          onClick={() => jugarDesdeGaleriaRomp(tabNivelRomp, romp.id)}
+                          aria-label="Armar este rompecabezas"
+                        >
+                          {imagen ? <img src={imagen.src} alt="" draggable={false} /> : <PictureOutlined className="romp-galeria-cargando" aria-hidden="true" />}
+                          {completadosRomp.includes(romp.id) && (
+                            <span className="colorear-tarjeta-marca" aria-label="Ya lo armaste"><CheckOutlined /></span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
                 <>
                   {ganoRomp && (
                     <div className="memory-victoria-overlay victoria">
                       <div className="memory-victoria">
                         <GiPuzzle className="memory-victoria-icono rompecabezas" aria-hidden="true" />
-                        <p>
-                          {seguirEnNivelRomp
-                            ? `¡Lo armaste! ${faltanRomp === 1 ? 'Te falta 1 rompecabezas' : `Te faltan ${faltanRomp} rompecabezas`} ${enFronteraRomp ? 'para el nivel siguiente' : 'de este nivel'}.`
-                            : siguienteNivelIdxRomp === undefined
-                              ? '¡Completaste todos los niveles!'
-                              : enFronteraRomp
-                                ? `¡Nivel ${nivelIdxRomp + 2} desbloqueado!`
-                                : '¡Lo armaste de nuevo!'}
-                        </p>
+                        <p>¡Lo armaste!</p>
                         <button
                           type="button"
                           className="memory-victoria-btn"
-                          onClick={() => reiniciarRomp(seguirEnNivelRomp ? nivelIdxRomp : (siguienteNivelIdxRomp ?? nivelIdxRomp))}
+                          onClick={volverAGaleriaRomp}
                         >
-                          {seguirEnNivelRomp
-                            ? 'Otro rompecabezas'
-                            : siguienteNivelIdxRomp === undefined ? 'Armar de nuevo' : 'Jugar nivel siguiente'}
+                          Elegir otro
                         </button>
                       </div>
                     </div>

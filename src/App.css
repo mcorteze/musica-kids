@@ -553,16 +553,19 @@ body {
 /* ========== MINI PLAYER FLOTANTE (sobre el menu de grupos) ==========
    Reemplaza a .player-bar mientras se ve el menu: mismos botones de
    control-btn/play-btn (mismo look), pero sin reservar una franja fija de
-   alto en el layout — flota encima de la grilla. */
+   alto en el layout — flota encima de la grilla. Vertical y arriba a la
+   izquierda, bajo el encabezado (pedido 2026-10-24: abajo a la derecha
+   tapaba la barra de herramientas de Colorear). */
 .mini-player-fab {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  left: 12px;
+  top: 76px;
   /* Por encima de .memory-overlay (9998): el drawer del menu general
      (Memorice/Imprimir) es a pantalla completa, y el reproductor flotante
      tiene que seguir visible y usable con el abierto (pedido explicito). */
   z-index: 10000;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
   padding: 6px;
@@ -6197,4 +6200,20 @@ body {
 .modo-liviano *::after {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* Galeria de un tema del Rompecabezas (pestaña por nivel + miniaturas con
+   las tarjetas de Colorear). Arriba, no centrada en el drawer. */
+.romp-galeria {
+  width: 100%;
+  align-self: stretch;
+  margin-bottom: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.romp-galeria-cargando {
+  font-size: 32px;
+  color: rgba(11, 79, 115, 0.3);
 }

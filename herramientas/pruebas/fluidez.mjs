@@ -61,6 +61,9 @@ export async function probarFluidez(browser, carpeta, chequear) {
   await r.$eval('button[aria-label="Rompecabezas"]', (el) => el.click());
   await espera(500);
   await r.$eval('.memory-picker-tile:not(.memory-solo-dev)', (el) => el.click());
+  // Galeria del tema (2026-10-24): se arma la primera miniatura.
+  await r.waitForSelector('.romp-galeria .colorear-tarjeta');
+  await r.$eval('.romp-galeria .colorear-tarjeta', (el) => el.click());
   await r.waitForSelector('.romp-tray-pieza');
   let fondos = [];
   for (let i = 0; i < 20; i++) {
