@@ -155,13 +155,29 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
 
   await guardar({ activo: true, dias: await dias(-1), despertar: await horaEn(r, 60) });
   chequear('pasada la hora: pantalla de dormir sin modo desarrollador', await visible(r, '.hd-noche'));
+  await r.reload();
+  await espera(1500);
+  chequear('recargar no quita la pantalla de dormir', await visible(r, '.hd-noche'));
+  await r.goto(`${urlDe(carpeta)}#otra`);
+  await r.reload();
+  await espera(1500);
+  chequear('otra dirección de la app tampoco la quita', await visible(r, '.hd-noche'));
   await tocarEsquina(r, 20);
+  const opciones = await r.$$eval('.hd-puerta .hd-btn', (els) => els.map((e) => e.textContent.trim()).join());
+  chequear('opciones: 5, 10 o 15 minutos más o desbloquear', opciones === '5 minutos más,10 minutos más,15 minutos más,Desbloquear,Volver', opciones);
   await clicTexto(r, '.hd-puerta .hd-btn', '15 minutos más');
   await espera(1200);
   chequear('«15 minutos más» quita la pantalla y deja la luna', !(await visible(r, '.hd-noche')) && await visible(r, '.hd-reloj'));
   await r.reload();
   await espera(1500);
   chequear('la prórroga sigue al recargar', !(await visible(r, '.hd-noche')));
+
+  await guardar({ activo: true, dias: await dias(-1), despertar: await horaEn(r, 60) });
+  await tocarEsquina(r, 20);
+  await clicTexto(r, '.hd-puerta .hd-btn', 'Desbloquear');
+  await r.reload();
+  await espera(1500);
+  chequear('«Desbloquear» la quita hasta despertar, también al recargar', !(await visible(r, '.hd-noche')) && !(await visible(r, '.hd-reloj')));
 
   await guardar({ activo: false, dias: await dias(-1), despertar: await horaEn(r, 60) });
   chequear('apagado: no aparece nada', !(await visible(r, '.hd-noche')) && !(await visible(r, '.hd-reloj')));

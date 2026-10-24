@@ -15,9 +15,11 @@
 //              (-1 = luna sin aviso todavia, 0 = primero, ...)
 //   dormir  -> pantalla de buenas noches hasta la hora de despertar
 //
-// Un adulto puede dar 15 minutos mas o apagarlo por hoy desde la pantalla
-// de dormir (pregunta de adulto). Las dos cosas se guardan con su hora de
-// termino, asi que recargar la pagina no sirve para saltarselo.
+// La pantalla de dormir es definitiva para el niño: sale de la hora y de lo
+// guardado, asi que recargar o volver a abrir la app la muestra igual. Un
+// adulto (20 toques en una esquina) puede dar 5, 10 o 15 minutos mas o
+// desbloquear hasta la hora de despertar; las dos cosas se guardan con su
+// hora de termino.
 
 import { useSyncExternalStore } from 'react';
 
@@ -26,7 +28,8 @@ const MIN = 60 * 1000;
 
 // La luna aparece 30 minutos antes, este o no encendido el primer aviso.
 export const LUNA_MIN = 30;
-export const PRORROGA_MIN = 15;
+// Minutos extra que puede dar el adulto.
+export const PRORROGAS_MIN = [5, 10, 15];
 // Minutos antes de la hora, de mayor a menor (fijos, pedido 2026-10-24).
 export const AVISOS = [30, 15, 5];
 
@@ -41,9 +44,9 @@ const PREDETERMINADA = {
   despertar: '07:00',
   // encendido/apagado de cada aviso de AVISOS
   avisosActivos: [true, true, true],
-  // ms hasta cuando corre la prorroga de 15 minutos (0 = ninguna)
+  // ms hasta cuando corren los minutos extra (0 = ninguno)
   prorrogaHasta: 0,
-  // ms hasta cuando esta apagado "por hoy" (0 = no)
+  // ms hasta cuando esta desbloqueado (0 = no)
   pausaHasta: 0,
 };
 
@@ -179,8 +182,9 @@ export function calcular({ config, ensayo, vistaPrevia }, ahora = Date.now()) {
 }
 
 // Acciones del adulto en la pantalla de dormir.
-export const darProrroga = () => guardarConfig({ prorrogaHasta: Date.now() + PRORROGA_MIN * MIN });
-export const apagarPorHoy = () => guardarConfig({
+export const darProrroga = (minutos) => guardarConfig({ prorrogaHasta: Date.now() + minutos * MIN });
+// Desbloquear: libre hasta la hora de despertar.
+export const desbloquear = () => guardarConfig({
   pausaHasta: nocheRelevante(estado.config).fin,
   prorrogaHasta: 0,
 });
@@ -188,12 +192,12 @@ export const apagarPorHoy = () => guardarConfig({
 // Texto para el adulto (panel): "Faltan 2 h 10 min para la hora de dormir."
 export function describir(config, ahora = Date.now()) {
   if (!config.activo) return 'Apagado en este equipo.';
-  if (config.pausaHasta > ahora) return `Apagado por hoy, vuelve a las ${config.despertar}.`;
+  if (config.pausaHasta > ahora) return `Desbloqueado hasta las ${config.despertar}.`;
   const { fase, restantes } = calcular({ config }, ahora);
   if (fase === 'dormir') return `Ahora es hora de dormir (hasta las ${config.despertar}).`;
   const total = Math.ceil(restantes);
   const h = Math.floor(total / 60);
   const min = total % 60;
-  const extra = config.prorrogaHasta > ahora ? ' (con 15 minutos más)' : '';
+  const extra = config.prorrogaHasta > ahora ? ' (con minutos extra)' : '';
   return `Faltan ${h ? `${h} h ` : ''}${min} min para la hora de dormir${extra}.`;
 }

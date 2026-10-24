@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SoundFilled } from '@ant-design/icons';
 import {
-  LUNA_MIN, PRORROGA_MIN, apagarPorHoy, audioDe, audioDeAviso, calcular, darProrroga, imagenDeAviso,
+  LUNA_MIN, PRORROGAS_MIN, desbloquear, audioDe, audioDeAviso, calcular, darProrroga, imagenDeAviso,
   terminarPrueba, useHoraDormir,
 } from '../utils/horaDormir';
 import './HoraDormir.css';
@@ -164,11 +164,13 @@ function OpcionesAdulto({ prueba, onCerrar }) {
             <button type="button" className="hd-btn" onClick={terminarPrueba}>Terminar prueba</button>
           ) : (
             <>
-              <button type="button" className="hd-btn" onClick={darProrroga}>
-                {PRORROGA_MIN} minutos más
-              </button>
-              <button type="button" className="hd-btn hd-btn--suave" onClick={apagarPorHoy}>
-                Apagar por hoy
+              {PRORROGAS_MIN.map((m) => (
+                <button key={m} type="button" className="hd-btn" onClick={() => darProrroga(m)}>
+                  {m} minutos más
+                </button>
+              ))}
+              <button type="button" className="hd-btn hd-btn--suave" onClick={desbloquear}>
+                Desbloquear
               </button>
             </>
           )}

@@ -29,7 +29,9 @@ Actualizado: 2026-10-24
   - [ ] Falta buenas-noches.mp3 (ahí suena solo la campanita).
   - 2026-10-24: ACTIVA por defecto (pushed 178b159). Pantalla de dormir sin
     botón «Adulto» ni pregunta: 20 toques seguidos en la esquina de abajo a
-    la derecha (zona invisible) muestran «15 minutos más / Apagar por hoy».
+    la derecha (zona invisible) muestran las opciones: 5, 10 o 15 minutos
+    más, o «Desbloquear» (hasta la hora de despertar). La pantalla es
+    definitiva: sale de la hora + localStorage, recargar no la quita (probado).
   - Ojo: commits de Colorear (otra sesión, 91f307e/93554bf/405ad77) se
     llevaron los archivos de Hora de dormir con git add -A; sin push aún.
   - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida.

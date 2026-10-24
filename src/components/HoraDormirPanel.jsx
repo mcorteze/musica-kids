@@ -18,7 +18,7 @@ export default function HoraDormirPanel() {
     return () => clearInterval(id);
   }, []);
 
-  // Cambiar el horario descarta la prorroga y el "apagado por hoy".
+  // Cambiar el horario descarta los minutos extra y el desbloqueo.
   const sinExcepciones = { prorrogaHasta: 0, pausaHasta: 0 };
   const cambiarDia = (dia) => (e) => {
     if (!e.target.value) return;
@@ -90,8 +90,9 @@ export default function HoraDormirPanel() {
         <p className="hd-panel-nota">
           La luna aparece {LUNA_MIN} minutos antes aunque los avisos estén apagados. En cada
           aviso encendido sale una tarjeta con una campanita y la voz grabada. A la hora de dormir la música se apaga despacio y queda la pantalla de
-          buenas noches hasta la hora de despertar. Para dar 15 minutos más o apagarlo por
-          hoy, tocar 20 veces seguidas la esquina de abajo a la derecha de esa pantalla.
+          buenas noches hasta la hora de despertar. Para dar 5, 10 o 15 minutos más o
+          desbloquear hasta la hora de despertar, tocar 20 veces seguidas la esquina de abajo
+          a la derecha de esa pantalla.
         </p>
       </section>
 
