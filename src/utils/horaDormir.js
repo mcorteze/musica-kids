@@ -1,18 +1,18 @@
 // Hora de dormir: a cierta hora la app avisa que se acaba el dia y, al
 // llegar, muestra una pantalla de "buenas noches" que tapa todo hasta la
-// hora de despertar. Nunca corta en seco: avisa antes en tres pasos
-// (AVISOS) para que el niño alcance a terminar lo que esta haciendo, como
-// los avisos de transicion del jardin ("en 10 minutos guardamos").
+// hora de despertar. Nunca corta en seco: avisa antes en tres pasos (por
+// defecto 30, 15 y 5 minutos) para que el niño alcance a terminar lo que
+// esta haciendo, como los avisos de transicion del jardin.
 //
 // Se configura en el modo desarrollador (Actividades > Hora de dormir) y
-// queda guardado en ESTE equipo. Viene apagado.
+// queda guardado en ESTE equipo. Viene apagado. Cada dia de la semana tiene
+// su hora de dormir; la de despertar es una sola.
 //
-// Fases (de menos a mas cerca de la hora):
-//   libre    -> falta mas de 30 min (o esta apagado)
-//   aviso30  -> 30 min: aparece la luna con el tiempo que queda
-//   aviso10  -> 10 min: "ve terminando tu juego"
-//   ultimo   ->  2 min: "ultimo juego"
-//   dormir   -> pantalla de buenas noches hasta la hora de despertar
+// Fases:
+//   libre   -> falta mas de lunaDesde() (o esta apagado): no se ve nada
+//   aviso   -> la luna en la esquina; nivel = ultimo aviso alcanzado
+//              (-1 = luna sin aviso todavia, 0 = primero, ...)
+//   dormir  -> pantalla de buenas noches hasta la hora de despertar
 //
 // Un adulto puede dar 15 minutos mas o apagarlo por hoy desde la pantalla
 // de dormir (pregunta de adulto). Las dos cosas se guardan con su hora de
@@ -22,15 +22,23 @@ import { useSyncExternalStore } from 'react';
 
 const CLAVE = 'musica-kids-hora-dormir';
 const MIN = 60 * 1000;
-const DIA_MIN = 24 * 60;
 
-export const AVISOS = { aviso30: 30, aviso10: 10, ultimo: 2 };
+// La luna aparece 30 minutos antes (o con el primer aviso, si es antes).
+export const LUNA_MIN = 30;
 export const PRORROGA_MIN = 15;
+export const AVISOS_MAX_MIN = 120;
+
+// Indice = getDay() de JS (0 domingo ... 6 sabado). El panel los muestra
+// de lunes a domingo (ORDEN_DIAS).
+export const NOMBRES_DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+export const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
 
 const PREDETERMINADA = {
   activo: false,
-  dormir: '20:30',
+  dias: ['20:00', '19:45', '19:45', '19:45', '19:45', '19:45', '20:30'],
   despertar: '07:00',
+  // minutos antes de la hora, de mayor a menor
+  avisos: [30, 15, 5],
   // ms hasta cuando corre la prorroga de 15 minutos (0 = ninguna)
   prorrogaHasta: 0,
   // ms hasta cuando esta apagado "por hoy" (0 = no)
@@ -42,21 +50,35 @@ const aMinutos = (hhmm) => {
   return (h || 0) * 60 + (m || 0);
 };
 
+// Tres avisos validos (1 a AVISOS_MAX_MIN, distintos) de mayor a menor; si
+// no, null.
+export function normalizarAvisos(avisos) {
+  const limpios = [...new Set((avisos ?? []).map(Number))]
+    .filter((m) => Number.isInteger(m) && m >= 1 && m <= AVISOS_MAX_MIN)
+    .sort((a, b) => b - a);
+  return limpios.length === 3 ? limpios : null;
+}
+
 function leer() {
   try {
-    return { ...PREDETERMINADA, ...JSON.parse(localStorage.getItem(CLAVE) || '{}') };
+    const guardada = JSON.parse(localStorage.getItem(CLAVE) || '{}');
+    const config = { ...PREDETERMINADA, ...guardada };
+    if (!Array.isArray(config.dias) || config.dias.length !== 7) config.dias = [...PREDETERMINADA.dias];
+    config.avisos = normalizarAvisos(config.avisos) ?? [...PREDETERMINADA.avisos];
+    // La primera version tenia una sola hora ("dormir"): ya no se usa.
+    delete config.dormir;
+    return config;
   } catch {
     return { ...PREDETERMINADA };
   }
 }
 
 // ---------- Almacen (config + pruebas del modo desarrollador) ----------
-// ensayo: la secuencia completa acelerada (empieza justo antes de los 30 min y corre
-// FACTOR_ENSAYO veces mas rapido: dura ~1 minuto). vistaPrevia: muestra una
-// fase puntual al instante. Ninguna de las dos se guarda.
-const FACTOR_ENSAYO = 30;
-// nPrueba cambia con cada prueba nueva: asi una misma vista previa pedida
-// dos veces vuelve a avisar.
+// ensayo: la secuencia completa acelerada; parte justo antes de que aparezca
+// la luna y dura ~1 minuto. vistaPrevia: { nivel } de un aviso o
+// { dormir: true }, al instante. Ninguna de las dos se guarda. nPrueba
+// cambia con cada prueba nueva: asi una misma vista previa pedida dos veces
+// vuelve a avisar.
 let estado = { config: leer(), ensayo: null, vistaPrevia: null, nPrueba: 0 };
 const oyentes = new Set();
 
@@ -77,7 +99,8 @@ export function guardarConfig(parcial) {
 
 const prueba = (ensayo, vistaPrevia) => cambiar({ ensayo, vistaPrevia, nPrueba: estado.nPrueba + 1 });
 export const iniciarEnsayo = () => prueba({ inicio: Date.now() }, null);
-export const verFase = (fase) => prueba(null, fase);
+export const verAviso = (nivel) => prueba(null, { nivel });
+export const verDormir = () => prueba(null, { dormir: true });
 export const terminarPrueba = () => prueba(null, null);
 
 const suscribir = (f) => {
@@ -87,56 +110,75 @@ const suscribir = (f) => {
 export const useHoraDormir = () => useSyncExternalStore(suscribir, () => estado);
 
 // ---------- Calculo ----------
-const faseSegun = (restantes) => {
-  if (restantes <= 0) return 'dormir';
-  if (restantes <= AVISOS.ultimo) return 'ultimo';
-  if (restantes <= AVISOS.aviso10) return 'aviso10';
-  if (restantes <= AVISOS.aviso30) return 'aviso30';
-  return 'libre';
-};
+export const lunaDesde = (avisos) => Math.max(LUNA_MIN, avisos[0]);
 
-// Proxima hora de despertar (ms) a partir de "ahora".
-export function proximoDespertar(config, ahora = Date.now()) {
-  const d = new Date(ahora);
-  const w = aMinutos(config.despertar);
-  d.setHours(Math.floor(w / 60), w % 60, 0, 0);
-  if (d.getTime() <= ahora) d.setDate(d.getDate() + 1);
-  return d.getTime();
+function segun(restantes, avisos) {
+  if (restantes <= 0) return { fase: 'dormir', nivel: avisos.length - 1, restantes: 0 };
+  if (restantes > lunaDesde(avisos)) return { fase: 'libre', nivel: -1, restantes };
+  let nivel = -1;
+  avisos.forEach((m, i) => { if (restantes <= m) nivel = i; });
+  return { fase: 'aviso', nivel, restantes };
 }
 
-// { fase, restantes (minutos, con decimales; null en libre lejano/dormir),
-//   prueba: 'ensayo' | 'vista' | null }
+// Momento (ms) en que empieza la noche del dia de "base" (fecha local) y en
+// que termina. Una hora de dormir menor que la de despertar (ej. 00:30) se
+// toma como de la madrugada siguiente.
+function noche(config, base) {
+  const dormir = aMinutos(config.dias[base.getDay()]);
+  const despertar = aMinutos(config.despertar);
+  const inicio = new Date(base);
+  inicio.setHours(Math.floor(dormir / 60), dormir % 60, 0, 0);
+  if (dormir < despertar) inicio.setDate(inicio.getDate() + 1);
+  const fin = new Date(inicio);
+  fin.setHours(Math.floor(despertar / 60), despertar % 60, 0, 0);
+  if (fin <= inicio) fin.setDate(fin.getDate() + 1);
+  return { inicio: inicio.getTime(), fin: fin.getTime() };
+}
+
+// Noche en curso o la proxima: { inicio, fin, enCurso }.
+export function nocheRelevante(config, ahora = Date.now()) {
+  const dia = (desfase) => {
+    const d = new Date(ahora);
+    d.setDate(d.getDate() + desfase);
+    return noche(config, d);
+  };
+  for (const n of [dia(-1), dia(0)]) {
+    if (n.inicio <= ahora && ahora < n.fin) return { ...n, enCurso: true };
+  }
+  const hoy = dia(0);
+  return { ...(hoy.inicio > ahora ? hoy : dia(1)), enCurso: false };
+}
+
+// { fase, nivel, restantes (minutos), prueba: 'ensayo' | 'vista' | null }
 export function calcular({ config, ensayo, vistaPrevia }, ahora = Date.now()) {
+  const { avisos } = config;
   if (vistaPrevia) {
-    return { fase: vistaPrevia, restantes: AVISOS[vistaPrevia] ?? 0, prueba: 'vista' };
+    if (vistaPrevia.dormir) return { fase: 'dormir', nivel: avisos.length - 1, restantes: 0, prueba: 'vista' };
+    return { fase: 'aviso', nivel: vistaPrevia.nivel, restantes: avisos[vistaPrevia.nivel], prueba: 'vista' };
   }
   if (ensayo) {
-    const restantes = AVISOS.aviso30 + 0.2 - ((ahora - ensayo.inicio) * FACTOR_ENSAYO) / MIN;
-    return { fase: faseSegun(restantes), restantes: Math.max(0, restantes), prueba: 'ensayo' };
+    const desde = lunaDesde(avisos) + 0.2;
+    // "desde" minutos en 60 segundos.
+    const restantes = desde - ((ahora - ensayo.inicio) * desde) / MIN;
+    return { ...segun(restantes, avisos), prueba: 'ensayo' };
   }
-  if (!config.activo || config.pausaHasta > ahora) return { fase: 'libre', restantes: null, prueba: null };
-
+  if (!config.activo || config.pausaHasta > ahora) return { fase: 'libre', nivel: -1, restantes: null, prueba: null };
   if (config.prorrogaHasta > ahora) {
-    const restantes = (config.prorrogaHasta - ahora) / MIN;
-    return { fase: faseSegun(restantes), restantes, prueba: null };
+    return { ...segun((config.prorrogaHasta - ahora) / MIN, avisos), prueba: null };
   }
-
-  const d = new Date(ahora);
-  const m = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
-  const D = aMinutos(config.dormir);
-  const W = aMinutos(config.despertar);
-  // La ventana de descanso casi siempre cruza la medianoche (20:30 a 07:00).
-  const enVentana = D > W ? (m >= D || m < W) : (m >= D && m < W);
-  if (enVentana) return { fase: 'dormir', restantes: 0, prueba: null };
-  const restantes = (D - m + DIA_MIN) % DIA_MIN;
-  return { fase: faseSegun(restantes), restantes, prueba: null };
+  const n = nocheRelevante(config, ahora);
+  if (n.enCurso) return { fase: 'dormir', nivel: avisos.length - 1, restantes: 0, prueba: null };
+  return { ...segun((n.inicio - ahora) / MIN, avisos), prueba: null };
 }
 
 // Acciones del adulto en la pantalla de dormir.
 export const darProrroga = () => guardarConfig({ prorrogaHasta: Date.now() + PRORROGA_MIN * MIN });
-export const apagarPorHoy = () => guardarConfig({ pausaHasta: proximoDespertar(estado.config), prorrogaHasta: 0 });
+export const apagarPorHoy = () => guardarConfig({
+  pausaHasta: nocheRelevante(estado.config).fin,
+  prorrogaHasta: 0,
+});
 
-// Texto para el adulto (panel): "Faltan 2 h 10 min".
+// Texto para el adulto (panel): "Faltan 2 h 10 min para la hora de dormir."
 export function describir(config, ahora = Date.now()) {
   if (!config.activo) return 'Apagado en este equipo.';
   if (config.pausaHasta > ahora) return `Apagado por hoy, vuelve a las ${config.despertar}.`;

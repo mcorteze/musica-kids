@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  AVISOS, PRORROGA_MIN, apagarPorHoy, calcular, darProrroga, terminarPrueba, useHoraDormir,
+  PRORROGA_MIN, apagarPorHoy, calcular, darProrroga, lunaDesde, terminarPrueba, useHoraDormir,
 } from '../utils/horaDormir';
 import './HoraDormir.css';
 
@@ -10,22 +10,19 @@ import './HoraDormir.css';
 // desarrollador). Tres piezas:
 // - la luna: aparece 30 min antes en la esquina y se va vaciando, como un
 //   reloj de arena (un preescolar no lee la hora, pero ve cuanto queda);
-// - los avisos: tarjeta arriba + campanita a los 30, 10 y 2 minutos (sin
-//   voz sintetizada: pedido explicito). No bloquean: el juego sigue debajo;
+// - los avisos: tarjeta arriba + campanita en cada aviso configurado (por
+//   defecto 30, 15 y 5 min; sin voz sintetizada: pedido explicito). No
+//   bloquean: el juego sigue debajo;
 // - la noche: pantalla de buenas noches que tapa todo hasta despertar. La
 //   musica se apaga despacio (App.jsx, onDormirChange).
 // Va fuera del app-shell (que queda inert en el modo auto) y por encima del
 // drawer de Actividades (9998) y del reproductor flotante (10000).
 
-const TITULOS = {
-  aviso30: 'En un ratito es hora de dormir',
-  aviso10: 'Ve terminando tu juego',
-  ultimo: '¡Último juego!',
-};
+// Por nivel de aviso (primero, segundo, ultimo).
+const TITULOS = ['En un ratito es hora de dormir', 'Ve terminando tu juego', '¡Último juego!'];
 
 // La tarjeta se va sola; la luna queda para volver a verla.
 const AVISO_VISIBLE_MS = 20000;
-const ORDEN = ['libre', 'aviso30', 'aviso10', 'ultimo', 'dormir'];
 
 // Campanita suave de dos notas (sin archivo de audio).
 function campanita() {
@@ -60,14 +57,14 @@ function Luna({ tamano = 40 }) {
 }
 
 // Luna en la esquina con un anillo que se vacia en los ultimos 30 minutos.
-function Reloj({ restantes, fase, onTocar }) {
+function Reloj({ restantes, desde, ultimo, onTocar }) {
   const r = 30;
   const largo = 2 * Math.PI * r;
-  const fraccion = Math.max(0, Math.min(1, restantes / AVISOS.aviso30));
+  const fraccion = Math.max(0, Math.min(1, restantes / desde));
   return (
     <button
       type="button"
-      className={`hd-reloj hd-reloj--${fase}`}
+      className={`hd-reloj${ultimo ? ' hd-reloj--ultimo' : ''}`}
       onClick={onTocar}
       aria-label="Cuánto falta para dormir"
     >
@@ -87,13 +84,13 @@ function Reloj({ restantes, fase, onTocar }) {
   );
 }
 
-function Aviso({ fase, onCerrar }) {
+function Aviso({ nivel, onCerrar }) {
   return (
-    <div className={`hd-aviso hd-aviso--${fase}`} role="status">
+    <div className="hd-aviso" role="status">
       <div className="hd-aviso-ilustracion">
         <Luna tamano={56} />
       </div>
-      <p className="hd-aviso-titulo">{TITULOS[fase]}</p>
+      <p className="hd-aviso-titulo">{TITULOS[nivel]}</p>
       <button type="button" className="hd-aviso-ok" onClick={onCerrar}>
         ¡Ya voy!
       </button>
@@ -232,34 +229,35 @@ export default function HoraDormir({ onDormirChange }) {
     };
   }, []);
 
-  const { fase, restantes, prueba } = calcular(almacen, ahora);
+  const { fase, nivel, restantes, prueba } = calcular(almacen, ahora);
+  const { avisos } = almacen.config;
 
-  const mostrarAviso = useCallback((f) => setAviso((a) => ({ fase: f, n: (a?.n ?? 0) + 1 })), []);
+  const mostrarAviso = useCallback((nv) => setAviso((a) => ({ nivel: nv, n: (a?.n ?? 0) + 1 })), []);
   useEffect(() => {
     if (!aviso) return undefined;
     const id = setTimeout(() => setAviso(null), AVISO_VISIBLE_MS);
     return () => clearTimeout(id);
   }, [aviso]);
 
-  // Cada aviso sale UNA vez por noche (al entrar a su fase). Si la app se
-  // abre ya dentro de una fase, sale el de esa fase y no los anteriores.
-  // Una prueba nueva del modo desarrollador empieza la cuenta de cero.
+  // Cada aviso sale UNA vez por noche (al llegar a su minuto). Si la app se
+  // abre ya pasado un aviso, sale ese y no los anteriores. Una prueba nueva
+  // del modo desarrollador empieza la cuenta de cero.
   useEffect(() => {
     const avisadas = avisadasRef.current;
     if (nPruebaRef.current !== almacen.nPrueba) {
       nPruebaRef.current = almacen.nPrueba;
       avisadas.clear();
     }
-    if (fase === 'libre' || fase === 'dormir') {
+    if (fase !== 'aviso') {
       if (fase === 'libre') avisadas.clear();
       setAviso(null);
       return;
     }
-    if (avisadas.has(fase)) return;
-    ORDEN.slice(0, ORDEN.indexOf(fase) + 1).forEach((f) => avisadas.add(f));
+    if (nivel < 0 || avisadas.has(nivel)) return;
+    for (let i = 0; i <= nivel; i++) avisadas.add(i);
     campanita();
-    mostrarAviso(fase);
-  }, [fase, almacen.nPrueba, mostrarAviso]);
+    mostrarAviso(nivel);
+  }, [fase, nivel, almacen.nPrueba, mostrarAviso]);
 
   const dormido = fase === 'dormir';
   useEffect(() => {
@@ -276,10 +274,11 @@ export default function HoraDormir({ onDormirChange }) {
         <>
           <Reloj
             restantes={restantes}
-            fase={fase}
-            onTocar={() => mostrarAviso(fase)}
+            desde={lunaDesde(avisos)}
+            ultimo={nivel === avisos.length - 1}
+            onTocar={() => mostrarAviso(Math.max(0, nivel))}
           />
-          {aviso && <Aviso fase={aviso.fase} onCerrar={() => setAviso(null)} />}
+          {aviso && <Aviso nivel={aviso.nivel} onCerrar={() => setAviso(null)} />}
           {prueba && (
             <button type="button" className="hd-prueba-cerrar" onClick={terminarPrueba}>
               Terminar prueba

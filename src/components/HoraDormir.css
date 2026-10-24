@@ -371,6 +371,29 @@
   font-family: inherit;
 }
 
+.hd-panel-fila--separada {
+  padding-top: 12px;
+  border-top: 1px solid #E6E0F2;
+}
+
+.hd-panel-avisos {
+  display: flex;
+  gap: 10px;
+}
+
+.hd-panel-minutos {
+  width: 80px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.hd-panel-error {
+  margin: 0;
+  color: #B33A36;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .hd-panel-estado {
   margin: 0;
   font-size: 15px;

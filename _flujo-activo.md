@@ -1,24 +1,27 @@
 # Flujo activo — musica-kids
-Actualizado: 2026-10-23
+Actualizado: 2026-10-24
 
-## Hora de dormir (2026-10-23) — fase 1 hecha, sin commit, en prueba del usuario
+## Hora de dormir (2026-10-23/24) — hecho, sin commit, en prueba del usuario
 - Pedido: inculcar que hay hora de terminar con las pantallas; avisar antes,
   no apagar en seco. Primero el cierre del día; otros horarios después.
-- Hecho: utils/horaDormir.js (horario, fases, prórroga, ensayo),
-  components/HoraDormir.jsx (luna con anillo que se vacía, avisos a 30/10/2
-  min con campanita, pantalla de buenas noches hasta despertar, pregunta de
-  adulto: multiplicación → "15 minutos más" / "Apagar por hoy"),
-  HoraDormirPanel.jsx (Actividades > Hora de dormir, solo modo dev: activar,
-  horas, vistas previas, ensayo de un minuto). Música baja en 4 s y se pausa.
-  Clave musica-kids-hora-dormir permanente (caducidad.js). Viene APAGADO.
+- Hecho: utils/horaDormir.js (horario por día, fases, prórroga, ensayo),
+  components/HoraDormir.jsx (luna con anillo que se vacía, tarjeta +
+  campanita en cada aviso, pantalla de buenas noches hasta despertar,
+  pregunta de adulto: multiplicación → "15 minutos más" / "Apagar por hoy"),
+  HoraDormirPanel.jsx (Actividades > Hora de dormir, solo modo dev).
+  Música baja en 4 s y se pausa. Clave musica-kids-hora-dormir permanente
+  (caducidad.js). Viene APAGADO.
+- 2026-10-24 (pedido): avisos configurables, por defecto 30/15/5 min; hora
+  de dormir por día: L-V 19:45, sáb 20:30, dom 20:00; despertar único 07:00.
+  La luna (el ícono que le gustó) aparece 30 min antes, o con el primer
+  aviso si es mayor.
 - Decisión: SIN voz sintetizada (pedido explícito: "no necesito voz robótica").
-- Pruebas: herramientas/pruebas/hora-dormir.mjs (24 chequeos por build).
+- Pruebas: herramientas/pruebas/hora-dormir.mjs (29 chequeos por build).
 - Pendiente:
   - [ ] Que el usuario lo pruebe en la tablet y lo active.
   - [ ] Fase final: ilustraciones de Skye (aviso, último juego, durmiendo)
         en lugar de la luna SVG.
-  - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida,
-        horario distinto fin de semana.
+  - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida.
 
 ## PLANIFICADO — reestructuración (NO se hace por ahora, pedido 2026-10-22)
 Dos cambios ligados; el 1 es requisito del 2.
