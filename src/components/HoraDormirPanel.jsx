@@ -90,8 +90,8 @@ export default function HoraDormirPanel() {
         <p className="hd-panel-nota">
           La luna aparece {LUNA_MIN} minutos antes aunque los avisos estén apagados. En cada
           aviso encendido sale una tarjeta con una campanita y la voz grabada. A la hora de dormir la música se apaga despacio y queda la pantalla de
-          buenas noches hasta la hora de despertar. Un adulto puede dar 15 minutos más o
-          apagarlo por hoy con el botón «Adulto».
+          buenas noches hasta la hora de despertar. Para dar 15 minutos más o apagarlo por
+          hoy, tocar 20 veces seguidas la esquina de abajo a la derecha de esa pantalla.
         </p>
       </section>
 

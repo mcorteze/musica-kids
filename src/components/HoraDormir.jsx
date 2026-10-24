@@ -15,7 +15,8 @@ import './HoraDormir.css';
 // - los avisos: tarjeta arriba + campanita + voz grabada (si esta el audio)
 //   a los 30, 15 y 5 min; el adulto puede apagar cualquiera. Nada de voz
 //   sintetizada (pedido explicito). No bloquean: el juego sigue debajo;
-// - la noche: pantalla de buenas noches que tapa todo hasta despertar, con
+// - la noche: pantalla de buenas noches (un adulto la desbloquea con 20
+//   toques en la esquina de abajo a la derecha) que tapa todo hasta despertar, con
 //   su audio. La musica se apaga despacio (App.jsx, onDormirChange).
 // Va fuera del app-shell (que queda inert en el modo auto) y por encima del
 // drawer de Actividades (9998) y del reproductor flotante (10000).
@@ -145,76 +146,34 @@ function Aviso({ nivel, onCerrar }) {
   );
 }
 
-const nuevaPregunta = () => {
-  const a = 6 + Math.floor(Math.random() * 4);
-  const b = 6 + Math.floor(Math.random() * 4);
-  return { a, b };
-};
+// Desbloqueo oculto: TOQUES_DESBLOQUEO toques seguidos en la esquina de
+// abajo a la derecha de la pantalla de dormir (sin boton visible ni
+// pregunta, pedido 2026-10-24), igual que el modo desarrollador. Cada toque
+// debe llegar antes de VENTANA_TOQUES_MS desde el anterior.
+const TOQUES_DESBLOQUEO = 20;
+const VENTANA_TOQUES_MS = 1200;
 
-// Pregunta de adulto: una multiplicacion que un preescolar no resuelve.
-function PuertaAdulto({ prueba, onCerrar }) {
-  const [pregunta, setPregunta] = useState(nuevaPregunta);
-  const [respuesta, setRespuesta] = useState('');
-  const [error, setError] = useState(false);
-  const [abierta, setAbierta] = useState(false);
-
-  const responder = (e) => {
-    e.preventDefault();
-    if (Number(respuesta) === pregunta.a * pregunta.b) {
-      setAbierta(true);
-      return;
-    }
-    setError(true);
-    setRespuesta('');
-    setPregunta(nuevaPregunta());
-  };
-
+// Opciones del adulto una vez desbloqueado.
+function OpcionesAdulto({ prueba, onCerrar }) {
   return (
     <div className="hd-puerta-fondo" onClick={onCerrar}>
       <div className="hd-puerta" onClick={(e) => e.stopPropagation()}>
-        {!abierta ? (
-          <form onSubmit={responder}>
-            <p className="hd-puerta-titulo">Solo para adultos</p>
-            <label className="hd-puerta-pregunta" htmlFor="hd-respuesta">
-              ¿Cuánto es {pregunta.a} × {pregunta.b}?
-            </label>
-            <input
-              id="hd-respuesta"
-              className={`hd-puerta-input${error ? ' hd-puerta-input--error' : ''}`}
-              inputMode="numeric"
-              autoComplete="off"
-              value={respuesta}
-              onChange={(e) => {
-                setError(false);
-                setRespuesta(e.target.value.replace(/\D/g, '').slice(0, 3));
-              }}
-            />
-            {error && <p className="hd-puerta-error">No es correcto, prueba con esta otra.</p>}
-            <div className="hd-puerta-acciones">
-              <button type="button" className="hd-btn hd-btn--suave" onClick={onCerrar}>Cancelar</button>
-              <button type="submit" className="hd-btn" disabled={!respuesta}>Aceptar</button>
-            </div>
-          </form>
-        ) : (
-          <>
-            <p className="hd-puerta-titulo">¿Qué quieres hacer?</p>
-            <div className="hd-puerta-opciones">
-              {prueba ? (
-                <button type="button" className="hd-btn" onClick={terminarPrueba}>Terminar prueba</button>
-              ) : (
-                <>
-                  <button type="button" className="hd-btn" onClick={darProrroga}>
-                    {PRORROGA_MIN} minutos más
-                  </button>
-                  <button type="button" className="hd-btn hd-btn--suave" onClick={apagarPorHoy}>
-                    Apagar por hoy
-                  </button>
-                </>
-              )}
-              <button type="button" className="hd-btn hd-btn--suave" onClick={onCerrar}>Volver</button>
-            </div>
-          </>
-        )}
+        <p className="hd-puerta-titulo">¿Qué quieres hacer?</p>
+        <div className="hd-puerta-opciones">
+          {prueba ? (
+            <button type="button" className="hd-btn" onClick={terminarPrueba}>Terminar prueba</button>
+          ) : (
+            <>
+              <button type="button" className="hd-btn" onClick={darProrroga}>
+                {PRORROGA_MIN} minutos más
+              </button>
+              <button type="button" className="hd-btn hd-btn--suave" onClick={apagarPorHoy}>
+                Apagar por hoy
+              </button>
+            </>
+          )}
+          <button type="button" className="hd-btn hd-btn--suave" onClick={onCerrar}>Volver</button>
+        </div>
       </div>
     </div>
   );
@@ -228,7 +187,17 @@ const ESTRELLAS = [
 ];
 
 function Noche({ prueba }) {
-  const [puerta, setPuerta] = useState(false);
+  const [opciones, setOpciones] = useState(false);
+  const toquesRef = useRef({ n: 0, t: 0 });
+  const tocarEsquina = () => {
+    const ahora = Date.now();
+    const cuenta = toquesRef.current;
+    cuenta.n = ahora - cuenta.t <= VENTANA_TOQUES_MS ? cuenta.n + 1 : 1;
+    cuenta.t = ahora;
+    if (cuenta.n < TOQUES_DESBLOQUEO) return;
+    cuenta.n = 0;
+    setOpciones(true);
+  };
   // Despues de que la musica alcanza a bajar un poco.
   useEffect(() => {
     decir(audioDe('buenas-noches'));
@@ -253,10 +222,8 @@ function Noche({ prueba }) {
         <Escuchar url={audioDe('buenas-noches')} className="hd-escuchar--noche" />
       </div>
       {prueba && <span className="hd-prueba-chip">Prueba</span>}
-      <button type="button" className="hd-adulto-btn" onClick={() => setPuerta(true)}>
-        Adulto
-      </button>
-      {puerta && <PuertaAdulto prueba={prueba} onCerrar={() => setPuerta(false)} />}
+      <button type="button" className="hd-desbloqueo" onClick={tocarEsquina} aria-label="Desbloquear (adulto)" />
+      {opciones && <OpcionesAdulto prueba={prueba} onCerrar={() => setOpciones(false)} />}
     </div>
   );
 }

@@ -27,8 +27,9 @@ Actualizado: 2026-10-24
   - [x] 2026-10-24: audios aviso-30/15/5 e ilustraciones de Skye (avif,
         fondo #15214D = tarjeta) integrados. Voz entra 1,5 s después.
   - [ ] Falta buenas-noches.mp3 (ahí suena solo la campanita).
-  - [ ] Viene APAGADO por defecto: activarlo en la tablet (o cambiar el
-        predeterminado si el usuario lo pide).
+  - 2026-10-24: ACTIVA por defecto (pushed 178b159). Pantalla de dormir sin
+    botón «Adulto» ni pregunta: 20 toques seguidos en la esquina de abajo a
+    la derecha (zona invisible) muestran «15 minutos más / Apagar por hoy».
   - Ojo: commits de Colorear (otra sesión, 91f307e/93554bf/405ad77) se
     llevaron los archivos de Hora de dormir con git add -A; sin push aún.
   - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida.

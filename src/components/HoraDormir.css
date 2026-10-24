@@ -230,23 +230,25 @@
   font-weight: 600;
 }
 
-/* Discreto pero tocable: un niño que lo toca se encuentra con la pregunta. */
-.hd-adulto-btn {
+/* Zona invisible del desbloqueo (20 toques), donde estaba el boton
+   «Adulto». Sin resaltado ni zoom por doble toque. */
+.hd-desbloqueo {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  border: 0;
   background: transparent;
-  color: var(--hd-texto-suave);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ---------- Pregunta de adulto ---------- */
+/* ---------- Opciones del adulto ---------- */
 .hd-puerta-fondo {
   position: absolute;
   inset: 0;
@@ -274,54 +276,11 @@
   color: #5A5F86;
 }
 
-.hd-puerta-pregunta {
-  display: block;
-  margin-bottom: 12px;
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.hd-puerta-input {
-  width: 100%;
-  box-sizing: border-box;
-  height: 52px;
-  padding: 0 14px;
-  border: 2px solid #C9CCE6;
-  border-radius: 6px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1E2345;
-  outline: none;
-}
-
-.hd-puerta-input:focus {
-  border-color: #4B57C9;
-}
-
-.hd-puerta-input--error {
-  border-color: #D9534F;
-}
-
-.hd-puerta-error {
-  margin: 8px 0 0;
-  color: #B33A36;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.hd-puerta-acciones,
 .hd-puerta-opciones {
   display: flex;
+  flex-direction: column;
   gap: 10px;
   margin-top: 16px;
-}
-
-.hd-puerta-acciones {
-  justify-content: flex-end;
-}
-
-.hd-puerta-opciones {
-  flex-direction: column;
 }
 
 .hd-btn {

@@ -1,6 +1,6 @@
 // Hora de dormir (2026-10-23/24): la tarjeta del panel solo con el modo
 // desarrollador; vistas previas; avisos fijos que se encienden/apagan;
-// pregunta de adulto;
+// desbloqueo oculto (20 toques en la esquina);
 // horario real por dia de la semana (aviso, pantalla de dormir, prorroga
 // que sobrevive a recargar) y que nada se salga de la pantalla. Con
 // CAPTURAS=<carpeta> guarda capturas.
@@ -27,11 +27,12 @@ const visible = (page, sel) => page.$eval(sel, (el) => {
 
 const clicTexto = (page, sel, texto) => page.$$eval(sel, (els, t) => els.find((e) => e.textContent.trim() === t).click(), texto);
 
-// Responde la pregunta de adulto (bien o mal).
-async function responder(page, bien) {
-  const [a, b] = await page.$eval('.hd-puerta-pregunta', (el) => el.textContent.match(/\d+/g).map(Number));
-  await page.type('#hd-respuesta', String(bien ? a * b : a * b + 1));
-  await page.$eval('.hd-puerta form', (f) => f.requestSubmit());
+// Toques seguidos en la esquina oculta de la pantalla de dormir.
+async function tocarEsquina(page, veces) {
+  for (let i = 0; i < veces; i++) {
+    await page.$eval('.hd-desbloqueo', (b) => b.click());
+    await espera(40);
+  }
   await espera(200);
 }
 
@@ -98,11 +99,11 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   chequear(`noche: botón de volver a escuchar ${hayAudio('buenas-noches') ? 'visible (hay audio)' : 'oculto (falta el audio)'}`,
     (await visible(p, '.hd-noche .hd-escuchar')) === hayAudio('buenas-noches'));
   await capturar(p, 'noche-tablet');
-  await p.$eval('.hd-adulto-btn', (b) => b.click());
-  await espera(200);
-  await responder(p, false);
-  chequear('respuesta incorrecta: sigue la pregunta con aviso', await visible(p, '.hd-puerta-error'));
-  await responder(p, true);
+  chequear('sin botón «Adulto» a la vista', !(await p.$eval('.hd-desbloqueo', (b) => b.textContent.trim().length > 0 || getComputedStyle(b).borderStyle !== 'none')));
+  await tocarEsquina(p, 19);
+  chequear('19 toques en la esquina no desbloquean', !(await visible(p, '.hd-puerta')));
+  await tocarEsquina(p, 1);
+  chequear('el toque 20 muestra las opciones, sin pregunta', await visible(p, '.hd-puerta'));
   await capturar(p, 'puerta-tablet');
   await clicTexto(p, '.hd-puerta .hd-btn', 'Terminar prueba');
   await espera(300);
@@ -154,9 +155,7 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
 
   await guardar({ activo: true, dias: await dias(-1), despertar: await horaEn(r, 60) });
   chequear('pasada la hora: pantalla de dormir sin modo desarrollador', await visible(r, '.hd-noche'));
-  await r.$eval('.hd-adulto-btn', (b) => b.click());
-  await espera(200);
-  await responder(r, true);
+  await tocarEsquina(r, 20);
   await clicTexto(r, '.hd-puerta .hd-btn', '15 minutos más');
   await espera(1200);
   chequear('«15 minutos más» quita la pantalla y deja la luna', !(await visible(r, '.hd-noche')) && await visible(r, '.hd-reloj'));
@@ -181,7 +180,7 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
     await capturar(v, `aviso5-${nombre}`);
     await clicTexto(v, '.hd-panel .hd-btn', 'Pantalla de dormir');
     await espera(1400);
-    const fueraNoche = await fueraDePantalla(v, '.hd-noche-centro, .hd-escuchar, .hd-adulto-btn');
+    const fueraNoche = await fueraDePantalla(v, '.hd-noche-centro, .hd-escuchar, .hd-desbloqueo');
     await capturar(v, `noche-${nombre}`);
     chequear(`${nombre}: avisos y pantalla de dormir caben`, !fueraAviso.length && !fueraNoche.length, [...fueraAviso, ...fueraNoche].join(', '));
     await v.close();
