@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { SoundFilled } from '@ant-design/icons';
 import {
-  PRORROGA_MIN, apagarPorHoy, calcular, darProrroga, lunaDesde, terminarPrueba, useHoraDormir,
+  LUNA_MIN, PRORROGA_MIN, apagarPorHoy, audioDe, audioDeAviso, calcular, darProrroga, terminarPrueba,
+  useHoraDormir,
 } from '../utils/horaDormir';
 import './HoraDormir.css';
 
@@ -10,11 +12,11 @@ import './HoraDormir.css';
 // desarrollador). Tres piezas:
 // - la luna: aparece 30 min antes en la esquina y se va vaciando, como un
 //   reloj de arena (un preescolar no lee la hora, pero ve cuanto queda);
-// - los avisos: tarjeta arriba + campanita en cada aviso configurado (por
-//   defecto 30, 15 y 5 min; sin voz sintetizada: pedido explicito). No
-//   bloquean: el juego sigue debajo;
-// - la noche: pantalla de buenas noches que tapa todo hasta despertar. La
-//   musica se apaga despacio (App.jsx, onDormirChange).
+// - los avisos: tarjeta arriba + campanita + voz grabada (si esta el audio)
+//   a los 30, 15 y 5 min; el adulto puede apagar cualquiera. Nada de voz
+//   sintetizada (pedido explicito). No bloquean: el juego sigue debajo;
+// - la noche: pantalla de buenas noches que tapa todo hasta despertar, con
+//   su audio. La musica se apaga despacio (App.jsx, onDormirChange).
 // Va fuera del app-shell (que queda inert en el modo auto) y por encima del
 // drawer de Actividades (9998) y del reproductor flotante (10000).
 
@@ -48,6 +50,29 @@ function campanita() {
   }
 }
 
+// Voz grabada (src/assets/hora-dormir/). Una sola a la vez; la campanita
+// suena antes, por eso el retardo.
+let vozActual = null;
+let vozPendiente = null;
+function callarVoz() {
+  clearTimeout(vozPendiente);
+  vozActual?.pause();
+  vozActual = null;
+}
+function decir(url, retardo = 900) {
+  callarVoz();
+  if (!url) return;
+  vozPendiente = setTimeout(() => {
+    // document.createElement, no new Audio(): mismo cuidado que con Image.
+    const audio = document.createElement('audio');
+    audio.src = url;
+    vozActual = audio;
+    audio.play().catch(() => {
+      // El navegador puede bloquear el sonido si nadie ha tocado la pantalla.
+    });
+  }, retardo);
+}
+
 function Luna({ tamano = 40 }) {
   return (
     <svg width={tamano} height={tamano} viewBox="0 0 40 40" aria-hidden="true">
@@ -57,10 +82,10 @@ function Luna({ tamano = 40 }) {
 }
 
 // Luna en la esquina con un anillo que se vacia en los ultimos 30 minutos.
-function Reloj({ restantes, desde, ultimo, onTocar }) {
+function Reloj({ restantes, ultimo, onTocar }) {
   const r = 30;
   const largo = 2 * Math.PI * r;
-  const fraccion = Math.max(0, Math.min(1, restantes / desde));
+  const fraccion = Math.max(0, Math.min(1, restantes / LUNA_MIN));
   return (
     <button
       type="button"
@@ -84,6 +109,22 @@ function Reloj({ restantes, desde, ultimo, onTocar }) {
   );
 }
 
+// Volver a escuchar la voz. Solo si esta el audio: un boton que no suena
+// confunde al niño.
+function Escuchar({ url, className = '' }) {
+  if (!url) return null;
+  return (
+    <button
+      type="button"
+      className={`hd-escuchar ${className}`}
+      onClick={() => decir(url, 0)}
+      aria-label="Escuchar otra vez"
+    >
+      <SoundFilled />
+    </button>
+  );
+}
+
 function Aviso({ nivel, onCerrar }) {
   return (
     <div className="hd-aviso" role="status">
@@ -91,9 +132,12 @@ function Aviso({ nivel, onCerrar }) {
         <Luna tamano={56} />
       </div>
       <p className="hd-aviso-titulo">{TITULOS[nivel]}</p>
-      <button type="button" className="hd-aviso-ok" onClick={onCerrar}>
-        ¡Ya voy!
-      </button>
+      <div className="hd-aviso-botones">
+        <Escuchar url={audioDeAviso(nivel)} />
+        <button type="button" className="hd-aviso-ok" onClick={onCerrar}>
+          ¡Ya voy!
+        </button>
+      </div>
     </div>
   );
 }
@@ -182,6 +226,11 @@ const ESTRELLAS = [
 
 function Noche({ prueba }) {
   const [puerta, setPuerta] = useState(false);
+  // Despues de que la musica alcanza a bajar un poco.
+  useEffect(() => {
+    decir(audioDe('buenas-noches'), 1500);
+    return callarVoz;
+  }, []);
 
   return (
     <div className="hd-noche" role="dialog" aria-modal="true" aria-label="Hora de dormir">
@@ -198,6 +247,7 @@ function Noche({ prueba }) {
         </div>
         <h1 className="hd-noche-titulo">Hora de dormir</h1>
         <p className="hd-noche-texto">Buenas noches. Mañana seguimos jugando.</p>
+        <Escuchar url={audioDe('buenas-noches')} className="hd-escuchar--noche" />
       </div>
       {prueba && <span className="hd-prueba-chip">Prueba</span>}
       <button type="button" className="hd-adulto-btn" onClick={() => setPuerta(true)}>
@@ -230,7 +280,6 @@ export default function HoraDormir({ onDormirChange }) {
   }, []);
 
   const { fase, nivel, restantes, prueba } = calcular(almacen, ahora);
-  const { avisos } = almacen.config;
 
   const mostrarAviso = useCallback((nv) => setAviso((a) => ({ nivel: nv, n: (a?.n ?? 0) + 1 })), []);
   useEffect(() => {
@@ -255,9 +304,13 @@ export default function HoraDormir({ onDormirChange }) {
     }
     if (nivel < 0 || avisadas.has(nivel)) return;
     for (let i = 0; i <= nivel; i++) avisadas.add(i);
+    // Aviso apagado por el adulto: no sale (la luna sigue). La vista previa
+    // del modo desarrollador lo muestra igual.
+    if (!almacen.config.avisosActivos[nivel] && prueba !== 'vista') return;
     campanita();
+    decir(audioDeAviso(nivel));
     mostrarAviso(nivel);
-  }, [fase, nivel, almacen.nPrueba, mostrarAviso]);
+  }, [fase, nivel, prueba, almacen.nPrueba, almacen.config.avisosActivos, mostrarAviso]);
 
   const dormido = fase === 'dormir';
   useEffect(() => {
@@ -274,9 +327,12 @@ export default function HoraDormir({ onDormirChange }) {
         <>
           <Reloj
             restantes={restantes}
-            desde={lunaDesde(avisos)}
-            ultimo={nivel === avisos.length - 1}
-            onTocar={() => mostrarAviso(Math.max(0, nivel))}
+            ultimo={nivel === TITULOS.length - 1}
+            onTocar={() => {
+              const nv = Math.max(0, nivel);
+              decir(audioDeAviso(nv), 0);
+              mostrarAviso(nv);
+            }}
           />
           {aviso && <Aviso nivel={aviso.nivel} onCerrar={() => setAviso(null)} />}
           {prueba && (

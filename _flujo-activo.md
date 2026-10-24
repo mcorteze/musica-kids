@@ -11,14 +11,20 @@ Actualizado: 2026-10-24
   HoraDormirPanel.jsx (Actividades > Hora de dormir, solo modo dev).
   Música baja en 4 s y se pausa. Clave musica-kids-hora-dormir permanente
   (caducidad.js). Viene APAGADO.
-- 2026-10-24 (pedido): avisos configurables, por defecto 30/15/5 min; hora
-  de dormir por día: L-V 19:45, sáb 20:30, dom 20:00; despertar único 07:00.
-  La luna (el ícono que le gustó) aparece 30 min antes, o con el primer
-  aviso si es mayor.
+- 2026-10-24 (pedido): hora de dormir por día: L-V 19:45, sáb 20:30,
+  dom 20:00; despertar único 07:00. Avisos FIJOS en 30/15/5 min: el adulto
+  solo los enciende/apaga (los minutos editables se descartaron). La luna
+  (el ícono que le gustó) aparece siempre 30 min antes.
+- Voz: audios de ElevenLabs en src/assets/hora-dormir/ (aviso-30, aviso-15,
+  aviso-5, buenas-noches .mp3). La app los toma solos; el panel lista los
+  que faltan. Textos (dicen el tiempo que falta) en el README.txt de esa
+  carpeta. Botón «volver a escuchar» en la tarjeta y en la pantalla de
+  dormir (solo si está el audio); tocar la luna también repite.
 - Decisión: SIN voz sintetizada (pedido explícito: "no necesito voz robótica").
 - Pruebas: herramientas/pruebas/hora-dormir.mjs (29 chequeos por build).
 - Pendiente:
   - [ ] Que el usuario lo pruebe en la tablet y lo active.
+  - [ ] Usuario genera los 4 audios en ElevenLabs; probarlos en el panel.
   - [ ] Fase final: ilustraciones de Skye (aviso, último juego, durmiendo)
         en lugar de la luna SVG.
   - [ ] Después (si lo pide): horario mínimo de inicio, pausas de comida.

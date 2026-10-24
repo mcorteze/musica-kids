@@ -27,7 +27,7 @@ import {
   LuVolumeX,
 } from 'react-icons/lu';
 import { borrarDibujo, guardarDibujo, leerDibujo, ultimoUso, VIGENCIA_MS } from '../utils/dibujosColorear';
-import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, colorTexto, dibujarTextos, encajarTexto, letrasArcoiris, medirTexto } from '../utils/textosColorear';
+import { FUENTE_POR_ID, FUENTES, bordeTexto, cargarFuentes, dibujarTextos, encajarTexto, medirTexto, tramosTexto } from '../utils/textosColorear';
 import {
   COLORES,
   ESPECTRO,
@@ -293,7 +293,8 @@ function ConfirmarBorrado({ titulo, texto, miniatura, onConfirmar, onCancelar })
 
 // Dictado por voz (pedido explicito 2026-10-23): reconocimiento de voz del
 // navegador (Chrome/Android: necesita internet y pide permiso del microfono
-// la primera vez). Sin soporte, el boton no aparece.
+// la primera vez). Sin soporte, el boton igual aparece (pedido explicito: en
+// la tablet no se veia) y explica que se use el microfono del teclado.
 const Reconocedor = typeof window !== 'undefined' ? window.SpeechRecognition ?? window.webkitSpeechRecognition : null;
 const MAX_TEXTO = 40;
 
@@ -309,9 +310,17 @@ function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
   // Al cerrar el dialogo, se deja de escuchar.
   useEffect(() => () => reconocedorRef.current?.abort(), []);
 
+  const campoRef = useRef(null);
   const dictar = () => {
     if (escuchando) {
       reconocedorRef.current?.stop();
+      return;
+    }
+    // Navegador sin reconocimiento de voz (algunas tablets): el teclado de
+    // la tablet trae su propio microfono.
+    if (!Reconocedor) {
+      setAviso('Toca el micrófono del teclado para dictar.');
+      campoRef.current?.focus();
       return;
     }
     setAviso('');
@@ -357,6 +366,7 @@ function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
       >
         <div className="colorear-texto-fila">
           <input
+            ref={campoRef}
             className="colorear-texto-campo"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
@@ -365,18 +375,16 @@ function DialogoTexto({ inicial, editando, onListo, onCancelar }) {
             aria-label="Texto"
             autoFocus
           />
-          {Reconocedor && (
-            <button
-              type="button"
-              className={`colorear-texto-mic${escuchando ? ' colorear-texto-mic--escuchando' : ''}`}
-              onClick={dictar}
-              aria-pressed={escuchando}
-              aria-label={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
-              title={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
-            >
-              <LuMic />
-            </button>
-          )}
+          <button
+            type="button"
+            className={`colorear-texto-mic${escuchando ? ' colorear-texto-mic--escuchando' : ''}`}
+            onClick={dictar}
+            aria-pressed={escuchando}
+            aria-label={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
+            title={escuchando ? 'Dejar de escuchar' : 'Dictar con la voz'}
+          >
+            <LuMic />
+          </button>
         </div>
         {aviso && <p className="colorear-texto-aviso">{aviso}</p>}
         <div className="colorear-dialogo-botones">
@@ -1892,15 +1900,20 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
                         fontFamily={f.familia}
                         fontWeight={f.peso}
                         fontSize={t.tam}
-                        fill={t.rgb ? colorTexto(t.rgb) : undefined}
-                        stroke="#fff"
-                        strokeWidth={bordeTexto(t.tam)}
                         strokeLinejoin="round"
                         paintOrder="stroke"
                       >
-                        {t.rgb ? t.texto : letrasArcoiris(t.texto).map((l, i) => (
-                          // eslint-disable-next-line react/no-array-index-key
-                          <tspan key={i} fill={l.color ?? 'none'}>{l.letra}</tspan>
+                        {/* Los emojis van sin borde ni color encima (tramosTexto). */}
+                        {tramosTexto(t.texto, t.rgb).map((tr, i) => (
+                          <tspan
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={i}
+                            fill={tr.emoji ? '#000' : tr.color ?? 'none'}
+                            stroke={tr.emoji ? 'none' : '#fff'}
+                            strokeWidth={tr.emoji ? undefined : bordeTexto(t.tam)}
+                          >
+                            {tr.texto}
+                          </tspan>
                         ))}
                       </text>
                     </g>

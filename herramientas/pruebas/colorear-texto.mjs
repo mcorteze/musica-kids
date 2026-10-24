@@ -20,7 +20,7 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
     }
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   };
-  const textos = () => p.$$eval('.colorear-texto', (gs) => gs.map((g) => `${g.getAttribute('transform')} "${g.textContent}" ${g.querySelector('text').getAttribute('fill')}`));
+  const textos = () => p.$$eval('.colorear-texto', (gs) => gs.map((g) => `${g.getAttribute('transform')} "${g.textContent}" ${g.querySelector('tspan').getAttribute('fill')}`));
   const m = await (await p.$('.colorear-hoja')).boundingBox();
   await p.click('.colorear-selector[aria-label="Texto"]');
   await espera(300);
@@ -231,4 +231,34 @@ export async function probarColorearTexto(browser, carpeta, chequear) {
   await espera(400);
   chequear('sin permiso avisa cómo dictar', (await v.$eval('.colorear-texto-aviso', (e) => e.textContent).catch(() => '')).includes('micrófono'));
   await v.close();
+
+  // Navegador sin reconocimiento de voz: el microfono igual se ve y dice que
+  // se use el del teclado. Y un texto con emojis: van enteros y sin borde.
+  const sv = await paginaNueva(browser, chequear, viewportDe(800, 1180), 'colorear sin dictado');
+  await sv.evaluateOnNewDocument(() => {
+    for (const nombre of ['SpeechRecognition', 'webkitSpeechRecognition']) {
+      Object.defineProperty(window, nombre, { value: undefined, configurable: true, writable: true });
+    }
+  });
+  await abrirLaminaColorear(sv, carpeta, { limpiarColorear: true });
+  const ms = await (await sv.$('.colorear-hoja')).boundingBox();
+  await sv.click('.colorear-selector[aria-label="Texto"]');
+  await espera(200);
+  await sv.click('.colorear-listo');
+  await espera(200);
+  await sv.mouse.click(ms.x + ms.width * 0.5, ms.y + ms.height * 0.4);
+  await espera(400);
+  chequear('sin reconocimiento de voz el micrófono igual aparece', await sv.$('.colorear-texto-mic'));
+  await sv.click('.colorear-texto-mic');
+  await espera(200);
+  chequear('y avisa que se use el micrófono del teclado', (await sv.$eval('.colorear-texto-aviso', (e) => e.textContent).catch(() => '')).includes('teclado'));
+  await sv.$eval('.colorear-texto-campo', (el) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, 'Hola ❤️👍🏽');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await sv.click('.colorear-dialogo--texto button[type="submit"]');
+  await espera(400);
+  const tramos = await sv.$$eval('.colorear-texto tspan', (ts) => ts.map((t) => [t.textContent, t.getAttribute('stroke')]));
+  chequear('los emojis van enteros y sin borde', JSON.stringify(tramos) === JSON.stringify([['Hola ', '#fff'], ['❤️', 'none'], ['👍🏽', 'none']]), JSON.stringify(tramos));
+  await sv.close();
 }

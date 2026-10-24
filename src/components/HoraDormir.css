@@ -103,8 +103,39 @@
   line-height: 1.2;
 }
 
-.hd-aviso-ok {
+.hd-aviso-botones {
   justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Volver a escuchar: redondo, del mismo alto que «¡Ya voy!». */
+.hd-escuchar {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  padding: 0;
+  border: 2px solid rgba(255, 214, 107, 0.7);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--hd-luna);
+  font-size: 24px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hd-escuchar--noche {
+  margin-top: 8px;
+  width: 64px;
+  height: 64px;
+  font-size: 28px;
+}
+
+.hd-aviso-ok {
   min-height: 56px;
   padding: 0 28px;
   border: 0;
@@ -376,24 +407,6 @@
   border-top: 1px solid #E6E0F2;
 }
 
-.hd-panel-avisos {
-  display: flex;
-  gap: 10px;
-}
-
-.hd-panel-minutos {
-  width: 80px;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-.hd-panel-error {
-  margin: 0;
-  color: #B33A36;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .hd-panel-estado {
   margin: 0;
   font-size: 15px;
@@ -454,7 +467,21 @@
     grid-row: auto;
   }
 
-  .hd-aviso-ok {
+  .hd-aviso-botones {
     justify-self: center;
+  }
+}
+
+/* Celular acostado: la luna mas chica para que quepan el texto y el boton
+   de volver a escuchar. */
+@media (max-height: 480px) {
+  .hd-noche-centro {
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .hd-noche-ilustracion {
+    width: 30vmin;
+    height: 30vmin;
   }
 }

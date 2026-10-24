@@ -1,12 +1,16 @@
 // Hora de dormir (2026-10-23/24): la tarjeta del panel solo con el modo
-// desarrollador; vistas previas; avisos configurables; pregunta de adulto;
+// desarrollador; vistas previas; avisos fijos que se encienden/apagan;
+// pregunta de adulto;
 // horario real por dia de la semana (aviso, pantalla de dormir, prorroga
 // que sobrevive a recargar) y que nada se salga de la pantalla. Con
 // CAPTURAS=<carpeta> guarda capturas.
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { PANTALLAS, abrirActividades, espera, fueraDePantalla, paginaNueva, urlDe, viewportDe } from './comun.mjs';
+import { RAIZ, PANTALLAS, abrirActividades, espera, fueraDePantalla, paginaNueva, urlDe, viewportDe } from './comun.mjs';
 
 const CLAVE = 'musica-kids-hora-dormir';
+// El boton de volver a escuchar sale solo si esta el audio.
+const hayAudio = (nombre) => existsSync(join(RAIZ, 'src', 'assets', 'hora-dormir', `${nombre}.mp3`));
 const capturas = process.env.CAPTURAS;
 const capturar = (page, nombre) => capturas && page.screenshot({ path: join(capturas, `${nombre}.png`) });
 
@@ -45,13 +49,16 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   chequear('viene apagado', (await p.$eval('.hd-panel-estado', (el) => el.textContent)).includes('Apagado'));
   await capturar(p, 'panel-tablet');
 
-  chequear('avisos por defecto 30, 15 y 5', (await p.$$eval('.hd-panel-minutos', (els) => els.map((e) => e.value).join())) === '30,15,5');
+  const interruptores = await p.$$eval('.hd-panel-bloque:nth-child(3) .ant-switch', (els) => els.map((e) => `${e.getAttribute('aria-label')}:${e.getAttribute('aria-checked')}`).join());
+  chequear('avisos 30, 15 y 5 encendidos por defecto', interruptores === 'Aviso 30 minutos antes:true,Aviso 15 minutos antes:true,Aviso 5 minutos antes:true', interruptores);
   chequear('por defecto: lunes 19:45, sábado 20:30, domingo 20:00', (await p.$$eval('.hd-panel-bloque:nth-child(2) .hd-panel-hora', (els) => els.map((e) => e.value).join())) === '19:45,19:45,19:45,19:45,19:45,20:30,20:00,07:00');
 
   await clicTexto(p, '.hd-panel .hd-btn', 'Aviso 15 min');
   await espera(600);
   chequear('vista previa: aparece el aviso', (await p.$eval('.hd-aviso-titulo', (el) => el.textContent).catch(() => '')) === 'Ve terminando tu juego');
   chequear('vista previa: aparece la luna con el tiempo', await visible(p, '.hd-reloj'));
+  chequear(`aviso: botón de volver a escuchar ${hayAudio('aviso-15') ? 'visible (hay audio)' : 'oculto (falta el audio)'}`,
+    (await visible(p, '.hd-aviso .hd-escuchar')) === hayAudio('aviso-15'));
   await capturar(p, 'aviso10-tablet');
   await p.$eval('.hd-aviso-ok', (b) => b.click());
   await espera(200);
@@ -64,6 +71,8 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   await espera(1400);
   const tapa = await p.evaluate(() => Boolean(document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('.hd-noche')));
   chequear('la pantalla de dormir tapa todo (también el drawer)', tapa);
+  chequear(`noche: botón de volver a escuchar ${hayAudio('buenas-noches') ? 'visible (hay audio)' : 'oculto (falta el audio)'}`,
+    (await visible(p, '.hd-noche .hd-escuchar')) === hayAudio('buenas-noches'));
   await capturar(p, 'noche-tablet');
   await p.$eval('.hd-adulto-btn', (b) => b.click());
   await espera(200);
@@ -82,22 +91,11 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   await espera(200);
   chequear('«Terminar prueba» corta el ensayo', !(await visible(p, '.hd-reloj')));
 
-  // Avisos configurables: cambian las pruebas; uno invalido no se guarda.
-  const escribirAviso = async (i, valor) => {
-    const campo = (await p.$$('.hd-panel-minutos'))[i];
-    await campo.click({ clickCount: 3 });
-    await campo.type(valor);
-    await p.keyboard.press('Enter');
-    await espera(200);
-  };
-  await escribirAviso(0, '20');
-  await escribirAviso(1, '10');
-  await escribirAviso(2, '3');
-  const botones = await p.$$eval('.hd-panel .hd-btn--suave', (els) => els.map((e) => e.textContent).join());
-  chequear('avisos editados cambian las pruebas', botones.startsWith('Aviso 20 min,Aviso 10 min,Aviso 3 min'), botones);
-  await escribirAviso(0, '10');
-  chequear('avisos repetidos: mensaje y vuelve a lo guardado', await visible(p, '.hd-panel-error')
-    && (await p.$$eval('.hd-panel-minutos', (els) => els.map((e) => e.value).join())) === '20,10,3');
+  // Apagar el aviso de 15 min se guarda (se prueba su efecto mas abajo).
+  await p.$eval('.ant-switch[aria-label="Aviso 15 minutos antes"]', (b) => b.click());
+  await espera(200);
+  const guardado = await p.evaluate((clave) => JSON.parse(localStorage.getItem(clave)).avisosActivos.join(), CLAVE);
+  chequear('apagar un aviso se guarda', guardado === 'true,false,true', guardado);
   await p.evaluate((clave) => localStorage.removeItem(clave), CLAVE);
   await p.close();
 
@@ -123,6 +121,9 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
   await guardar({ activo: true, dias: await dias(10), despertar: await horaEn(r, -60) });
   chequear('a 10 min de la hora de hoy: aviso «Ve terminando tu juego»', (await r.$eval('.hd-aviso-titulo', (el) => el.textContent).catch(() => '')) === 'Ve terminando tu juego');
   chequear('a 10 min: no se avisa también lo de 30 min', (await r.$$('.hd-aviso')).length === 1);
+
+  await guardar({ activo: true, dias: await dias(10), despertar: await horaEn(r, -60), avisosActivos: [true, false, true] });
+  chequear('aviso de 15 min apagado: sin tarjeta, pero con la luna', !(await visible(r, '.hd-aviso')) && await visible(r, '.hd-reloj'));
 
   await guardar({ activo: true, dias: await dias(40), despertar: await horaEn(r, -60) });
   chequear('a 40 min: todavía no aparece la luna', !(await visible(r, '.hd-reloj')));
@@ -152,11 +153,11 @@ export async function probarHoraDormir(browser, carpeta, chequear) {
     await espera(300);
     await clicTexto(v, '.hd-panel .hd-btn', 'Aviso 5 min');
     await espera(700);
-    const fueraAviso = await fueraDePantalla(v, '.hd-aviso, .hd-reloj, .hd-prueba-cerrar');
+    const fueraAviso = await fueraDePantalla(v, '.hd-aviso, .hd-aviso-ok, .hd-escuchar, .hd-reloj, .hd-prueba-cerrar');
     await capturar(v, `aviso5-${nombre}`);
     await clicTexto(v, '.hd-panel .hd-btn', 'Pantalla de dormir');
     await espera(1400);
-    const fueraNoche = await fueraDePantalla(v, '.hd-noche-centro, .hd-adulto-btn');
+    const fueraNoche = await fueraDePantalla(v, '.hd-noche-centro, .hd-escuchar, .hd-adulto-btn');
     await capturar(v, `noche-${nombre}`);
     chequear(`${nombre}: avisos y pantalla de dormir caben`, !fueraAviso.length && !fueraNoche.length, [...fueraAviso, ...fueraNoche].join(', '));
     await v.close();

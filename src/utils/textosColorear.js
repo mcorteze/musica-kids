@@ -20,16 +20,35 @@ export const FUENTES = [
 export const FUENTE_POR_ID = Object.fromEntries(FUENTES.map((f) => [f.id, f]));
 const fuenteDe = (t) => FUENTE_POR_ID[t.fuente] ?? FUENTES[0];
 
-// Arcoiris: cada letra con el siguiente color (los espacios no gastan color).
-const ARCOIRIS = ['#E53935', '#FB8C00', '#FDD835', '#43A047', '#1E88E5', '#8E24AA'];
-export function letrasArcoiris(texto) {
-  let k = 0;
-  return [...texto].map((letra) => ({ letra, color: letra.trim() ? ARCOIRIS[k++ % ARCOIRIS.length] : null }));
-}
-
 export const colorTexto = (rgb) => (rgb ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` : null);
 // Grosor del borde blanco (centrado en el contorno: se ve la mitad afuera).
-export const bordeTexto = (tam) => tam * 0.22;
+// 0,11 del alto de letra (pedido explicito 2026-10-24: antes 0,22, muy grueso).
+export const bordeTexto = (tam) => tam * 0.11;
+
+// Caracteres "de verdad" (un emoji compuesto, como ❤️ o 👍🏽, es UNO solo).
+const separador = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter('es', { granularity: 'grapheme' }) : null;
+const caracteres = (texto) => (separador ? [...separador.segment(texto)].map((g) => g.segment) : [...texto]);
+const esEmoji = (c) => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(c);
+
+// El texto en tramos para dibujarlo: { texto, color, emoji }. Los emojis van
+// aparte, SIN borde blanco ni color encima (traen el suyo; con el borde y el
+// relleno de las letras se veian mal o no se veian). Arcoiris: cada letra
+// con el siguiente color (los espacios no gastan color).
+const ARCOIRIS = ['#E53935', '#FB8C00', '#FDD835', '#43A047', '#1E88E5', '#8E24AA'];
+export function tramosTexto(texto, rgb) {
+  const tramos = [];
+  let k = 0;
+  for (const c of caracteres(texto)) {
+    const emoji = esEmoji(c);
+    let color = null;
+    if (!emoji) color = rgb ? colorTexto(rgb) : c.trim() ? ARCOIRIS[k++ % ARCOIRIS.length] : null;
+    const previo = tramos[tramos.length - 1];
+    // Con un solo color las letras seguidas van juntas (se ven mejor unidas).
+    if (rgb && previo && !emoji && !previo.emoji) previo.texto += c;
+    else tramos.push({ texto: c, color, emoji });
+  }
+  return tramos;
+}
 
 // Antes de dibujar en un canvas, las letras deben estar cargadas (si no,
 // el navegador usa otra y la imagen sale distinta a la pantalla).
@@ -81,29 +100,23 @@ export function dibujarTextos(ctx, textos = [], k = 1) {
     ctx.lineWidth = bordeTexto(tam);
     const x = t.x * k;
     const y = t.y * k;
-    if (t.rgb) {
-      ctx.textAlign = 'center';
-      ctx.strokeText(t.texto, x, y);
-      ctx.fillStyle = colorTexto(t.rgb);
-      ctx.fillText(t.texto, x, y);
-    } else {
-      // Letra por letra (primero todos los bordes, despues los colores),
-      // desde el borde izquierdo del texto centrado.
-      ctx.textAlign = 'left';
-      const letras = letrasArcoiris(t.texto);
-      const anchos = letras.map(({ letra }) => ctx.measureText(letra).width);
-      const inicio = x - anchos.reduce((a, b) => a + b, 0) / 2;
-      for (const pasada of ['borde', 'color']) {
-        let cx = inicio;
-        letras.forEach(({ letra, color }, i) => {
-          if (pasada === 'borde') ctx.strokeText(letra, cx, y);
-          else if (color) {
-            ctx.fillStyle = color;
-            ctx.fillText(letra, cx, y);
-          }
-          cx += anchos[i];
-        });
-      }
+    // Por tramos (primero todos los bordes, despues los colores), desde el
+    // borde izquierdo del texto centrado. Los emojis, sin borde.
+    ctx.textAlign = 'left';
+    const tramos = tramosTexto(t.texto, t.rgb);
+    const anchos = tramos.map((tr) => ctx.measureText(tr.texto).width);
+    const inicio = x - anchos.reduce((a, b) => a + b, 0) / 2;
+    for (const pasada of ['borde', 'color']) {
+      let cx = inicio;
+      tramos.forEach((tr, i) => {
+        if (pasada === 'borde') {
+          if (!tr.emoji) ctx.strokeText(tr.texto, cx, y);
+        } else if (tr.emoji || tr.color) {
+          ctx.fillStyle = tr.color ?? '#000';
+          ctx.fillText(tr.texto, cx, y);
+        }
+        cx += anchos[i];
+      });
     }
     ctx.restore();
   }

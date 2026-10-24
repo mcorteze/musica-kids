@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Switch } from 'antd';
 import {
-  AVISOS_MAX_MIN, LUNA_MIN, NOMBRES_DIAS, ORDEN_DIAS, describir, guardarConfig, iniciarEnsayo,
-  normalizarAvisos, useHoraDormir, verAviso, verDormir,
+  AUDIOS, AVISOS, LUNA_MIN, NOMBRES_DIAS, ORDEN_DIAS, audioDe, describir, guardarConfig, iniciarEnsayo,
+  useHoraDormir, verAviso, verDormir,
 } from '../utils/horaDormir';
 
 // Panel del adulto (Actividades > Hora de dormir, solo modo desarrollador):
 // encender en este equipo, la hora de dormir de cada dia, la de despertar,
-// los minutos de los avisos y probar cada pantalla sin esperar a la noche.
+// encender o apagar cada aviso (los minutos son fijos) y probar cada
+// pantalla sin esperar a la noche.
 // Lo que ve el niño esta en HoraDormir.jsx.
 export default function HoraDormirPanel() {
   const { config } = useHoraDormir();
@@ -17,21 +18,6 @@ export default function HoraDormirPanel() {
     return () => clearInterval(id);
   }, []);
 
-  // Los avisos se editan como texto y se guardan al salir del campo, solo
-  // si los tres son validos (si no, vuelven a lo guardado).
-  const [avisos, setAvisos] = useState(() => config.avisos.map(String));
-  const [errorAvisos, setErrorAvisos] = useState(false);
-  const guardarAvisos = () => {
-    const validos = normalizarAvisos(avisos);
-    setErrorAvisos(!validos);
-    if (!validos) {
-      setAvisos(config.avisos.map(String));
-      return;
-    }
-    setAvisos(validos.map(String));
-    guardarConfig({ avisos: validos });
-  };
-
   // Cambiar el horario descarta la prorroga y el "apagado por hoy".
   const sinExcepciones = { prorrogaHasta: 0, pausaHasta: 0 };
   const cambiarDia = (dia) => (e) => {
@@ -40,6 +26,11 @@ export default function HoraDormirPanel() {
     dias[dia] = e.target.value;
     guardarConfig({ dias, ...sinExcepciones });
   };
+
+  const faltan = AUDIOS.filter((a) => !audioDe(a));
+  const estadoAudios = faltan.length
+    ? `Audios que faltan (src/assets/hora-dormir/): ${faltan.map((a) => `${a}.mp3`).join(', ')}.`
+    : 'Están los cuatro audios.';
 
   return (
     <div className="hd-panel">
@@ -81,31 +72,24 @@ export default function HoraDormirPanel() {
       </section>
 
       <section className="hd-panel-bloque">
-        <h3>Avisos (minutos antes)</h3>
-        <div className="hd-panel-avisos">
-          {avisos.map((valor, i) => (
-            <input
-              key={i}
-              className="hd-panel-hora hd-panel-minutos"
-              inputMode="numeric"
-              value={valor}
-              aria-label={`Aviso ${i + 1}`}
-              onChange={(e) => {
-                const otros = [...avisos];
-                otros[i] = e.target.value.replace(/\D/g, '').slice(0, 3);
-                setAvisos(otros);
+        <h3>Avisos</h3>
+        {AVISOS.map((m, i) => (
+          <div key={m} className="hd-panel-fila">
+            <span>{m} minutos antes</span>
+            <Switch
+              checked={config.avisosActivos[i]}
+              aria-label={`Aviso ${m} minutos antes`}
+              onChange={(activo) => {
+                const avisosActivos = [...config.avisosActivos];
+                avisosActivos[i] = activo;
+                guardarConfig({ avisosActivos });
               }}
-              onBlur={guardarAvisos}
-              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
             />
-          ))}
-        </div>
-        {errorAvisos && (
-          <p className="hd-panel-error">Tienen que ser tres números distintos, entre 1 y {AVISOS_MAX_MIN}.</p>
-        )}
+          </div>
+        ))}
         <p className="hd-panel-nota">
-          La luna aparece {LUNA_MIN} minutos antes y en cada aviso sale una tarjeta con una
-          campanita. A la hora de dormir la música se apaga despacio y queda la pantalla de
+          La luna aparece {LUNA_MIN} minutos antes aunque los avisos estén apagados. En cada
+          aviso encendido sale una tarjeta con una campanita y la voz grabada. A la hora de dormir la música se apaga despacio y queda la pantalla de
           buenas noches hasta la hora de despertar. Un adulto puede dar 15 minutos más o
           apagarlo por hoy con el botón «Adulto».
         </p>
@@ -120,8 +104,9 @@ export default function HoraDormirPanel() {
         <div className="hd-panel-botones">
           <button type="button" className="hd-btn" onClick={iniciarEnsayo}>Ensayo de un minuto</button>
         </div>
+        <p className="hd-panel-nota">{estadoAudios}</p>
         <div className="hd-panel-botones">
-          {config.avisos.map((m, i) => (
+          {AVISOS.map((m, i) => (
             <button key={m} type="button" className="hd-btn hd-btn--suave" onClick={() => verAviso(i)}>
               Aviso {m} min
             </button>
