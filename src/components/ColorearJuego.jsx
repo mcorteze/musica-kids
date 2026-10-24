@@ -45,7 +45,8 @@ import {
   titilanDe,
 } from '../utils/pincelesColorear';
 import { MARCOS, conMarco } from '../utils/marcosColorear';
-import { prepararAudio, silenciar, sonidoClic, sonidoDeTrazo, sonidoPop } from '../utils/sonidosColorear';
+import { prepararAudio, silenciar, sonidoClic, sonidoPop } from '../utils/sonidosColorear';
+import { canvasAPng } from '../utils/codificarPng';
 import IconoHerramienta, { IconoSello, MuestraPolvo, PUNTAS } from './ColorearIconos';
 import { esLiviano } from '../utils/rendimiento';
 import './ColorearJuego.css';
@@ -103,7 +104,9 @@ const TAMANO_INICIAL = 22;
 const LADO_LARGO = 1800;
 const MAX_DESHACER = 25;
 const MINIATURA = 320;
-const ESPERA_GUARDADO_MS = 800;
+// Guardado tras dejar de pintar: 2 s (eran 0,8 s; en la tablet guardaba
+// entre trazo y trazo y se trababa).
+const ESPERA_GUARDADO_MS = 2000;
 // Igual al gap de .colorear-centro en ColorearJuego.css.
 const SEPARACION = 14;
 // Tamaño del dibujo de la herramienta que hace de cursor (laptop).
@@ -526,7 +529,9 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
   const [versionHistoria, setVersionHistoria] = useState(0);
   const temporizadorRef = useRef(null);
   const pendienteRef = useRef(false);
-  const sonidoTrazoRef = useRef(null);
+  const miniaturaPendienteRef = useRef(false);
+  // Si este dibujo ya tiene un guardado (con miniatura) en el dispositivo.
+  const guardadoAntesRef = useRef(false);
   const [dimensiones, setDimensiones] = useState(null);
   const [caja, setCaja] = useState(null);
   const [herramienta, setHerramienta] = useState('crayon');
@@ -668,6 +673,7 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       // Dibujo con capa pero sin historia (anterior a "Ver cómo lo pinté"):
       // no se puede repetir.
       historiaRef.current = guardado?.capa ? guardado.historia ?? null : [];
+      guardadoAntesRef.current = Boolean(guardado?.miniatura);
       const guardados = guardado?.textos ?? [];
       await cargarFuentes(guardados);
       if (!vivo) return;
@@ -752,37 +758,59 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     };
   }, [menu]);
 
-  const guardar = useCallback(async () => {
+  // Guardar sin trabar la tablet (pedido 2026-10-24): mientras se pinta se
+  // guarda solo la capa (PNG hecho en un worker, utils/codificarPng.js) y la
+  // historia. La miniatura (componer la lamina entera) y el aviso a la
+  // galeria (que relee todos los dibujos) quedan para el guardado final: al
+  // salir de la lamina o al pasar la app a segundo plano. La primera vez si
+  // va miniatura, para que la galeria nunca quede sin imagen.
+  const guardar = useCallback(async (final = false) => {
     clearTimeout(temporizadorRef.current);
-    if (!pendienteRef.current) return;
+    const conCapa = pendienteRef.current;
+    const conMiniatura = miniaturaPendienteRef.current && (final || !guardadoAntesRef.current);
+    if (!conCapa && !conMiniatura) return;
     pendienteRef.current = false;
+    if (conMiniatura) miniaturaPendienteRef.current = false;
     const canvas = capaRef.current;
     const lamina = laminaRef.current;
     if (!canvas || !lamina) return;
-    const escala = MINIATURA / Math.max(canvas.width, canvas.height);
     const lista = textosRef.current;
-    await cargarFuentes(lista);
-    const mini = componer(canvas, lamina, Math.round(canvas.width * escala), Math.round(canvas.height * escala), lista, canvas.width);
-    const [capa, miniatura] = await Promise.all([aBlob(canvas, 'image/png'), aBlob(mini, 'image/jpeg', 0.82)]);
+    const capa = conCapa ? await canvasAPng(canvas) : null;
+    let miniatura = null;
+    if (conMiniatura) {
+      const escala = MINIATURA / Math.max(canvas.width, canvas.height);
+      await cargarFuentes(lista);
+      const mini = componer(canvas, lamina, Math.round(canvas.width * escala), Math.round(canvas.height * escala), lista, canvas.width);
+      miniatura = await aBlob(mini, 'image/jpeg', 0.82);
+    }
     await guardarDibujo(id, capa, miniatura, historiaRef.current, lista);
-    onGuardadoRef.current?.();
+    guardadoAntesRef.current = true;
+    if (final) onGuardadoRef.current?.();
   }, [id]);
 
   const programarGuardado = useCallback(() => {
     pendienteRef.current = true;
+    miniaturaPendienteRef.current = true;
     clearTimeout(temporizadorRef.current);
     temporizadorRef.current = setTimeout(guardar, ESPERA_GUARDADO_MS);
   }, [guardar]);
 
-  // Al salir de la lamina se guarda lo que falte.
-  useEffect(() => () => {
-    guardar();
+  // Al salir de la lamina, o si la app pasa a segundo plano (en la tablet
+  // puede no volver), se guarda todo lo que falte.
+  useEffect(() => {
+    const alOcultar = () => {
+      if (document.visibilityState === 'hidden') guardar(true);
+    };
+    document.addEventListener('visibilitychange', alOcultar);
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultar);
+      guardar(true);
+    };
   }, [guardar]);
 
   useEffect(() => () => {
     cancelAnimationFrame(cuadroRepeticionRef.current);
     clearTimeout(cuadroRepeticionRef.current);
-    sonidoTrazoRef.current?.parar();
   }, []);
 
   // Miniatura de los dialogos de "Borrar todo" y "Ver cómo lo pinté".
@@ -1101,7 +1129,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const actual = trazoRef.current;
     if (!actual) return;
     trazoRef.current = null;
-    sonidoTrazoRef.current?.parar();
     if (actual.capa) {
       const capa = canvasTrazoRef.current;
       capa.getContext('2d').clearRect(0, 0, capa.width, capa.height);
@@ -1255,9 +1282,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     }
     const p = punto(e);
     pintarTramo(destino.getContext('2d'), trazo, p, p);
-    sonidoTrazoRef.current?.parar();
-    sonidoTrazoRef.current = sonidoDeTrazo(herramienta);
-    sonidoTrazoRef.current.mover();
     trazoRef.current = {
       pointerId: e.pointerId,
       ultimo: p,
@@ -1294,7 +1318,6 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
       caja.x1 = Math.max(caja.x1, p.x);
       caja.y1 = Math.max(caja.y1, p.y);
     }
-    sonidoTrazoRef.current?.mover();
     mostrarEfectos(actual, actual.ultimo);
   };
 
@@ -1310,11 +1333,13 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     const actual = trazoRef.current;
     if (!actual || actual.pointerId !== e.pointerId) return;
     trazoRef.current = null;
-    sonidoTrazoRef.current?.parar();
     const zona = zonaDeTrazo(actual.caja, actual.trazo.ancho, actual.trazo.espejo);
     if (actual.capa) fundirCapa(canvasRef.current.getContext('2d'), canvasTrazoRef.current, actual.trazo.herramienta, zona);
     const titilan = titilanDe(actual.trazo);
     if (titilan.length) actual.hist.ti = titilan;
+    // Puntos compactos: guardar la historia copia un bloque, no miles de
+    // numeros sueltos (y ocupa la mitad).
+    actual.hist.p = Float32Array.from(actual.hist.p);
     registrarCambio(zona, actual.hist);
     if (actual.trazo.herramienta === 'goma') apagarBrillosBorrados(actual.hist);
     programarGuardado();
@@ -1365,6 +1390,8 @@ export default function ColorearLienzo({ id, src, onGuardado, onImprimir, onCapa
     registrarCambio({ x: 0, y: 0, w: canvas.width, h: canvas.height }, { t: 'borrar' }, textosAntes);
     clearTimeout(temporizadorRef.current);
     pendienteRef.current = false;
+    miniaturaPendienteRef.current = false;
+    guardadoAntesRef.current = false;
     await borrarDibujo(id);
     onGuardadoRef.current?.();
   };

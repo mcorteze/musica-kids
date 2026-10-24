@@ -436,21 +436,34 @@ function chispas(ctx, trazo, p, ancho, rgb, n) {
   }
 }
 
+// Opacidades de las gotas del spray: cada tanda se pinta de una vez.
+const TANDAS_ROCIO = [0.6, 0.8, 1];
+
 function rocio(ctx, trazo, p, ancho, rgb) {
   const { azar } = trazo;
   const radio = ancho / 2;
-  const gotas = Math.max(8, Math.round(radio * 0.9));
+  // Menos gotas y un solo fill por tanda de opacidad (pedido 2026-10-24: en
+  // la tablet se trababa). Antes: radio*0.9 gotas con un fill cada una,
+  // ~11.000 fills en tres trazos.
+  const gotas = Math.max(6, Math.round(radio * 0.55));
   const punto = Math.max(1, ancho / 70);
-  ctx.fillStyle = css(rgb);
+  const tandas = TANDAS_ROCIO.map(() => new Path2D());
   for (let i = 0; i < gotas; i++) {
     const ang = azar() * Math.PI * 2;
     // Radio uniforme: mas denso al centro, como un spray.
     const r = azar() * radio;
-    ctx.globalAlpha = 0.55 + azar() * 0.45;
-    ctx.beginPath();
-    ctx.arc(p.x + Math.cos(ang) * r, p.y + Math.sin(ang) * r, punto * (0.6 + azar()), 0, Math.PI * 2);
-    ctx.fill();
+    const x = p.x + Math.cos(ang) * r;
+    const y = p.y + Math.sin(ang) * r;
+    const t = punto * (0.6 + azar());
+    const tanda = tandas[i % tandas.length];
+    tanda.moveTo(x + t, y);
+    tanda.arc(x, y, t, 0, Math.PI * 2);
   }
+  ctx.fillStyle = css(rgb);
+  tandas.forEach((tanda, i) => {
+    ctx.globalAlpha = TANDAS_ROCIO[i];
+    ctx.fill(tanda);
+  });
   ctx.globalAlpha = 1;
 }
 

@@ -148,6 +148,8 @@ export async function probarColorearAjustes(browser, carpeta, chequear) {
       g.onsuccess = () => res(g.result);
     };
   }));
+  // El guardado llega 2 s despues de dejar de pintar (ESPERA_GUARDADO_MS).
+  await espera(2500);
   await correrUso(6);
   await page.reload();
   await espera(1200);
