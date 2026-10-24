@@ -117,10 +117,14 @@
    centro. */
 .colorear-mas-contenido {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 10px 14px;
+  gap: 14px;
+}
+
+/* Con el zoom al lado, las opciones van de a dos por fila. */
+.colorear-mas-contenido .colorear-mas {
+  grid-template-columns: repeat(2, 88px);
 }
 
 .colorear-control-zoom {
@@ -1330,6 +1334,22 @@
 
   .colorear-mas {
     grid-template-columns: repeat(2, 120px);
+  }
+
+  /* Celular: el zoom pasa debajo de las opciones. */
+  .colorear-mas-contenido {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .colorear-mas-contenido .colorear-mas {
+    grid-template-columns: repeat(2, 120px);
+  }
+
+  .colorear-control-zoom {
+    padding: 10px 0 0;
+    border-left: 0;
+    border-top: 1px solid #E1E8EE;
   }
 
   .colorear-centro {
